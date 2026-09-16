@@ -1,4 +1,4 @@
-param([int]$Port = 9341, [switch]$NoLaunch, [switch]$InPlace)
+param([int]$Port = 9341, [switch]$NoLaunch, [switch]$InPlace, [switch]$Force)
 . (Join-Path $PSScriptRoot 'common-windows.ps1')
 
 if ($Port -lt 1024 -or $Port -gt 65535) { Stop-WithError 'Port must be between 1024 and 65535.' }
@@ -16,7 +16,7 @@ if (-not $InPlace -and $script:ProjectRoot -ne $script:InstallRoot) {
     }
     exit 0
   }
-  if ($installedVersion -and $bundledVersion -and $installedVersion -eq $bundledVersion -and $installedComplete) {
+  if (-not $Force -and $installedVersion -and $bundledVersion -and $installedVersion -eq $bundledVersion -and $installedComplete) {
     Write-Host "Installed engine $installedVersion is already current; replacement skipped."
     if (-not $NoLaunch) {
       & (Join-Path $script:InstallRoot 'scripts\windows\start-qq-skin-windows.ps1') -Port $Port -RestartExisting

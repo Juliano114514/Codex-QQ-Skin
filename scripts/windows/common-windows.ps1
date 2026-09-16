@@ -31,7 +31,7 @@ function ConvertTo-SkinVersion {
 
 function Get-EngineVersionAt {
   param([Parameter(Mandatory)][string]$Root)
-  $common = Join-Path $Root 'scripts\common-windows.ps1'
+  $common = Join-Path $Root 'scripts\windows\common-windows.ps1'
   if (-not (Test-Path -LiteralPath $common -PathType Leaf)) { return $null }
   $match = [regex]::Match((Get-Content -LiteralPath $common -Raw), '(?m)^\s*\$script:SkinVersion\s*=\s*[''"]([^''"]+)[''"]')
   if (-not $match.Success) { return $null }
@@ -164,7 +164,7 @@ function Test-CodexCdpEndpoint {
   try {
     $connections = @(Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort $Port -State Listen -ErrorAction Stop)
     if (-not $connections -or -not ($connections | Where-Object { Test-ProcessDescendsFromCodex -ProcessId $_.OwningProcess })) { return $false }
-    $targets = @(Invoke-RestMethod -Uri "http://127.0.0.1:$Port/json/list" -TimeoutSec 2 -MaximumRedirection 0)
+    $targets = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/json/list" -TimeoutSec 2 -MaximumRedirection 0
     foreach ($target in $targets) {
       if ($target.type -ne 'page' -or -not ([string]$target.url).StartsWith('app://')) { continue }
       $uri = [Uri]$target.webSocketDebuggerUrl
