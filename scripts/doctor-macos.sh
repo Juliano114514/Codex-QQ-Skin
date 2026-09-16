@@ -16,11 +16,13 @@ require_macos_runtime
 [ -f "$CONFIG_PATH" ] || fail "Codex config not found: $CONFIG_PATH"
 for required in \
   "$PROJECT_ROOT/assets/qq-skin.css" \
+  "$PROJECT_ROOT/assets/qq-dark.css" \
   "$PROJECT_ROOT/assets/renderer-inject.js" \
   "$PROJECT_ROOT/assets/codex-pet.png" \
   "$PROJECT_ROOT/assets/retro-window-frame.png" \
   "$PROJECT_ROOT/assets/qq-avatar.png" \
   "$PROJECT_ROOT/assets/theme.json" \
+  "$PROJECT_ROOT/assets/theme-dark.json" \
   "$PROJECT_ROOT/scripts/injector.mjs" \
   "$PROJECT_ROOT/scripts/usage/codex-usage-worker.mjs" \
   "$PROJECT_ROOT/scripts/companion/companion-feed-worker.mjs" \

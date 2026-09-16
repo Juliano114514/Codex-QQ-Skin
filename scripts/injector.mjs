@@ -21,6 +21,20 @@ const USAGE_REFRESH_INTERVAL_MS = 60_000;
 const COMPANION_REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
 let staticPayloadAssets = null;
 
+// Codex 26.908 moved shell/composer classes to CSS modules. Match semantic
+// prefixes, never build-specific hashes, and retain the legacy selectors.
+const SHELL_SELECTOR = 'main:is(.main-surface,[class*=_MainContentSurface_])';
+const COMPOSER_SELECTOR = ':is(.composer-surface-chrome,[class*=_ComposerLayoutRoot_])';
+function adaptShellSelectors(source) {
+  return source
+    .replaceAll('main.main-surface', SHELL_SELECTOR)
+    .replaceAll('header.app-header-tint', 'header:is(.app-header-tint,.draggable)')
+    .replaceAll('.composer-surface-chrome', COMPOSER_SELECTOR)
+    // The newer marker is an empty PiP obstacle; its sibling owns the UI.
+    .replaceAll('[data-pip-obstacle="thread-summary-panel"]',
+      ':is([data-pip-obstacle="thread-summary-panel"]:not([aria-hidden="true"]),[data-pip-obstacle="thread-summary-panel"][aria-hidden="true"] + div)');
+}
+
 async function persistActiveMode(themeDir, mode, themeId = null) {
   if (!themeDir || !["native", "qq", "custom"].includes(mode)) return;
   const file = path.join(resolveStateRoot(themeDir), "active-skin.json");
@@ -239,9 +253,9 @@ async function listAppTargets(port) {
 async function probeSession(session) {
   return session.evaluate(`(() => {
     const markers = {
-      shell: Boolean(document.querySelector('main.main-surface')),
+      shell: Boolean(document.querySelector('${SHELL_SELECTOR}')),
       sidebar: Boolean(document.querySelector('aside.app-shell-left-panel')),
-      composer: Boolean(document.querySelector('.composer-surface-chrome')),
+      composer: Boolean(document.querySelector('${COMPOSER_SELECTOR}')),
       main: Boolean(document.querySelector('[role="main"]')),
     };
     return {
@@ -524,22 +538,39 @@ async function loadStaticPayloadAssets() {
   const cacheHit = Boolean(staticPayloadAssets);
   if (!staticPayloadAssets) {
     staticPayloadAssets = Promise.all([
-      fs.readFile(path.join(root, "assets", "qq-skin.css"), "utf8"),
-      fs.readFile(path.join(root, "assets", "custom-skin.css"), "utf8"),
-      fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8"),
+      fs.readFile(path.join(root, "assets", "qq-skin.css"), "utf8").then(adaptShellSelectors),
+      fs.readFile(path.join(root, "assets", "custom-skin.css"), "utf8").then(adaptShellSelectors),
+      fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8").then(adaptShellSelectors),
       fs.readFile(path.join(root, "assets", "portal-hero.png")),
       fs.readFile(path.join(root, "assets", "theme.json"), "utf8"),
       fs.readFile(path.join(root, "assets", "codex-pet.png")),
       fs.readFile(path.join(root, "assets", "retro-window-frame.png")),
       fs.readFile(path.join(root, "assets", "qq-avatar.png")),
       fs.readFile(path.join(root, "assets", "audio", "qq-system-cough.mp3")),
+      fs.readFile(path.join(root, "assets", "qq-dark.css"), "utf8").then(adaptShellSelectors),
+      fs.readFile(path.join(root, "assets", "theme-dark.json"), "utf8"),
+      Promise.all(["star", "moon", "sun", "king"].map(async (name) => {
+        const image = await fs.readFile(path.join(root, "assets", "level-icons", `${name}.png`));
+        const kind = name === "king" ? "crown" : name;
+        return `.qq-skin-level-icons i[data-kind="${kind}"] { background-image: url("data:image/png;base64,${image.toString("base64")}"); }`;
+      })),
+      fs.readFile(path.join(root, "assets", "qq-avatars.json"), "utf8"),
     ]).catch((error) => {
       staticPayloadAssets = null;
       throw error;
     });
   }
-  const [css, customCss, template, qqArt, qqThemeJson, pet, retroFrame, qqAvatar, coughAudio] = await staticPayloadAssets;
+  const [baseCss, customCss, template, qqArt, qqThemeJson, pet, retroFrame, qqAvatar, coughAudio, darkCss, darkThemeJson, levelIconCss, avatarJson] = await staticPayloadAssets;
   const qqTheme = JSON.parse(qqThemeJson);
+  qqTheme.avatarLibrary = JSON.parse(avatarJson);
+  qqTheme.notificationAudio = Object.fromEntries(await Promise.all(
+    [["approval", "action-required.wav"], ["completed", "task-completed.wav"]].map(async ([event, file]) => {
+      const bytes = await fs.readFile(path.join(root, "assets", "audio", file));
+      return [event, `data:audio/wav;base64,${bytes.toString("base64")}`];
+    }),
+  ));
+  qqTheme.variants = { dark: JSON.parse(darkThemeJson) };
+  const css = `${baseCss}\n${darkCss}\n${levelIconCss.join("\n")}`;
   return { css, customCss, template, qqArt, qqTheme, pet, retroFrame, qqAvatar, coughAudio, cacheHit };
 }
 
@@ -822,15 +853,18 @@ function runLibrarySwitch(themeId) {
   if (!/^[A-Za-z0-9_-]{1,80}$/.test(themeId || "")) {
     return Promise.reject(new Error(`Invalid theme id: ${themeId}`));
   }
-  if (process.platform === "win32") {
-    return Promise.reject(new Error("In-app library switching is currently macOS-only"));
-  }
-  const script = path.join(root, "scripts", "switch-theme-macos.sh");
+  const windows = process.platform === "win32";
+  const script = windows
+    ? path.join(root, "scripts", "windows", "switch-theme-windows.ps1")
+    : path.join(root, "scripts", "switch-theme-macos.sh");
   return new Promise((resolve, reject) => {
     // --no-apply only stages the live theme pack. The watch loop refreshes
     // the payload; never spawn a full start that would kill this injector.
-    const child = spawn("/bin/bash", [script, "--id", themeId, "--no-apply"], {
+    const child = spawn(windows ? "powershell.exe" : "/bin/bash", windows
+      ? ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script, "-Id", themeId, "-NoApply"]
+      : [script, "--id", themeId, "--no-apply"], {
       env: process.env,
+      windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stderr = "";
@@ -1008,8 +1042,8 @@ async function verifySession(session) {
       home?.firstElementChild || null;
     const hero = box(stack?.querySelector(':scope > div:first-child > div:first-child'));
     const projectButton = box(home?.querySelector('.group\\\\/project-selector > button'));
-    const shell = box(document.querySelector('main.main-surface'));
-    const composer = box(document.querySelector('.composer-surface-chrome'));
+    const shell = box(document.querySelector('${SHELL_SELECTOR}'));
+    const composer = box(document.querySelector('${COMPOSER_SELECTOR}'));
     const sidebar = box(document.querySelector('aside.app-shell-left-panel'));
     const chrome = document.getElementById('codex-qq-skin-chrome');
     const usagePanelNode = document.getElementById('codex-qq-skin-usage-panel');
@@ -1018,6 +1052,8 @@ async function verifySession(session) {
       installed: document.documentElement.classList.contains('codex-qq-skin') ||
         document.documentElement.classList.contains('codex-dream-skin'),
       skinMode: window.__CODEX_QQ_SKIN_STATE__?.skinMode ?? null,
+      themeId: window.__CODEX_QQ_SKIN_STATE__?.themeId ?? null,
+      appearance: document.documentElement.getAttribute('data-dream-shell'),
       version: window.__CODEX_QQ_SKIN_STATE__?.version ?? null,
       stylePresent: Boolean(document.getElementById('codex-qq-skin-style')),
       chromePresent: Boolean(chrome),
@@ -1106,21 +1142,6 @@ async function runOneShot(options) {
   const connected = await connectCodexTargets(options.port, options.timeoutMs);
   const loaded = (options.mode === "once" || options.reload) ? await loadPayload(options.themeDir) : null;
   const payload = loaded?.payload ?? null;
-  const shouldPushCompanion = options.mode === "once" || options.reload;
-  let companionSnapshot = null;
-  if (shouldPushCompanion) {
-    try {
-      // A hot apply must be self-contained. The background watcher may not
-      // survive a terminal/session boundary, while the on-disk cache does.
-      companionSnapshot = await runCompanionWorker(options.themeDir);
-    } catch (error) {
-      companionSnapshot = sanitizeCompanionSnapshot({
-        status: "error",
-        generatedAt: new Date().toISOString(),
-        error: error.message,
-      });
-    }
-  }
   const results = [];
   let screenshotCaptured = false;
 
@@ -1139,7 +1160,6 @@ async function runOneShot(options) {
         }
       }
 
-      if (companionSnapshot) await pushCompanionSnapshot(session, companionSnapshot);
 
       const result = options.mode === "remove"
         ? await verifyRemovedSession(session)
@@ -1177,7 +1197,7 @@ export function earlyPayloadFor(payload, revision) {
     const install = () => {
       if (window[generationKey] !== generation) { stop(); return true; }
       if (!document.documentElement) return false;
-      const shell = document.querySelector('main.main-surface');
+      const shell = document.querySelector('${SHELL_SELECTOR}');
       const sidebar = document.querySelector('aside.app-shell-left-panel');
       if (!shell || !sidebar) return false;
       stop();
@@ -1205,9 +1225,9 @@ function watchPayloadSources(themeDir, onDirty) {
         const name = filename ? String(filename) : "";
         const staticChanged = directory === assetsRoot &&
           (!name || name === "qq-skin.css" || name === "custom-skin.css" || name === "renderer-inject.js" ||
-            name === "portal-hero.png" || name === "theme.json" ||
+            name === "portal-hero.png" || name === "theme.json" || name === "theme-dark.json" || name === "qq-dark.css" ||
             name === "codex-pet.png" || name === "retro-window-frame.png" ||
-            name === "qq-avatar.png" || name === "audio");
+            name === "qq-avatar.png" || name === "qq-avatars.json" || name === "level-icons" || name === "audio");
         if (kind === "static" && !staticChanged) return;
         onDirty({ staticChanged });
       });
@@ -1233,11 +1253,8 @@ async function runWatch(options) {
   const sessions = new Map();
   const rejected = new Set();
   let usageSnapshot = sanitizeUsageSnapshot({ status: "loading", generatedAt: new Date().toISOString() });
-  let companionSnapshot = sanitizeCompanionSnapshot({ status: "loading", generatedAt: new Date().toISOString() });
   let usageRefreshPromise = null;
-  let companionRefreshPromise = null;
   let nextUsageRefreshAt = 0;
-  let nextCompanionRefreshAt = 0;
   let stopping = false;
   let reloadTimer = null;
   let reloadChain = Promise.resolve();
@@ -1296,34 +1313,6 @@ async function runWatch(options) {
     return usageRefreshPromise;
   };
 
-  const refreshCompanion = async (force = false) => {
-    try {
-      companionSnapshot = await runCompanionWorker(options.themeDir, { force });
-      for (const record of sessions.values()) {
-        if (!record.session.closed) await pushCompanionSnapshot(record.session, companionSnapshot).catch(() => {});
-      }
-      console.log(`[qq-skin] refreshed companion feeds (${companionSnapshot.status})`);
-    } catch (error) {
-      companionSnapshot = sanitizeCompanionSnapshot({
-        ...companionSnapshot,
-        status: "error",
-        stale: Boolean(companionSnapshot.github?.length || companionSnapshot.news?.length),
-        error: error.message,
-      });
-      for (const record of sessions.values()) {
-        if (!record.session.closed) await pushCompanionSnapshot(record.session, companionSnapshot).catch(() => {});
-      }
-    } finally {
-      nextCompanionRefreshAt = Date.now() + COMPANION_REFRESH_INTERVAL_MS;
-    }
-  };
-
-  const queueCompanionRefresh = (force = false) => {
-    if (companionRefreshPromise || (!force && Date.now() < nextCompanionRefreshAt)) return companionRefreshPromise;
-    companionRefreshPromise = refreshCompanion(force).finally(() => { companionRefreshPromise = null; });
-    return companionRefreshPromise;
-  };
-
   const refreshPayload = async () => {
     const next = await loadPayload(options.themeDir);
     if (next.revision === current.revision) return;
@@ -1342,7 +1331,6 @@ async function runWatch(options) {
         record.needsLoadFallback = !nextIdentifier;
         await applyToSession(session, current.payload);
         await pushUsageSnapshot(session, usageSnapshot);
-        await pushCompanionSnapshot(session, companionSnapshot);
       } catch (error) {
         record.needsLoadFallback = true;
         console.error(`[qq-skin] theme refresh failed: ${error.message}`);
@@ -1388,7 +1376,7 @@ async function runWatch(options) {
   };
 
   const pollLibrarySwitchRequests = async () => {
-    if (librarySwitchBusy || process.platform === "win32" || !sessions.size) return;
+    if (librarySwitchBusy || !sessions.size) return;
     for (const record of sessions.values()) {
       if (record.session.closed) continue;
       let themeId = null;
@@ -1483,7 +1471,6 @@ async function runWatch(options) {
                 });
               }
               await pushUsageSnapshot(session, usageSnapshot).catch(() => {});
-              await pushCompanionSnapshot(session, companionSnapshot).catch(() => {});
             }, 0);
           });
           const earlyApplied = await session.evaluate(
@@ -1496,10 +1483,8 @@ async function runWatch(options) {
             await applyToSession(session, current.payload);
           }
           await pushUsageSnapshot(session, usageSnapshot);
-          await pushCompanionSnapshot(session, companionSnapshot);
           sessions.set(target.id, record);
           queueUsageRefresh(usageSnapshot.status === "loading");
-          queueCompanionRefresh(companionSnapshot.status === "loading");
           console.log(`[qq-skin] injected verified Codex target ${target.id} (${target.title || target.url})`);
         } catch (error) {
           if (record) await removeEarly(record);

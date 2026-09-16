@@ -17,10 +17,12 @@
   const WEATHER_AUDIO_ID = "codex-qq-skin-weather-audio";
   const ENABLED_STORAGE_KEY = "codex-qq-skin-enabled";
   const MODE_STORAGE_KEY = "codex-qq-skin-mode";
+  const QQ_APPEARANCE_STORAGE_KEY = "codex-qq-skin-appearance";
   const LIBRARY_SWITCH_KEY = "codex-qq-skin-library-switch";
-  const USAGE_MODE_KEY = "codex-qq-skin-usage-mode";
   const USAGE_NET_MODE_KEY = "codex-qq-skin-usage-net-mode";
   const USAGE_REFRESH_KEY = "codex-qq-skin-usage-refresh";
+  const PROFILE_STORAGE_KEY = "codex-qq-skin-profile-v1";
+  const PROFILE_DIALOG_ID = "codex-qq-skin-profile-dialog";
   const NATIVE_APPEARANCE_STATE_KEY = "__CODEX_QQ_SKIN_NATIVE_APPEARANCE__";
   const NEON_STORM_THEME_IDS = new Set(["preset-neon-storm", "custom-neon-storm"]);
   const LIBRARY_THEMES = Array.isArray(libraryThemes)
@@ -41,7 +43,11 @@
   const DEEP_THEME_ASSETS = deepThemeAssets && typeof deepThemeAssets === "object" ? deepThemeAssets : {};
   const CUSTOM_THEME_KINDS = new Set(["custom-native", "deep-custom"]);
   let skinMode = "qq";
+  let qqAppearance = "light";
+  const selectedQQTheme = () => qqAppearance === "dark" && QQ_THEME.variants?.dark
+    ? QQ_THEME.variants.dark : QQ_THEME;
   try {
+    if (window.localStorage?.getItem(QQ_APPEARANCE_STORAGE_KEY) === "dark") qqAppearance = "dark";
     const savedMode = window.localStorage?.getItem(MODE_STORAGE_KEY);
     const legacyEnabled = window.localStorage?.getItem(ENABLED_STORAGE_KEY);
     if (["native", "qq", "custom"].includes(savedMode)) skinMode = savedMode;
@@ -92,7 +98,7 @@
     return stack;
   };
   if (skinMode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) skinMode = "qq";
-  let THEME = skinMode === "qq" ? QQ_THEME : CUSTOM_THEME;
+  let THEME = skinMode === "qq" ? selectedQQTheme() : CUSTOM_THEME;
   let ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
   let LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
   let SOUND = THEME.sound && typeof THEME.sound === "object" ? THEME.sound : {};
@@ -186,6 +192,7 @@
   }
   previous?.soundMonitor?.cleanup?.();
   previous?.weatherMonitor?.destroy?.();
+  previous?.profileCleanup?.();
   // Rebuild floating chrome that closes over the previous generation. Keep the
   // shared <style id="codex-qq-skin-style"> node when a skin stays enabled so
   // reinject can reuse it; native mode must strip every painted leftover.
@@ -243,18 +250,19 @@
   };
 
   /**
-   * QQ is a deliberately light, classic skin. Codex writes its active native
+   * QQ has independent light and dark palettes. Codex writes its active native
    * palette as inline --color-* variables, so merely declaring color-scheme
    * cannot prevent dark popovers and portals. Snapshot those native values,
-   * let Codex's own electron-light stylesheet take over while QQ is active,
+   * let Codex's matching native stylesheet take over while QQ is active,
    * then restore the exact previous palette on exit.
    */
-  const forceNativeLightForQQ = () => {
+  const forceNativeAppearanceForQQ = () => {
     const root = document.documentElement;
     let snapshot = window[NATIVE_APPEARANCE_STATE_KEY];
     if (!snapshot) {
       snapshot = {
-        variant: root.classList.contains("electron-dark") ? "dark" : "light",
+        variant: root.classList.contains("electron-dark") ? "dark" : root.classList.contains("electron-light") ? "light" : null,
+        theme: root.getAttribute("data-theme"),
         properties: Array.from(root.style || [])
           .filter((name) => name.startsWith("--color-") || name.startsWith("--codex-base-"))
           .map((name) => [name, root.style.getPropertyValue(name), root.style.getPropertyPriority(name)]),
@@ -266,8 +274,9 @@
         root.style.removeProperty(name);
       }
     }
-    root.classList.remove("electron-dark");
-    root.classList.add("electron-light");
+    setAttribute(root, "data-theme", qqAppearance);
+    root.classList.toggle("electron-dark", qqAppearance === "dark");
+    root.classList.toggle("electron-light", qqAppearance === "light");
   };
 
   const restoreNativeAppearance = () => {
@@ -283,7 +292,9 @@
       root.style.setProperty(name, value, priority || "");
     }
     root.classList.remove("electron-dark", "electron-light");
-    root.classList.add(snapshot.variant === "dark" ? "electron-dark" : "electron-light");
+    if (snapshot.variant) root.classList.add(`electron-${snapshot.variant}`);
+    if (snapshot.theme === null) root.removeAttribute("data-theme");
+    else if (snapshot.theme !== undefined) setAttribute(root, "data-theme", snapshot.theme);
     delete window[NATIVE_APPEARANCE_STATE_KEY];
   };
 
@@ -744,57 +755,20 @@
   });
 
   let chromeParts = null;
-  let companionParts = null;
   let usageParts = null;
   let usageSnapshot = window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ && typeof window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ === "object"
     ? window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__
     : { schemaVersion: 1, status: "loading", scope: "device" };
-  let companionSnapshot = window.__CODEX_QQ_SKIN_COMPANION_SNAPSHOT__ &&
-    typeof window.__CODEX_QQ_SKIN_COMPANION_SNAPSHOT__ === "object"
-    ? window.__CODEX_QQ_SKIN_COMPANION_SNAPSHOT__
-    : { schemaVersion: 1, status: "loading", github: [] };
-  const BLIND_BOX_STORAGE_KEY = "codex-qq-skin-project-blind-box";
-  const BLIND_BOX_DECOR = ["globe", "rocket", "trophy", "cat"];
-  let companionBlindBox = {
-    currentId: 0,
-    history: [],
-    favorites: [],
-    avoidedIds: [],
-    avoidedLanguages: [],
-    discoveries: 0,
-    unlocked: [],
-  };
-  try {
-    const saved = JSON.parse(window.localStorage?.getItem(BLIND_BOX_STORAGE_KEY) || "null");
-    if (saved && typeof saved === "object") {
-      companionBlindBox = {
-        currentId: Number(saved.currentId) || 0,
-        history: Array.isArray(saved.history) ? saved.history.map(Number).filter(Boolean).slice(-50) : [],
-        favorites: Array.isArray(saved.favorites) ? saved.favorites.map(Number).filter(Boolean).slice(-100) : [],
-        avoidedIds: Array.isArray(saved.avoidedIds) ? saved.avoidedIds.map(Number).filter(Boolean).slice(-100) : [],
-        avoidedLanguages: Array.isArray(saved.avoidedLanguages)
-          ? saved.avoidedLanguages.map((item) => String(item || "").slice(0, 24)).filter(Boolean).slice(-20) : [],
-        discoveries: Math.max(0, Number(saved.discoveries) || 0),
-        unlocked: Array.isArray(saved.unlocked)
-          ? saved.unlocked.filter((item) => BLIND_BOX_DECOR.includes(item)) : [],
-      };
-    }
-  } catch {}
-  let companionRoomMode = "room";
-  let companionBreakTimer = null;
-  let blindBoxRevealTimer = null;
-  let usageMode = "stats";
   let usageNetMode = false;
   try {
-    usageMode = window.localStorage?.getItem(USAGE_MODE_KEY) === "native" ? "native" : "stats";
     usageNetMode = window.localStorage?.getItem(USAGE_NET_MODE_KEY) === "true";
   } catch {}
   let retroShellParts = null;
-  let retroProfileParts = null;
   let observedShellMain = null;
+  let observedReferenceHost = null;
   let resizeObserver = null;
 
-  const pinnedSummaryLabel = /(toggle pinned summary|pinned summary|置顶摘要|固定摘要|釘選概要|釘選摘要|概要.*釘選|摘要.*固定)/i;
+  const pinnedSummaryLabel = /(toggle pinned summary|pinned summary|toggle summary|切换摘要|置顶摘要|固定摘要|釘選概要|釘選摘要|概要.*釘選|摘要.*固定)/i;
   const showSidebarLabel = /^(show sidebar|显示边栏|显示侧边栏|顯示邊欄|顯示側邊欄|サイドバーを表示|사이드바 표시)$/i;
   const hideSidebarLabel = /^(hide sidebar|隐藏边栏|隐藏侧边栏|隱藏邊欄|隱藏側邊欄|サイドバーを非表示|사이드바 숨기기)$/i;
 
@@ -992,6 +966,20 @@
 
     const play = (eventName) => {
       if (!enabled || configuredVolume <= 0) return false;
+      const recording = skinMode === "qq" ? QQ_THEME.notificationAudio?.[eventName] : null;
+      if (recording && typeof window.Audio === "function") {
+        try {
+          activeCoughAudio?.pause?.();
+          const audio = new window.Audio(recording);
+          activeCoughAudio = audio;
+          audio.volume = configuredVolume;
+          const release = () => { if (activeCoughAudio === audio) activeCoughAudio = null; };
+          audio.onended = release;
+          audio.onerror = release;
+          audio.play()?.catch(release);
+          return true;
+        } catch { return false; }
+      }
       const context = ensureAudioContext();
       if (!context) return false;
       const style = eventName === "approval" ? approvalStyle
@@ -1241,7 +1229,7 @@
         button.style.cssText = [
           "height:22px", "padding:0 8px", "border:0", "border-radius:7px", "white-space:nowrap",
           "font:650 11px/22px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
-          "cursor:pointer", "user-select:none", "transition:background .16s ease,color .16s ease",
+          "cursor:pointer", "user-select:none", "-webkit-app-region:no-drag", "pointer-events:auto", "transition:background .16s ease,color .16s ease",
         ].join(";");
         button.addEventListener("click", (event) => {
           event.preventDefault();
@@ -1801,17 +1789,19 @@
       ctx = canvas.getContext("2d", { alpha: true, desynchronized: true }) || canvas.getContext("2d");
 
       try {
-        mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-        reduced = Boolean(mq.matches);
-        mq._handler = () => {
-          reduced = Boolean(mq.matches);
-          if (reduced) {
-            stop();
-            paint();
-          } else if (visible && document.visibilityState !== "hidden") start();
-        };
-        mq.addEventListener("change", mq._handler);
-      } catch { reduced = false; }
+        if (!mq) {
+          mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+          mq._handler = () => {
+            reduced = Boolean(mq.matches) || document.documentElement.getAttribute("data-reduced-motion") === "true";
+            if (reduced) {
+              stop();
+              paint();
+            } else if (visible && document.visibilityState !== "hidden") start();
+          };
+          mq.addEventListener("change", mq._handler);
+        }
+        reduced = Boolean(mq.matches) || document.documentElement.getAttribute("data-reduced-motion") === "true";
+      } catch { reduced = document.documentElement.getAttribute("data-reduced-motion") === "true"; }
 
       if (typeof IntersectionObserver === "function") {
         io?.disconnect();
@@ -1905,19 +1895,8 @@
     for (const button of document.querySelectorAll('button[aria-label]')) {
       if (pinnedSummaryLabel.test(button.getAttribute("aria-label") || "")) return button;
     }
-    // Newer Codex builds renamed the pinned-summary control to the generic
-    // “显示/隐藏侧边栏”. Distinguish it from the left navigation toggle by its
-    // real top-right viewport position and ignore our cloned retro control.
-    const genericSummaryLabel = /^(show\/hide sidebar|toggle sidebar visibility|显示\/隐藏侧边栏|顯示\/隱藏側邊欄)$/i;
-    const candidates = [...document.querySelectorAll('button[aria-label]')].filter((button) => {
-      if (!genericSummaryLabel.test(button.getAttribute("aria-label") || "")) return false;
-      if (button.closest?.(`#${RETRO_SHELL_ID}`)) return false;
-      const box = button.getBoundingClientRect?.();
-      return box && box.width >= 20 && box.height >= 20 &&
-        box.left > window.innerWidth * .65 && box.top >= 0 && box.top < 48;
-    });
-    return candidates.sort((left, right) =>
-      right.getBoundingClientRect().left - left.getBoundingClientRect().left)[0] || null;
+    // The workspace side panel is not the pinned environment summary.
+    return null;
   };
 
   const findLeftSidebarToggle = () => {
@@ -1928,514 +1907,77 @@
     return null;
   };
 
-  const statusLabels = {
-    idle: "在线 · 随时待命",
-    running: "正在工作…",
-    approval: "需要你的确认",
-    completed: "任务已完成",
-    offline: "连接已断开",
-  };
-  const weeklyUsageStorageKey = "codex-qq-skin-weekly-remaining";
-  const profileActionPattern = /^(open profile menu|open account menu|打开个人资料菜单|打开账户菜单|開啟個人資料選單|開啟帳戶選單|プロフィールメニューを開く|프로필 메뉴 열기)$/i;
-  const weeklyPattern = /(本周|每周|每週|一周|一週|week|weekly)/i;
-  const remainingPattern = /(?:剩余|剩餘)\s*(\d+(?:\.\d+)?)\s*%|(?:remaining|left)\s*:?\s*(\d+(?:\.\d+)?)\s*%/i;
-
-  const findReactWeeklyUsage = () => {
-    const firstFiber = window.__codexRoot?._internalRoot?.current;
-    if (!firstFiber || typeof firstFiber !== "object") return null;
-    const visited = new WeakSet();
-    const pending = [firstFiber];
-    let scanned = 0;
-    while (pending.length && scanned < 20000) {
-      const fiber = pending.pop();
-      if (!fiber || typeof fiber !== "object" || visited.has(fiber)) continue;
-      visited.add(fiber);
-      scanned += 1;
-      for (const props of [fiber.memoizedProps, fiber.alternate?.memoizedProps]) {
-        const rateLimit = props?.rateLimit;
-        const windowData = rateLimit?.rate_limit?.primary_window;
-        const windowSeconds = Number(windowData?.limit_window_seconds);
-        const usedPercent = Number(windowData?.used_percent);
-        if (
-          Number.isFinite(windowSeconds) && windowSeconds >= 6 * 86400 && windowSeconds <= 8 * 86400 &&
-          Number.isFinite(usedPercent)
-        ) {
-          const accountIdentity = String(rateLimit.account_id || rateLimit.user_id || "").trim();
-          return {
-            accountIdentity,
-            remaining: clamp(Math.round(100 - usedPercent), 0, 100),
-          };
-        }
-      }
-      if (fiber.sibling) pending.push(fiber.sibling);
-      if (fiber.child) pending.push(fiber.child);
-    }
-    return null;
-  };
-
-  const findWeeklyRemaining = () => {
-    for (const node of document.querySelectorAll('[role="status"], [role="alert"]')) {
-      const text = String(node.textContent || "").replace(/\s+/g, " ").trim();
-      if (!weeklyPattern.test(text)) continue;
-      const match = remainingPattern.exec(text);
-      const value = Number(match?.[1] ?? match?.[2]);
-      if (Number.isFinite(value)) return clamp(Math.round(value), 0, 100);
-    }
-    for (const progress of document.querySelectorAll("progress")) {
-      let host = progress;
-      let text = "";
-      for (let depth = 0; host && depth < 6; depth += 1, host = host.parentElement) {
-        text = String(host.textContent || "").replace(/\s+/g, " ").trim();
-        if (weeklyPattern.test(text)) break;
-      }
-      if (!weeklyPattern.test(text)) continue;
-      const match = remainingPattern.exec(text);
-      const parsed = Number(match?.[1] ?? match?.[2]);
-      if (Number.isFinite(parsed)) return clamp(Math.round(parsed), 0, 100);
-      const maximum = Number(progress.max || progress.getAttribute?.("max") || 100);
-      const used = Number(progress.value ?? progress.getAttribute?.("value"));
-      if (Number.isFinite(maximum) && maximum > 0 && Number.isFinite(used)) {
-        return clamp(Math.round(100 - used / maximum * 100), 0, 100);
-      }
-    }
-    return null;
-  };
-
-  const findCurrentAccountIdentity = () => {
-    const profileButton = [...document.querySelectorAll("button[aria-label]")].find((button) =>
-      profileActionPattern.test(String(button.getAttribute?.("aria-label") || "").trim()) &&
-      String(button.textContent || "").trim());
-    const visibleName = String(profileButton?.textContent || retroProfileParts?.name?.textContent || "")
-      .replace(/\s+/g, " ").trim();
-    return visibleName.slice(0, 120);
-  };
-
-  const weeklyUsageCacheKey = (accountIdentity) => accountIdentity
-    ? `${weeklyUsageStorageKey}:${encodeURIComponent(accountIdentity.toLocaleLowerCase())}`
-    : "";
-
-  const syncWeeklyUsage = (node) => {
-    if (!node) return;
-    const reactUsage = findReactWeeklyUsage();
-    const accountIdentity = reactUsage?.accountIdentity || findCurrentAccountIdentity();
-    const accountCacheKey = weeklyUsageCacheKey(accountIdentity);
-    let remaining = reactUsage?.remaining ?? findWeeklyRemaining();
-    if (remaining != null) {
-      if (accountCacheKey) {
-        try { window.localStorage?.setItem(accountCacheKey, String(remaining)); } catch {}
-      }
-    } else if (accountCacheKey) {
-      try {
-        const saved = window.localStorage?.getItem(accountCacheKey);
-        const cached = Number(saved);
-        if (saved != null && Number.isFinite(cached)) remaining = clamp(Math.round(cached), 0, 100);
-      } catch {}
-    }
-    // Version 1.6.1 stored one global value. It cannot safely be associated
-    // with the account currently signed in, so never use it after migration.
-    try { window.localStorage?.removeItem(weeklyUsageStorageKey); } catch {}
-    node.textContent = remaining == null ? "本周剩余 --" : `本周剩余 ${remaining}%`;
-    if (node.dataset) {
-      node.dataset.level = remaining == null ? "unknown" : remaining <= 5 ? "critical" : remaining <= 20 ? "low" : "normal";
-      node.dataset.account = accountIdentity;
-    }
-  };
-
-  const openAvatarOverlay = () => {
-    try {
-      const result = window.electronBridge?.sendMessageFromView?.({ type: "avatar-overlay-open" });
-      result?.catch?.(() => {});
-      return Boolean(result !== undefined || window.electronBridge?.sendMessageFromView);
-    } catch { return false; }
-  };
-
-  const toggleNativeTerminal = () => {
-    const labelPattern = /(toggle bottom panel visibility|切换底部面板显示|切換底部面板顯示|顯示\/隱藏底部面板)/i;
-    const candidates = [...document.querySelectorAll('button[aria-label], [role="button"][aria-label]')]
-      .filter((button) => !button.closest?.(`#${COMPANION_ID}`) && labelPattern.test(button.getAttribute?.("aria-label") || ""));
-    const visible = candidates.find((button) => {
-      const box = button.getBoundingClientRect?.();
-      if (!box) return true;
-      const style = window.getComputedStyle?.(button);
-      return box.width > 0 && box.height > 0 && box.left > 0 && box.top >= 0 &&
-        box.right <= window.innerWidth && box.bottom <= window.innerHeight &&
-        style?.display !== "none" && style?.visibility !== "hidden" && style?.opacity !== "0";
-    });
-    const target = visible || candidates[0];
-    target?.click?.();
-    return Boolean(target);
-  };
-
-  const syncCompanionStatus = (status) => {
-    const companion = companionParts?.companion;
-    if (!companion) return;
-    if (companion.dataset) companion.dataset.status = status;
-    setTextContent(companionParts.statusText, statusLabels[status] || statusLabels.idle);
-  };
-
-  const companionRoomPhase = () => {
-    const hour = new Date().getHours();
-    if (hour >= 6 && hour < 12) return "morning";
-    if (hour >= 12 && hour < 18) return "day";
-    if (hour >= 18 && hour < 22) return "evening";
-    return "night";
-  };
-
-  const roomEscape = (value) => String(value || "").replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  })[character]);
-
-  const safeRoomUrl = (value, githubOnly = false) => {
-    try {
-      const url = new URL(String(value || ""));
-      if (!["http:", "https:"].includes(url.protocol)) return "";
-      if (githubOnly && url.hostname !== "github.com") return "";
-      return url.href;
-    } catch { return ""; }
-  };
-
-  const roomToast = (message) => {
-    const toast = companionParts?.toast;
-    if (!toast) return;
-    setTextContent(toast, message);
-    toast.classList?.add("is-visible");
-    setTimeout(() => toast.classList?.remove("is-visible"), 2200);
-  };
-
-  const openRoomExternal = (value, githubOnly = false) => {
-    const url = safeRoomUrl(value, githubOnly);
-    if (!url) {
-      roomToast("这个链接暂时不可用。");
-      return false;
-    }
-    try {
-      window.open(url, "_blank", "noopener,noreferrer");
-      roomToast("已在浏览器中打开。");
-      return true;
-    } catch {
-      roomToast("无法打开浏览器，请稍后重试。");
-      return false;
-    }
-  };
-
-  const bindBlindBoxButtons = (content) => {
-    content?.querySelectorAll?.(".qq-skin-blind-box-actions [data-room-action]").forEach((button) => {
-      if (button.dataset.qqBlindBoxBound === "true") return;
-      button.dataset.qqBlindBoxBound = "true";
-      let pointerHandledAt = 0;
-      const run = (event) => {
-        event?.preventDefault?.();
-        event?.stopPropagation?.();
-        handleCompanionRoomAction(button.dataset.roomAction);
-      };
-      button.addEventListener?.("pointerup", (event) => {
-        if (typeof event.button === "number" && event.button !== 0) return;
-        pointerHandledAt = Date.now();
-        run(event);
-      });
-      button.addEventListener?.("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (Date.now() - pointerHandledAt < 600) return;
-        run(event);
-      });
-    });
-  };
-
-  const persistBlindBox = () => {
-    try { window.localStorage?.setItem(BLIND_BOX_STORAGE_KEY, JSON.stringify(companionBlindBox)); } catch {}
-  };
-
-  const currentBlindBoxProject = () => (Array.isArray(companionSnapshot?.github) ? companionSnapshot.github : [])
-    .find((repo) => Number(repo.id) === Number(companionBlindBox.currentId)) || null;
-
-  const syncBlindBoxDecor = () => {
-    const companion = companionParts?.companion;
-    if (!companion) return;
-    companion.dataset.roomUnlocks = String(companionBlindBox.unlocked.length);
-    companion.querySelectorAll("[data-room-decor]").forEach((decor) => {
-      decor.classList?.toggle("is-unlocked", companionBlindBox.unlocked.includes(decor.dataset.roomDecor));
-    });
-  };
-
-  const discoverBlindBoxProject = () => {
-    const repos = Array.isArray(companionSnapshot?.github) ? companionSnapshot.github : [];
-    if (!repos.length) return null;
-    const currentId = Number(companionBlindBox.currentId) || 0;
-    const recent = new Set(companionBlindBox.history.slice(-Math.max(1, repos.length - 2)));
-    const avoided = new Set(companionBlindBox.avoidedIds);
-    const avoidedLanguages = new Set(companionBlindBox.avoidedLanguages);
-    let candidates = repos.filter((repo) => Number(repo.id) !== currentId && !recent.has(Number(repo.id)) &&
-      !avoided.has(Number(repo.id)) && !avoidedLanguages.has(String(repo.language || "")));
-    if (!candidates.length) {
-      candidates = repos.filter((repo) => Number(repo.id) !== currentId && !avoided.has(Number(repo.id)));
-    }
-    if (!candidates.length) candidates = repos.filter((repo) => Number(repo.id) !== currentId);
-    if (!candidates.length) candidates = repos;
-    const project = candidates[Math.floor(Math.random() * candidates.length)];
-    companionBlindBox.currentId = Number(project.id);
-    companionBlindBox.history.push(Number(project.id));
-    companionBlindBox.history = companionBlindBox.history.slice(-50);
-    companionBlindBox.discoveries += 1;
-    if (companionBlindBox.discoveries % 5 === 0) {
-      const nextDecor = BLIND_BOX_DECOR.find((item) => !companionBlindBox.unlocked.includes(item));
-      if (nextDecor) {
-        companionBlindBox.unlocked.push(nextDecor);
-        roomToast("连续发现 5 个项目：新摆件已解锁！");
-      }
-    }
-    persistBlindBox();
-    syncBlindBoxDecor();
-    const companion = companionParts?.companion;
-    if (companion?.dataset) {
-      companion.dataset.roomMood = "reading";
-      companion.dataset.roomDrawing = "true";
-      setTimeout(() => {
-        if (companion.dataset) {
-          companion.dataset.roomMood = "";
-          companion.dataset.roomDrawing = "false";
-        }
-      }, 900);
-    }
-    return project;
-  };
-
-  const renderCompanionRoomPanel = () => {
-    const panel = companionParts?.panel;
-    const title = companionParts?.panelTitle;
-    const content = companionParts?.panelContent;
-    if (!panel || !title || !content) return;
-    panel.classList?.toggle("is-visible", companionRoomMode !== "room");
-    if (companionRoomMode === "room") return;
-    const empty = (message) => `<div class="qq-skin-room-empty">${roomEscape(message)}</div>`;
-
-    if (companionRoomMode === "blindbox") {
-      setTextContent(title, `GitHub 热门项目盲盒 · 已发现 ${companionBlindBox.discoveries}`);
-      const project = currentBlindBoxProject();
-      if (!project) {
-        content.innerHTML = empty("机器人正在找一本合适的项目书……");
-        return;
-      }
-      const favorite = companionBlindBox.favorites.includes(Number(project.id));
-      content.innerHTML = `<article class="qq-skin-blind-box-card">
-        <div class="qq-skin-blind-box-project">
-          <h3>${roomEscape(project.name)}</h3>
-          <p>${roomEscape(project.descriptionZh || "这是一个近期受到关注的开源项目，帮助开发者改善开发流程与自动化体验。")}</p>
-        </div>
-        <div class="qq-skin-blind-box-actions">
-          <button type="button" data-room-action="favorite">${favorite ? "★ 已收藏" : "☆ 收藏"}</button>
-          <button type="button" data-room-action="open-project">打开 GitHub</button>
-          <button type="button" data-room-action="next-project">换一本</button>
-          <button type="button" data-room-action="less-like-this">以后少推荐这种</button>
-        </div>
-        <small>再发现 ${5 - (companionBlindBox.discoveries % 5)} 个项目解锁下一件房间摆件</small>
-      </article>`;
-      bindBlindBoxButtons(content);
+  const ensureFloatingPanel = (panel, titleSelector) => {
+    if (panel.qqFloatingState) {
+      if (!panel.classList.contains("qq-skin-growth-docked")) panel.qqFloatingState.place();
       return;
     }
-
-    setTextContent(title, "伙伴房间设置");
-    const motion = companionParts.companion.dataset.roomMotion !== "off";
-    content.innerHTML = `<div class="qq-skin-room-settings">
-      <button type="button" data-room-action="motion"><b>房间动态效果</b><span>${motion ? "已开启" : "已关闭"}</span></button>
-      <p>收藏、减少同类推荐和摆件解锁进度只保存在本机。</p>
-    </div>`;
-  };
-
-  const setCompanionRoomMode = (mode) => {
-    companionRoomMode = ["room", "blindbox", "settings"].includes(mode) ? mode : "room";
-    if (companionParts?.companion?.dataset) companionParts.companion.dataset.roomMode = companionRoomMode;
-    renderCompanionRoomPanel();
-  };
-
-  const drawAndRevealBlindBox = () => {
-    if (blindBoxRevealTimer) clearTimeout(blindBoxRevealTimer);
-    setCompanionRoomMode("room");
-    discoverBlindBoxProject();
-    blindBoxRevealTimer = setTimeout(() => {
-      blindBoxRevealTimer = null;
-      setCompanionRoomMode("blindbox");
-    }, 720);
-  };
-
-  const handleCompanionRoomAction = (action) => {
-    if (action === "blindbox") {
-      drawAndRevealBlindBox();
-      return;
-    }
-    if (action === "settings") return setCompanionRoomMode("settings");
-    if (action === "back") return setCompanionRoomMode("room");
-    const companion = companionParts?.companion;
-    if (!companion?.dataset) return;
-    if (action === "favorite") {
-      const project = currentBlindBoxProject();
-      if (!project) return;
-      const id = Number(project.id);
-      if (companionBlindBox.favorites.includes(id)) {
-        companionBlindBox.favorites = companionBlindBox.favorites.filter((item) => item !== id);
-        roomToast("已取消收藏。");
-      } else {
-        companionBlindBox.favorites.push(id);
-        roomToast("已收藏到本机。");
-      }
-      persistBlindBox();
-      renderCompanionRoomPanel();
-    } else if (action === "open-project") {
-      const project = currentBlindBoxProject();
-      if (project) openRoomExternal(project.url, true);
-    } else if (action === "next-project") {
-      drawAndRevealBlindBox();
-    } else if (action === "less-like-this") {
-      const project = currentBlindBoxProject();
-      if (!project) return;
-      companionBlindBox.avoidedIds.push(Number(project.id));
-      if (project.language && project.language !== "Other") companionBlindBox.avoidedLanguages.push(String(project.language));
-      companionBlindBox.avoidedIds = [...new Set(companionBlindBox.avoidedIds)].slice(-100);
-      companionBlindBox.avoidedLanguages = [...new Set(companionBlindBox.avoidedLanguages)].slice(-20);
-      roomToast("记住了，以后会少推荐这一类。");
-      drawAndRevealBlindBox();
-    } else if (action === "motion") {
-      companion.dataset.roomMotion = companion.dataset.roomMotion === "off" ? "on" : "off";
-      try { window.localStorage?.setItem("codex-qq-skin-room-motion", companion.dataset.roomMotion); } catch {}
-      renderCompanionRoomPanel();
-    } else if (action === "robot") {
-      const moods = ["happy", "curious", "sleepy", "excited"];
-      const mood = moods[Math.floor(Math.random() * moods.length)];
-      companion.dataset.roomMood = mood;
-      roomToast({ happy: "今天也一起把 Bug 清空！", curious: "这个项目看起来很有意思。", sleepy: "唔……让我眯三秒。", excited: "出发！下一个任务！" }[mood]);
-      setTimeout(() => { companion.dataset.roomMood = ""; }, 2600);
-    } else if (action === "window") {
-      const phases = ["morning", "day", "evening", "night"];
-      companion.dataset.roomPhase = phases[(phases.indexOf(companion.dataset.roomPhase) + 1) % phases.length];
-      roomToast("窗外的时间变了。");
-    } else if (action === "break") {
-      if (companionBreakTimer) clearTimeout(companionBreakTimer);
-      companion.dataset.roomMood = "break";
-      roomToast("咖啡休息开始：5 分钟。");
-      companionBreakTimer = setTimeout(() => {
-        companionBreakTimer = null;
-        companion.dataset.roomMood = "";
-        roomToast("休息结束，回来继续创造吧。");
-      }, 5 * 60 * 1000);
-    } else if (action === "terminal") toggleNativeTerminal();
-  };
-
-  const ensureCompanion = () => {
-    let companion = document.getElementById(COMPANION_ID);
-    if (!companion || companion.parentElement !== document.body) {
-      companion?.remove();
-      companion = document.createElement("section");
-      companion.id = COMPANION_ID;
-      companion.setAttribute("aria-label", "Codex 伙伴");
-      companion.innerHTML = `
-        <div class="qq-skin-companion-title">
-          <span>Codex 伙伴</span><button type="button" data-room-action="settings" aria-label="伙伴房间设置">⚙</button><i></i>
-        </div>
-        <div class="qq-skin-companion-stage">
-          <div class="qq-skin-room-window" data-room-action="window" role="button" tabindex="0" aria-label="切换窗外时间">
-            <span class="qq-skin-room-sky"></span>
-            <span class="qq-skin-room-moon"></span>
-            <span class="qq-skin-room-cloud qq-skin-room-cloud-a"></span>
-            <span class="qq-skin-room-cloud qq-skin-room-cloud-b"></span>
-          </div>
-          <div class="qq-skin-room-wall-note" aria-hidden="true"><b>CODEX</b><span>BUILD · TEST · SHIP</span></div>
-          <div class="qq-skin-room-shelf" data-room-action="blindbox" role="button" tabindex="0" aria-label="抽一个项目盲盒">
-            <i></i><i></i><i></i><b></b>
-          </div>
-          <div class="qq-skin-room-lamp" data-room-action="blindbox" role="button" tabindex="0" aria-label="抽一个项目盲盒"><i></i><b></b></div>
-          <div class="qq-skin-room-character" data-room-action="robot" role="button" tabindex="0" aria-label="和 Codex 伙伴互动">
-            <img class="qq-skin-pet-image" alt="" draggable="false">
-            <span class="qq-skin-room-approval-sign">需要确认</span>
-          </div>
-          <div class="qq-skin-room-drawn-book" aria-hidden="true"><i></i><b>?</b></div>
-          <div class="qq-skin-room-monitor" data-room-action="blindbox" role="button" tabindex="0" aria-label="抽一个项目盲盒">
-            <i class="qq-skin-room-screen"><b>&gt;_</b><span></span></i>
-            <i class="qq-skin-room-monitor-stand"></i>
-          </div>
-          <div class="qq-skin-room-desk" aria-hidden="true">
-            <span class="qq-skin-room-keyboard" data-room-action="terminal" role="button" tabindex="0" aria-label="打开终端"></span>
-            <span class="qq-skin-room-mug" data-room-action="break" role="button" tabindex="0" aria-label="开始五分钟休息"></span>
-          </div>
-          <div class="qq-skin-room-plant" data-room-action="blindbox" role="button" tabindex="0" aria-label="抽一个项目盲盒"><i></i><i></i><i></i><b></b></div>
-          <div class="qq-skin-room-decor qq-skin-room-decor-globe" data-room-decor="globe" aria-hidden="true">◉</div>
-          <div class="qq-skin-room-decor qq-skin-room-decor-rocket" data-room-decor="rocket" aria-hidden="true">▲</div>
-          <div class="qq-skin-room-decor qq-skin-room-decor-trophy" data-room-decor="trophy" aria-hidden="true">★</div>
-          <div class="qq-skin-room-decor qq-skin-room-decor-cat" data-room-decor="cat" aria-hidden="true">ฅ</div>
-          <div class="qq-skin-room-confetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-          <div class="qq-skin-room-offline" aria-hidden="true">Z z z</div>
-          <div class="qq-skin-room-toast" aria-live="polite"></div>
-          <div class="qq-skin-room-panel">
-            <div class="qq-skin-room-panel-head"><button type="button" data-room-action="back">‹</button><b></b></div>
-            <div class="qq-skin-room-panel-content"></div>
-          </div>
-        </div>
-        <div class="qq-skin-companion-actions">
-          <button type="button" data-companion-action="pet">🐾 打开宠物</button>
-          <button type="button" data-companion-action="terminal">⌨ 终端</button>
-          <button type="button" data-companion-action="sound"></button>
-        </div>
-        <div class="qq-skin-pet-status"><i></i><span>在线 · 随时待命</span><b class="qq-skin-weekly-usage">本周剩余 --</b></div>`;
-      document.body.appendChild(companion);
-      companionParts = null;
-    }
-    if (companion.dataset) {
-      companion.dataset.roomPhase = companionRoomPhase();
-      companion.dataset.roomMode = companionRoomMode;
-      try { companion.dataset.roomMotion = window.localStorage?.getItem("codex-qq-skin-room-motion") === "off" ? "off" : "on"; }
-      catch { companion.dataset.roomMotion = "on"; }
-    }
-    if (!companionParts || companionParts.companion !== companion) {
-      companionParts = {
-        companion,
-        image: companion.querySelector(".qq-skin-pet-image"),
-        petButton: companion.querySelector('[data-companion-action="pet"]'),
-        terminalButton: companion.querySelector('[data-companion-action="terminal"]'),
-        soundButton: companion.querySelector('[data-companion-action="sound"]'),
-        statusText: companion.querySelector(".qq-skin-pet-status span"),
-        weeklyUsage: companion.querySelector(".qq-skin-weekly-usage"),
-        panel: companion.querySelector(".qq-skin-room-panel"),
-        panelTitle: companion.querySelector(".qq-skin-room-panel-head b"),
-        panelContent: companion.querySelector(".qq-skin-room-panel-content"),
-        toast: companion.querySelector(".qq-skin-room-toast"),
-      };
-      const bindAction = (button, action, label) => {
-        if (!button?.dataset || button.dataset.qqCompanionBound === "true" || typeof button.addEventListener !== "function") return;
-        button.dataset.qqCompanionBound = "true";
-        button.setAttribute?.("aria-label", label);
-        button.addEventListener("click", (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          action();
-        });
-      };
-      bindAction(companionParts.petButton, openAvatarOverlay, "打开 Codex 宠物");
-      bindAction(companionParts.terminalButton, toggleNativeTerminal, "显示或隐藏终端");
-      if (companion.dataset.qqRoomBound !== "true" && typeof companion.addEventListener === "function") {
-        companion.dataset.qqRoomBound = "true";
-        companion.addEventListener("click", (event) => {
-          const target = event.target?.closest?.("[data-room-action]");
-          if (!target) return;
-          event.preventDefault();
-          event.stopPropagation();
-          handleCompanionRoomAction(target.dataset.roomAction);
-        });
-        companion.addEventListener("keydown", (event) => {
-          if (!["Enter", " "].includes(event.key)) return;
-          const target = event.target?.closest?.("[data-room-action]");
-          if (!target) return;
-          event.preventDefault();
-          handleCompanionRoomAction(target.dataset.roomAction);
-        });
-      }
-    }
-    if (companionParts.image && companionParts.image.src !== petUrl) companionParts.image.src = petUrl;
-    soundMonitor.bindButton(companionParts.soundButton);
-    soundMonitor.bindStatus(syncCompanionStatus);
-    syncCompanionStatus(soundMonitor.status);
-    syncWeeklyUsage(companionParts.weeklyUsage);
-    syncBlindBoxDecor();
-    renderCompanionRoomPanel();
-    return companion;
+    const title = panel.querySelector(titleSelector);
+    if (!title) return;
+    const verticalOnly = panel.id === USAGE_PANEL_ID;
+    const key = `${panel.id}-window-v2`;
+    let saved = {};
+    try { saved = JSON.parse(window.localStorage?.getItem(key) || "{}") || {}; } catch {}
+    let position = Number.isFinite(saved.y) && (verticalOnly || Number.isFinite(saved.x)) ? saved : null;
+    let collapsed = saved.collapsed === true;
+    const persist = () => {
+      try { window.localStorage?.setItem(key, JSON.stringify({ x: verticalOnly ? undefined : position?.x, y: position?.y, collapsed })); } catch {}
+    };
+    const place = () => {
+      if (panel.classList.contains("qq-skin-growth-docked")) return;
+      if (!position) return;
+      const box = panel.getBoundingClientRect();
+      if (!verticalOnly) position.x = Math.max(0, Math.min(position.x, window.innerWidth - box.width));
+      const topInset = verticalOnly ? 44 : 0;
+      position.y = Math.max(topInset, Math.min(position.y, window.innerHeight - Math.min(box.height, window.innerHeight) - (verticalOnly ? 14 : 0)));
+      panel.classList.add("qq-skin-window-positioned");
+      if (!verticalOnly) setStyleProperty(panel, "--qq-window-x", `${position.x}px`);
+      setStyleProperty(panel, "--qq-window-y", `${position.y}px`);
+    };
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "qq-skin-window-toggle";
+    const sync = () => {
+      panel.classList.toggle("qq-skin-window-collapsed", collapsed);
+      toggle.textContent = collapsed ? "＋" : "−";
+      toggle.setAttribute("aria-label", `${collapsed ? "展开" : "收起"}${panel.getAttribute("aria-label")}`);
+      toggle.setAttribute("aria-expanded", String(!collapsed));
+      place();
+    };
+    toggle.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      collapsed = !collapsed;
+      sync();
+      persist();
+    });
+    title.appendChild(toggle);
+    title.classList.add("qq-skin-window-title");
+    let drag = null;
+    title.addEventListener("pointerdown", (event) => {
+      if (panel.classList.contains("qq-skin-growth-docked")) return;
+      if (event.button !== 0 || event.target.closest("button, a, input, [role=button]")) return;
+      const box = panel.getBoundingClientRect();
+      drag = { id: event.pointerId, x: event.clientX - box.left, y: event.clientY - box.top };
+      title.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+    title.addEventListener("pointermove", (event) => {
+      if (!drag || drag.id !== event.pointerId) return;
+      position = { x: event.clientX - drag.x, y: event.clientY - drag.y };
+      place();
+    });
+    const finish = (event) => {
+      if (!drag || drag.id !== event.pointerId) return;
+      drag = null;
+      if (title.hasPointerCapture(event.pointerId)) title.releasePointerCapture(event.pointerId);
+      persist();
+    };
+    title.addEventListener("pointerup", finish);
+    title.addEventListener("pointercancel", finish);
+    title.addEventListener("lostpointercapture", finish);
+    panel.qqFloatingState = { place };
+    sync();
   };
 
   const ensureRightTray = () => {
@@ -2458,15 +2000,6 @@
     return String(Math.round(number));
   };
 
-  const setUsageMode = (mode) => {
-    usageMode = mode === "native" ? "native" : "stats";
-    try { window.localStorage?.setItem(USAGE_MODE_KEY, usageMode); } catch {}
-    const root = document.documentElement;
-    setAttribute(root, "data-qq-usage-mode", usageMode);
-    document.getElementById(USAGE_PANEL_ID)?.classList?.toggle("is-visible", usageMode === "stats");
-    document.getElementById(USAGE_TOGGLE_ID)?.classList?.toggle("is-visible", usageMode === "native");
-  };
-
   const visibleUsageTokens = (value) => {
     const effective = Math.max(0, Number(value?.effectiveTokens) || 0);
     if (usageNetMode) return effective;
@@ -2482,9 +2015,248 @@
     renderUsageSnapshot();
   };
 
+  // Profile data belongs to the skin, never to the native account or composer.
+  const avatarLibrary = new Map((Array.isArray(QQ_THEME.avatarLibrary) ? QQ_THEME.avatarLibrary : [])
+    .filter(item => /^\d{1,4}$/.test(item?.id) && [item.small, item.large]
+      .every(value => typeof value === "string" && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(value)))
+    .map(item => [item.id, item]));
+  const presenceNames = { online: "在线", invisible: "隐身", offline: "离线" };
+  const normalizeProfile = (value) => ({
+    name: typeof value?.name === "string" ? value.name.trim().slice(0, 30) : "",
+    signature: typeof value?.signature === "string" ? value.signature.replace(/[\r\n]+/g, " ").slice(0, 120) : null,
+    status: Object.hasOwn(presenceNames, value?.status) ? value.status : "online",
+    avatar: avatarLibrary.has(String(value?.avatar)) ? String(value.avatar) : "",
+  });
+  let personalProfile = normalizeProfile(null);
+  try { personalProfile = normalizeProfile(JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY))); } catch {}
+  let nativeNickname = "Codex";
+  const currentProfile = () => ({ ...personalProfile,
+    name: personalProfile.name || nativeNickname,
+    signature: personalProfile.signature ?? THEME.tagline ?? "今天也和 Codex 一起把 Bug 聊下线。",
+  });
+  const profileAvatar = (id, small = false) => avatarLibrary.get(id)?.[small ? "small" : "large"] || qqAvatarUrl;
+  // Always use lifetime total, including cache; the net switch only filters charts.
+  const profileProgress = () => {
+    const lifetime = usageSnapshot?.totals?.lifetime;
+    const total = Number(lifetime?.totalTokens);
+    const tokens = Math.max(0, Number.isFinite(total) ? total
+      : (Number(lifetime?.effectiveTokens) || 0) + (Number(lifetime?.cachedInputTokens) || 0));
+    const step = 250_000_000;
+    const level = Math.floor(tokens / step);
+    const remaining = step - tokens % step;
+    return { level, tokens, percent: (tokens % step) / step * 100,
+      tooltip: lifetime ? `升级还需${(remaining / 1_000_000).toFixed(2)}M` : "正在读取历史 Token 用量" };
+  };
+  const profileLevelIcons = (level) => {
+    const labels = { crown: "皇冠", sun: "太阳", moon: "月亮", star: "星星" };
+    let remaining = level;
+    const icons = [];
+    for (const [kind, value] of [["crown", 64], ["sun", 16], ["moon", 4], ["star", 1]]) {
+      const count = Math.floor(remaining / value);
+      remaining %= value;
+      for (let index = 0; index < count && icons.length < 12; index += 1) {
+        icons.push(`<i data-kind="${kind}" role="img" aria-label="${labels[kind]}"></i>`);
+      }
+    }
+    return icons.join("") || '<i data-kind="empty" aria-label="暂无等级">☆</i>';
+  };
+  const updateSignatureMarquee = (node) => {
+    const text = node.firstElementChild;
+    if (!text) return;
+    const distance = Math.max(0, text.scrollWidth - node.clientWidth);
+    node.classList.toggle("is-scrolling", distance > 1);
+    setStyleProperty(node, "--qq-signature-distance", `${-distance}px`);
+    setStyleProperty(node, "--qq-signature-duration", `${Math.max(6, distance / 24 + 3)}s`);
+  };
+  const profileResizeObserver = new ResizeObserver(entries => {
+    for (const entry of entries) updateSignatureMarquee(entry.target);
+  });
+  let observedProfileMarquee = null;
+  const profileCleanup = () => {
+    profileResizeObserver.disconnect();
+    observedProfileMarquee = null;
+    document.getElementById(PROFILE_DIALOG_ID)?.remove();
+  };
+  const syncPersonalProfile = () => {
+    const profile = currentProfile();
+    const progress = profileProgress();
+    const key = JSON.stringify([profile, progress.level, progress.tooltip]);
+    for (const root of [document.getElementById(USAGE_PANEL_ID), document.getElementById(RETRO_PROFILE_ID)]) {
+      if (!root || root.qqProfileKey === key) continue;
+      root.qqProfileKey = key;
+      for (const node of root.querySelectorAll('[data-profile-field="name"]')) setTextContent(node, profile.name);
+      for (const node of root.querySelectorAll('[data-profile-field="level"]')) setTextContent(node, `Lv.${progress.level}`);
+      for (const node of root.querySelectorAll('[data-profile-field="avatar"]')) {
+        setAttribute(node, "src", profileAvatar(profile.avatar, node.dataset.size === "16"));
+      }
+      for (const node of root.querySelectorAll('[data-profile-field="status"]')) {
+        setAttribute(node, "data-presence", profile.status);
+        setTextContent(node.querySelector("span"), presenceNames[profile.status]);
+      }
+      for (const node of root.querySelectorAll('[data-profile-field="signature"]')) setTextContent(node, profile.signature);
+      for (const node of root.querySelectorAll(".qq-skin-signature-marquee")) {
+        setAttribute(node, "title", profile.signature);
+        if (observedProfileMarquee !== node) {
+          if (observedProfileMarquee) profileResizeObserver.unobserve(observedProfileMarquee);
+          observedProfileMarquee = node;
+          profileResizeObserver.observe(node);
+        }
+        updateSignatureMarquee(node);
+      }
+      for (const node of root.querySelectorAll(".qq-skin-level-icons")) {
+        if (node.dataset.level !== String(progress.level)) {
+          node.innerHTML = profileLevelIcons(progress.level);
+          node.dataset.level = String(progress.level);
+        }
+        setAttribute(node, "title", progress.tooltip);
+        setAttribute(node, "aria-label", `Lv.${progress.level}，${progress.tooltip}`);
+      }
+    }
+  };
+  const savePersonalProfile = (value) => {
+    const next = normalizeProfile(value);
+    try { localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(next)); } catch { return false; }
+    personalProfile = next;
+    syncPersonalProfile();
+    return true;
+  };
+  const openProfileDialog = (initialTab = "profile") => {
+    if (document.getElementById(PROFILE_DIALOG_ID)) return;
+    const opener = document.activeElement;
+    const draft = { ...currentProfile() };
+    const dialog = document.createElement("dialog");
+    dialog.id = PROFILE_DIALOG_ID;
+    dialog.setAttribute("aria-labelledby", "qq-profile-dialog-title");
+    dialog.innerHTML = `
+      <form class="qq-skin-profile-form">
+        <header class="qq-skin-profile-dialog-title"><img alt="" width="16" height="16"><strong id="qq-profile-dialog-title">个人设置</strong><button type="button" data-profile-close aria-label="关闭个人资料">×</button></header>
+        <div class="qq-skin-profile-dialog-body">
+          <nav aria-label="个人设置"><b>▾ 个人设置</b><button type="button" data-profile-tab="profile">个人资料</button><button type="button" data-profile-tab="avatar">更换头像</button></nav>
+          <main>
+            <section data-profile-page="profile">
+              <h2>个人设置 — 个人资料</h2>
+              <div class="qq-skin-profile-fields">
+                <div class="qq-skin-profile-account"><span>用户帐号：</span><b>Codex</b><button type="button" class="qq-skin-profile-avatar-edit" data-profile-tab="avatar"><img data-draft-avatar alt="当前头像" width="40" height="40"><span>更改头像</span></button></div>
+                <label>用户昵称：<input name="nickname" maxlength="30" required autocomplete="off"></label>
+                <label>个性签名：<textarea name="signature" maxlength="120" rows="3"></textarea></label>
+                <label>在线状态：<select name="presence"><option value="online">在线</option><option value="invisible">隐身</option><option value="offline">离线</option></select></label>
+                <div class="qq-skin-profile-rank"><span>用户等级：</span><b data-draft-level></b><span class="qq-skin-level-icons"></span></div>
+                <div class="qq-skin-profile-token-info"><span data-draft-tokens></span><span data-draft-progress></span><small>历史总用量每满 0.25B Token 升一级</small></div>
+              </div>
+            </section>
+            <section data-profile-page="avatar" hidden>
+              <h2>个人设置 — 更换头像</h2>
+              <div class="qq-skin-avatar-picker"><div class="qq-skin-avatar-library"><h3>经典默认头像（${avatarLibrary.size} 个）</h3><div class="qq-skin-avatar-grid" role="group" aria-label="经典头像"></div></div><aside><span>预览：</span><img data-draft-avatar alt="40像素头像预览" width="40" height="40"><span>状态栏：</span><img data-draft-small alt="16像素头像预览" width="16" height="16"><small data-avatar-label></small></aside></div>
+            </section>
+          </main>
+        </div>
+        <footer><span class="qq-skin-profile-save-message" role="status">我的资料 · 我的个性</span><button type="submit">确定</button><button type="button" data-profile-close>取消</button></footer>
+      </form>`;
+    const form = dialog.querySelector("form");
+    form.elements.nickname.value = draft.name;
+    form.elements.signature.value = draft.signature;
+    form.elements.presence.value = draft.status;
+    dialog.querySelector("header img").src = qqAvatarUrl;
+    const progress = profileProgress();
+    dialog.querySelector("[data-draft-level]").textContent = `Lv.${progress.level}`;
+    const icons = dialog.querySelector(".qq-skin-level-icons");
+    icons.innerHTML = profileLevelIcons(progress.level);
+    icons.title = progress.tooltip;
+    dialog.querySelector("[data-draft-tokens]").textContent = `历史总用量：${formatTokenCount(progress.tokens)} Token`;
+    dialog.querySelector("[data-draft-progress]").textContent = progress.tooltip;
+    const updatePreview = () => {
+      for (const image of dialog.querySelectorAll("[data-draft-avatar]")) image.src = profileAvatar(draft.avatar);
+      dialog.querySelector("[data-draft-small]").src = profileAvatar(draft.avatar, true);
+      dialog.querySelector("[data-avatar-label]").textContent = draft.avatar ? `经典头像 ${draft.avatar}` : "企鹅头像";
+      for (const button of dialog.querySelectorAll("[data-avatar-id]")) {
+        setAttribute(button, "aria-pressed", String(button.dataset.avatarId === draft.avatar));
+      }
+    };
+    const showTab = (tab) => {
+      for (const page of dialog.querySelectorAll("[data-profile-page]")) page.hidden = page.dataset.profilePage !== tab;
+      for (const button of dialog.querySelectorAll("nav button")) setAttribute(button, "aria-current", button.dataset.profileTab === tab ? "page" : "false");
+      const grid = dialog.querySelector(".qq-skin-avatar-grid");
+      if (tab === "avatar" && !grid.childElementCount) {
+        const fragment = document.createDocumentFragment();
+        for (const id of ["", ...avatarLibrary.keys()]) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.avatarId = id;
+          button.title = id ? `经典头像 ${id}` : "企鹅头像";
+          button.setAttribute("aria-label", button.title);
+          const image = document.createElement("img");
+          image.width = image.height = 40;
+          image.alt = "";
+          image.loading = "lazy";
+          image.src = profileAvatar(id);
+          button.appendChild(image);
+          fragment.appendChild(button);
+        }
+        grid.appendChild(fragment);
+      }
+      updatePreview();
+    };
+    const close = () => {
+      dialog.close();
+      dialog.remove();
+      if (opener?.isConnected) opener.focus();
+    };
+    dialog.addEventListener("cancel", event => { event.preventDefault(); close(); });
+    dialog.addEventListener("click", event => {
+      const target = event.target.closest("button");
+      if (!target) return;
+      if (target.hasAttribute("data-profile-close")) close();
+      else if (target.dataset.profileTab) showTab(target.dataset.profileTab);
+      else if (target.hasAttribute("data-avatar-id")) { draft.avatar = target.dataset.avatarId; updatePreview(); }
+    });
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const name = form.elements.nickname.value.trim();
+      if (!name) { showTab("profile"); form.elements.nickname.focus(); return; }
+      if (savePersonalProfile({ ...draft, name, signature: form.elements.signature.value, status: form.elements.presence.value })) close();
+      else dialog.querySelector('[role="status"]').textContent = "保存失败，请重试。";
+    });
+    document.body.appendChild(dialog);
+    showTab(initialTab);
+    dialog.showModal();
+    (initialTab === "avatar" ? dialog.querySelector('[data-avatar-id][aria-pressed="true"]') : form.elements.nickname)?.focus();
+  };
+  const editProfileSignature = (button) => {
+    const footer = button.parentElement;
+    if (footer.querySelector("input")) return;
+    const input = document.createElement("input");
+    input.className = "qq-skin-signature-input";
+    input.setAttribute("aria-label", "编辑个性签名");
+    input.maxLength = 120;
+    input.value = currentProfile().signature;
+    button.hidden = true;
+    footer.appendChild(input);
+    let finished = false;
+    const finish = (save, returnFocus = false) => {
+      if (finished) return;
+      if (save && !savePersonalProfile({ ...personalProfile, signature: input.value })) {
+        input.setCustomValidity("保存失败，请重试。"); input.reportValidity(); return;
+      }
+      finished = true;
+      input.remove();
+      button.hidden = false;
+      if (returnFocus) button.focus();
+    };
+    input.addEventListener("keydown", event => {
+      if (event.isComposing) return;
+      if (event.key === "Enter" || event.key === "Escape") {
+        event.preventDefault(); event.stopPropagation(); finish(event.key === "Enter", true);
+      }
+    });
+    input.addEventListener("blur", () => finish(true));
+    input.focus(); input.select();
+  };
+
   const renderUsageSnapshot = () => {
     const parts = usageParts;
     if (!parts?.panel) return;
+    syncPersonalProfile();
+    if (parts.hasRendered && parts.renderedSnapshot === usageSnapshot && parts.renderedNetMode === usageNetMode) return;
     const snapshot = usageSnapshot && typeof usageSnapshot === "object" ? usageSnapshot : { status: "error" };
     const status = ["loading", "indexing", "empty", "ready", "error"].includes(snapshot.status)
       ? snapshot.status : "error";
@@ -2493,23 +2265,11 @@
 
     const totals = snapshot.totals || {};
     const lifetime = totals.lifetime || {};
-    const growth = snapshot.growth || {};
+    const growth = profileProgress();
     setTextContent(parts.today, formatTokenCount(visibleUsageTokens(totals.today)));
     setTextContent(parts.week, formatTokenCount(visibleUsageTokens(totals.week)));
     setTextContent(parts.lifetime, formatTokenCount(visibleUsageTokens(lifetime)));
-    setTextContent(parts.level, `Lv.${Math.max(0, Math.round(Number(growth.level) || 0))}`);
-    if (parts.icons) {
-      const icons = Array.isArray(growth.icons) && growth.icons.length
-        ? growth.icons.slice(0, 12)
-        : [{ kind: "empty", symbol: "☆" }];
-      parts.icons.innerHTML = icons.map((item) =>
-        `<i data-kind="${["crown", "sun", "moon", "star"].includes(item.kind) ? item.kind : "empty"}">${item.symbol || "☆"}</i>`
-      ).join("");
-    }
-    const remaining = Math.max(0, Number(growth.remaining) || 0);
-    setTextContent(parts.progressText, growth.level == null
-      ? "正在计算成长值"
-      : `距离 Lv.${Math.max(0, Math.round(Number(growth.level) || 0)) + 1} 还差 ${remaining.toFixed(remaining % 1 ? 2 : 0)} 成长值`);
+    setAttribute(parts.progressFill.parentElement, "title", growth.tooltip);
     parts.progressFill?.style?.setProperty?.("width", `${clamp(Math.round(Number(growth.percent) || 0), 0, 100)}%`);
     setTextContent(parts.activity,
       `活跃 ${Math.max(0, Number(snapshot.activity?.activeDays) || 0)} 天 · 连续 ${Math.max(0, Number(snapshot.activity?.streakDays) || 0)} 天`);
@@ -2557,6 +2317,11 @@
       parts.refreshButton.disabled = status === "loading" || status === "indexing";
       parts.refreshButton.textContent = status === "indexing" ? "索引中" : "刷新";
     }
+    // Shell interactions do not change statistics. Rebuilding the chart and
+    // level icons on every route pass needlessly invalidates style and paint.
+    parts.hasRendered = true;
+    parts.renderedSnapshot = usageSnapshot;
+    parts.renderedNetMode = usageNetMode;
   };
 
   const setUsageSnapshot = (snapshot) => {
@@ -2564,29 +2329,25 @@
     usageSnapshot = snapshot;
     window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ = snapshot;
     renderUsageSnapshot();
-    return true;
-  };
-
-  const setCompanionSnapshot = (snapshot) => {
-    if (!snapshot || typeof snapshot !== "object" || Number(snapshot.schemaVersion) !== 1) return false;
-    companionSnapshot = snapshot;
-    window.__CODEX_QQ_SKIN_COMPANION_SNAPSHOT__ = snapshot;
-    renderCompanionRoomPanel();
+    syncRetroProfileLevel();
     return true;
   };
 
   const ensureUsagePanel = () => {
     let panel = document.getElementById(USAGE_PANEL_ID);
-    if (!panel || panel.parentElement !== document.body) {
+    if (!panel || (panel.parentElement !== document.body && !panel.classList.contains("qq-skin-growth-docked"))) {
       panel?.remove();
       panel = document.createElement("section");
       panel.id = USAGE_PANEL_ID;
-      panel.setAttribute("aria-label", "Codex 成长中心");
+      panel.setAttribute("aria-label", "个人资料");
       panel.innerHTML = `
-        <div class="qq-skin-usage-title"><span>Codex 成长中心 <small>本机</small></span><button type="button" data-usage-action="native">资料</button></div>
+        <div class="qq-skin-usage-title"><span>个人资料</span><button class="qq-skin-profile-settings" type="button" aria-label="个人资料设置" title="个人资料设置">⚙</button></div>
         <div class="qq-skin-usage-level">
-          <img alt="" draggable="false">
-          <div class="qq-skin-usage-level-main"><b></b><span class="qq-skin-level-icons"></span><small></small></div>
+          <button class="qq-skin-profile-avatar-button" type="button" aria-label="更换头像"><img data-profile-field="avatar" alt="个人头像" width="40" height="40" draggable="false"></button>
+          <div class="qq-skin-usage-level-main">
+            <div class="qq-skin-profile-identity"><button type="button" data-profile-field="name" aria-label="打开个人资料"></button><span class="qq-skin-level-icons" tabindex="0"></span></div>
+            <div class="qq-skin-profile-presence-row"><span class="qq-skin-presence" data-profile-field="status"><i></i><span></span></span><span class="qq-skin-signature-marquee"><span data-profile-field="signature"></span></span></div>
+          </div>
           <button class="qq-skin-usage-net-toggle" type="button" role="switch" aria-checked="false" data-usage-action="net"><span>净用量</span><i></i></button>
         </div>
         <div class="qq-skin-level-progress"><i></i></div>
@@ -2601,15 +2362,15 @@
         <div class="qq-skin-usage-message"></div>
         <div class="qq-skin-usage-footer"><span></span><button type="button" data-usage-action="refresh">刷新</button></div>`;
       document.body.appendChild(panel);
+      panel.querySelector(".qq-skin-profile-settings").addEventListener("click", () => openProfileDialog());
+      panel.querySelector('[data-profile-field="name"]').addEventListener("click", () => openProfileDialog());
+      panel.querySelector(".qq-skin-profile-avatar-button").addEventListener("click", () => openProfileDialog("avatar"));
       usageParts = null;
     }
+    ensureFloatingPanel(panel, ".qq-skin-usage-title");
     if (!usageParts || usageParts.panel !== panel) {
       usageParts = {
         panel,
-        image: panel.querySelector(".qq-skin-usage-level img"),
-        level: panel.querySelector(".qq-skin-usage-level-main b"),
-        icons: panel.querySelector(".qq-skin-level-icons"),
-        progressText: panel.querySelector(".qq-skin-usage-level-main small"),
         progressFill: panel.querySelector(".qq-skin-level-progress i"),
         today: panel.querySelector('[data-usage-metric="today"]'),
         week: panel.querySelector('[data-usage-metric="week"]'),
@@ -2619,15 +2380,9 @@
         breakdown: panel.querySelector(".qq-skin-usage-breakdown"),
         message: panel.querySelector(".qq-skin-usage-message"),
         updated: panel.querySelector(".qq-skin-usage-footer span"),
-        nativeButton: panel.querySelector('[data-usage-action="native"]'),
         refreshButton: panel.querySelector('[data-usage-action="refresh"]'),
         netToggle: panel.querySelector('[data-usage-action="net"]'),
       };
-      usageParts.nativeButton?.addEventListener?.("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        setUsageMode("native");
-      });
       usageParts.refreshButton?.addEventListener?.("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -2643,26 +2398,10 @@
         setUsageNetMode(!usageNetMode);
       });
     }
-    if (usageParts.image && usageParts.image.src !== qqAvatarUrl) usageParts.image.src = qqAvatarUrl;
     renderUsageSnapshot();
 
-    let toggle = document.getElementById(USAGE_TOGGLE_ID);
-    if (!toggle || toggle.parentElement !== document.body) {
-      toggle?.remove();
-      toggle = document.createElement("button");
-      toggle.id = USAGE_TOGGLE_ID;
-      toggle.type = "button";
-      toggle.textContent = "成长统计";
-      toggle.setAttribute("aria-label", "返回 Codex 成长统计");
-      toggle.addEventListener?.("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        setUsageMode("stats");
-      });
-      document.body.appendChild(toggle);
-    }
-    setUsageMode(usageMode);
-    return { panel, toggle };
+    panel.classList.add("is-visible");
+    return { panel };
   };
 
   const ensureHomePet = (home) => {
@@ -2750,6 +2489,123 @@
     return THEME.name || "经典 Codex 三栏";
   };
 
+  const syncRetroProfileLevel = () => {
+    syncPersonalProfile();
+  };
+
+  const referenceClasses = ["qq-skin-reference-host", "qq-skin-reference-summary", "qq-skin-reference-card", "qq-skin-growth-docked"];
+  let detailsCollapsed = false;
+  const clearReferenceLayout = () => {
+    const growth = document.getElementById(USAGE_PANEL_ID);
+    if (growth?.classList.contains("qq-skin-growth-docked")) document.body.appendChild(growth);
+    document.querySelectorAll(".qq-skin-details-title").forEach(node => node.remove());
+    document.querySelectorAll(".qq-skin-details-collapsed").forEach(node => node.classList.remove("qq-skin-details-collapsed"));
+    for (const name of referenceClasses) {
+      document.querySelectorAll(`.${name}`).forEach((node) => {
+        if (name === "qq-skin-reference-host") node.style.removeProperty("--qq-growth-height");
+        node.classList.remove(name);
+      });
+    }
+  };
+  const syncReferenceLayout = (panel, settingsRoute) => {
+    // Use the marker itself; the legacy payload adapter rewrites double-quoted
+    // summary selectors to the animated sibling that owns the old floating UI.
+    const marker = document.querySelector("[data-pip-obstacle='thread-summary-panel']");
+    const overlay = marker?.parentElement?.parentElement;
+    const host = overlay?.parentElement;
+    const card = marker?.nextElementSibling?.querySelector(".overflow-hidden");
+    const box = host?.getBoundingClientRect();
+    if (host !== observedReferenceHost) {
+      if (observedReferenceHost) resizeObserver?.unobserve(observedReferenceHost);
+      observedReferenceHost = host || null;
+      if (host) resizeObserver?.observe(host);
+    }
+    const eligible = skinMode === "qq" && !settingsRoute && card &&
+      marker.matches(':empty[aria-hidden="true"]') &&
+      host?.querySelector('[data-pip-obstacle="thread-footer"]') &&
+      box.width >= 680 && box.height >= 120 && window.innerWidth >= 1080 &&
+      !document.querySelector('section[data-pip-obstacle="quick-chat"][data-state="open"]');
+    if (!eligible) {
+      clearReferenceLayout();
+      panel.classList.remove("is-available");
+      return;
+    }
+    const marks = new Map([["qq-skin-reference-host", host], ["qq-skin-reference-summary", overlay],
+      ["qq-skin-reference-card", card], ["qq-skin-growth-docked", panel]]);
+    for (const [name, target] of marks) {
+      document.querySelectorAll(`.${name}`).forEach((node) => { if (node !== target) node.classList.remove(name); });
+      if (!target.classList.contains(name)) target.classList.add(name);
+    }
+    // Only skin-owned nodes are inserted; native sections keep their React parents.
+    let title = card.querySelector(":scope > .qq-skin-details-title");
+    if (!title) {
+      title = document.createElement("div");
+      title.id = "codex-qq-skin-details-title";
+      title.className = "qq-skin-details-title qq-skin-window-title";
+      const label = document.createElement("span");
+      label.textContent = "chat详情";
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "qq-skin-window-toggle";
+      const sync = () => {
+        card.classList.toggle("qq-skin-details-collapsed", detailsCollapsed);
+        toggle.textContent = detailsCollapsed ? "＋" : "−";
+        toggle.setAttribute("aria-expanded", String(!detailsCollapsed));
+        toggle.setAttribute("aria-label", `${detailsCollapsed ? "展开" : "收起"}chat详情`);
+      };
+      toggle.addEventListener("click", event => {
+        event.stopPropagation();
+        detailsCollapsed = !detailsCollapsed;
+        sync();
+      });
+      title.append(label, toggle);
+      card.prepend(title);
+      sync();
+    }
+    const list = overlay.firstElementChild;
+    if (panel.parentElement !== list) list.appendChild(panel);
+
+  };
+
+  const syncRetroProfile = (settingsRoute) => {
+    const enabled = skinMode === "qq" && !settingsRoute;
+    if (!enabled) clearReferenceLayout();
+    // The current app uses CSS-module names for main and the composer. Locate
+    // the real thread via its semantic footer; do not move React-owned nodes.
+    const threadMains = new Set(enabled
+      ? [...document.querySelectorAll('[data-pip-obstacle="thread-footer"]')]
+        .map((footer) => footer.closest("main")).filter(Boolean)
+      : []);
+    for (const main of document.querySelectorAll("main.qq-skin-thread-frame")) {
+      if (!threadMains.has(main)) main.classList.remove("qq-skin-thread-frame");
+    }
+    for (const main of threadMains) {
+      if (!main.classList.contains("qq-skin-thread-frame")) main.classList.add("qq-skin-thread-frame");
+    }
+    if (!enabled || !document.querySelector("aside.app-shell-left-panel, main.qq-skin-thread-frame")) {
+      document.getElementById(RETRO_PROFILE_ID)?.remove();
+      return;
+    }
+    let profile = document.getElementById(RETRO_PROFILE_ID);
+    if (!profile || !profile.querySelector(".qq-skin-profile-signature")) {
+      profile?.remove();
+      profile = document.createElement("footer");
+      profile.id = RETRO_PROFILE_ID;
+      profile.setAttribute("aria-label", "QQ 个人状态栏");
+      profile.innerHTML = '<img data-profile-field="avatar" data-size="16" width="16" height="16" alt="个人头像"><button type="button" class="qq-skin-presence" data-profile-field="status" aria-label="设置在线状态"><i></i><span></span></button><button type="button" class="qq-skin-profile-link" aria-label="打开个人资料"><b class="qq-skin-profile-name" data-profile-field="name"></b><span class="qq-skin-profile-level" data-profile-field="level"></span></button><button type="button" class="qq-skin-profile-signature" aria-label="修改个性签名"><span data-profile-field="signature"></span></button>';
+      document.body.appendChild(profile);
+      profile.querySelector(".qq-skin-profile-link").addEventListener("click", () => openProfileDialog());
+      profile.querySelector('[data-profile-field="status"]').addEventListener("click", () => openProfileDialog());
+      const signature = profile.querySelector(".qq-skin-profile-signature");
+      signature.addEventListener("click", () => editProfileSignature(signature));
+    }
+    const account = document.querySelector('aside.app-shell-left-panel .h-toolbar button[aria-haspopup="menu"]:has(img)');
+    const nickname = String(account?.querySelector("span")?.textContent || "").trim();
+    // A collapsed sidebar may temporarily unmount the account row.
+    if (nickname) nativeNickname = nickname;
+    syncRetroProfileLevel();
+  };
+
   const ensureRetroShell = () => {
     let retroShell = document.getElementById(RETRO_SHELL_ID);
     if (
@@ -2768,7 +2624,7 @@
         </div>
         <div class="dream-retro-toolbar" role="toolbar" aria-label="Codex 快捷导航">
           <button type="button" data-retro-action="new-task">📝 新建任务</button>
-          <button type="button" data-retro-action="scheduled">🗓 已安排</button><i></i>
+          <button type="button" data-retro-action="scheduled">🗓 定时任务</button><i></i>
           <button type="button" data-retro-action="plugins">🧩 插件</button>
           <button type="button" data-retro-action="skills">🛠 技能</button>
           <button type="button" data-retro-action="sites">🌐 站点</button>
@@ -2791,13 +2647,13 @@
     if (retroShellParts.penguin && retroShellParts.penguin.src !== qqAvatarUrl) {
       retroShellParts.penguin.src = qqAvatarUrl;
     }
-    setTextContent(retroShellParts.title, `Codex 2007 - ${findRetroTitle()}`);
+    setTextContent(retroShellParts.title, `Codex ${qqAppearance === "dark" ? "2008" : "2007"} - ${findRetroTitle()}`);
     return retroShell;
   };
 
   const retroActionMatchers = {
-    "new-task": { text: /^(新建任务|new task)$/i },
-    scheduled: { text: /^(已安排|scheduled)$/i },
+    "new-task": { text: /^(新建任务|新对话|新聊天|new task|new chat)$/i },
+    scheduled: { text: /^(已安排|定时任务|scheduled|automations)$/i },
     plugins: { text: /^(插件|plugins?)$/i },
     skills: { text: /^(技能|skills?)$/i },
     sites: { text: /^(站点|sites?)$/i },
@@ -2831,9 +2687,10 @@
       if (candidate.disabled || candidate.closest?.(`#${RETRO_SHELL_ID}`)) return false;
       const text = String(candidate.textContent || "").replace(/\s+/g, " ").trim();
       const aria = String(candidate.getAttribute?.("aria-label") || "").trim();
+      if (!matcher.text?.test(text) && !matcher.aria?.test(aria)) return false;
       const box = candidate.getBoundingClientRect?.();
       if (!box || box.width < 8 || box.height < 8) return false;
-      return Boolean(matcher.text?.test(text) || matcher.aria?.test(aria));
+      return true;
     }) || null;
   };
 
@@ -2844,6 +2701,7 @@
       const action = button.dataset.retroAction;
       const target = findNativeRetroAction(action);
       const fallback = action === "skills" ? findNativeRetroAction("plugins") : null;
+      button.hidden = !(target || fallback);
       button.disabled = !(target || fallback);
       button.setAttribute("aria-disabled", target || fallback ? "false" : "true");
       if (button.dataset.retroActionBound === "true") continue;
@@ -2873,98 +2731,6 @@
     }
   };
 
-  const syncRetroWindowControls = () => {
-    for (const button of document.querySelectorAll(".dream-retro-window-control")) {
-      button.classList.remove(
-        "dream-retro-window-control", "dream-retro-control-summary",
-        "dream-retro-control-bottom", "dream-retro-control-sidebar",
-      );
-    }
-    const labels = [
-      pinnedSummaryLabel,
-      /^(toggle bottom panel visibility|切换底部面板显示|顯示\/隱藏底部面板)$/i,
-      /^(toggle sidebar visibility|显示\/隐藏侧边栏|顯示\/隱藏側邊欄)$/i,
-    ];
-    const selected = [];
-    for (const button of document.querySelectorAll('button[aria-label]')) {
-      if (typeof button.closest === "function" && button.closest(`#${RETRO_SHELL_ID}`)) continue;
-      if (typeof button.getBoundingClientRect !== "function") continue;
-      const box = button.getBoundingClientRect();
-      const label = button.getAttribute("aria-label") || "";
-      if (
-        box.width >= 20 && box.height >= 20 && box.x > window.innerWidth * .65 && box.y < 48 &&
-        labels.some((pattern) => pattern.test(label))
-      ) selected.push(button);
-    }
-    selected.sort((left, right) => left.getBoundingClientRect().x - right.getBoundingClientRect().x);
-    const host = retroShellParts?.controls;
-    if (!host?.dataset || typeof host.replaceChildren !== "function") return;
-    const signature = selected.map((button) => button.getAttribute("aria-label") || "").join("|");
-    if (host.dataset.controlSignature === signature) return;
-    host.replaceChildren();
-    host.dataset.controlSignature = signature;
-    for (const original of selected) {
-      const clone = original.cloneNode(true);
-      clone.removeAttribute("id");
-      clone.classList.add("dream-retro-cloned-control");
-      clone.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        original.click();
-      });
-      host.appendChild(clone);
-    }
-  };
-
-  const ensureRetroProfile = () => {
-    const sidebar = document.querySelector("aside.app-shell-left-panel");
-    if (!sidebar || typeof sidebar.getBoundingClientRect !== "function") return null;
-    const sidebarBox = sidebar.getBoundingClientRect();
-    const buttons = [...sidebar.querySelectorAll("button")];
-    const isVisibleFooterButton = (button) => {
-      if (typeof button.getBoundingClientRect !== "function") return false;
-      const box = button.getBoundingClientRect();
-      const text = String(button.textContent || "").replace(/\s+/g, " ").trim();
-      return box.width > 120 && box.height > 16 &&
-        box.top >= sidebarBox.top && box.bottom <= sidebarBox.bottom + 2 &&
-        box.bottom > sidebarBox.bottom - 120 && text.length >= 2 && text.length <= 48;
-    };
-    const profileButton = buttons.find((button) =>
-      profileActionPattern.test(String(button.getAttribute?.("aria-label") || "").trim()) &&
-      isVisibleFooterButton(button)) || buttons.find(isVisibleFooterButton);
-    const host = profileButton?.closest('[class*="container-type"]') || profileButton?.parentElement;
-    if (!host) return null;
-    for (const stale of document.querySelectorAll(".dream-retro-profile-host")) {
-      if (stale !== host) stale.classList.remove("dream-retro-profile-host");
-    }
-    host.classList.add("dream-retro-profile-host");
-    let profile = document.getElementById(RETRO_PROFILE_ID);
-    if (!profile || profile.parentElement !== host) {
-      profile?.remove();
-      profile = document.createElement("section");
-      profile.id = RETRO_PROFILE_ID;
-      profile.setAttribute("aria-hidden", "true");
-      profile.innerHTML = `
-        <img alt="" draggable="false">
-        <div><strong></strong><span><i></i> 在线 <b>▾</b></span></div>`;
-      host.appendChild(profile);
-      retroProfileParts = null;
-    }
-    if (!retroProfileParts || retroProfileParts.profile !== profile) {
-      retroProfileParts = {
-        profile,
-        image: profile.querySelector("img"),
-        name: profile.querySelector("strong"),
-      };
-    }
-    const name = String(profileButton.textContent || "Codex 用户").replace(/\s+/g, " ").trim();
-    if (retroProfileParts.image && retroProfileParts.image.src !== qqAvatarUrl) {
-      retroProfileParts.image.src = qqAvatarUrl;
-    }
-    setTextContent(retroProfileParts.name, name);
-    return profile;
-  };
-
   const ensureStyle = (root) => {
     let style = document.getElementById(STYLE_ID);
     // Include the active product stylesheet only. Keeping custom-skin.css out of
@@ -2990,7 +2756,7 @@
 
   const applyRootState = (root) => {
     metrics.rootPasses += 1;
-    if (skinMode === "qq") forceNativeLightForQQ();
+    if (skinMode === "qq") forceNativeAppearanceForQQ();
     else restoreNativeAppearance();
     ensureStyle(root);
     const shell = resolvedShell();
@@ -3063,10 +2829,16 @@
     // Belt-and-suspenders: never allow both product skins on the same document.
     if (skinMode === "qq") root.classList.remove("codex-dream-skin");
     if (skinMode === "custom") root.classList.remove("codex-qq-skin");
+    // These synchronous class/theme writes belong to us. Feeding them back
+    // through rootObserver used to repaint the entire skin on every frame.
+    rootObserver?.takeRecords();
     return shell;
   };
 
   const removeQQDecorations = () => {
+    profileCleanup();
+    clearReferenceLayout();
+    document.querySelectorAll(".qq-skin-thread-frame").forEach((node) => node.classList.remove("qq-skin-thread-frame"));
     document.getElementById(CHROME_ID)?.remove();
     document.getElementById(COMPANION_ID)?.remove();
     document.getElementById(USAGE_PANEL_ID)?.remove();
@@ -3081,10 +2853,8 @@
       "dream-retro-window-control", "dream-retro-control-summary",
       "dream-retro-control-bottom", "dream-retro-control-sidebar",
     ));
-    companionParts = null;
     usageParts = null;
     chromeParts = null;
-    retroProfileParts = null;
   };
 
   const syncRouteState = (shell, { layout = false } = {}) => {
@@ -3092,7 +2862,8 @@
     const root = document.documentElement;
     if (!root) return;
     shell ||= root.getAttribute(SHELL_ATTR) || resolvedShell();
-    const shellMain = document.querySelector("main.main-surface") || document.querySelector("main");
+    const shellMain = document.querySelector('[data-pip-obstacle="app-shell-header"]')?.closest("main") ||
+      document.querySelector("main.main-surface") || document.querySelector("main");
     const homeIndicator = document.querySelector('[data-testid="home-icon"]');
     const home = homeIndicator?.closest('[role="main"]') ||
       [...document.querySelectorAll('[role="main"]')].find((candidate) =>
@@ -3141,7 +2912,7 @@
         return true;
       }
       const nav = document.querySelector("aside.app-shell-left-panel") || document.querySelector("aside");
-      const navText = String(nav?.innerText || "").replace(/\s+/g, " ");
+      const navText = String(nav?.textContent || "").replace(/\s+/g, " ");
       if (/(常规|General).{0,120}(个人资料|Profile).{0,120}(外观|Appearance)/i.test(navText)) return true;
       if (/(常规|General).{0,80}(外观|Appearance).{0,160}(语音|Voice|声音|通知)/i.test(navText)) return true;
       // Visible settings section titles in the main pane.
@@ -3152,6 +2923,7 @@
       return false;
     })();
     setAttribute(root, "data-qq-settings", settingsRoute ? "true" : "");
+    syncRetroProfile(settingsRoute);
     if (settingsRoute) {
       // Force Codex-native settings chrome: drop neon weather + deep wallpaper attrs.
       root.removeAttribute("data-qq-weather");
@@ -3191,20 +2963,24 @@
       return;
     }
     weatherMonitor.destroy();
+    // Native desktop chrome already offsets the shell. Only reserve the remainder.
+    const sidebarTop = document.querySelector("aside.app-shell-left-panel")?.getBoundingClientRect().top || 0;
+    setStyleProperty(root, "--qq-native-shell-top", `${Math.max(0, sidebarTop)}px`);
+    const nativeHeaderBox = shellMain.getBoundingClientRect();
+    setStyleProperty(root, "--qq-native-header-left", `${nativeHeaderBox.left}px`);
+    setStyleProperty(root, "--qq-native-header-right", `${Math.max(0, window.innerWidth - nativeHeaderBox.right)}px`);
     ensureRetroShell();
     syncRetroToolbarActions();
-    syncRetroWindowControls();
-    ensureRetroProfile();
     ensureToggleButton();
     if (observedShellMain !== shellMain) {
       resizeObserver?.disconnect();
       resizeObserver?.observe(shellMain);
       observedShellMain = shellMain;
+      observedReferenceHost = null;
       layout = true;
     }
     ensureHomePet(home);
     ensureSidebarSectionBars();
-    const companion = ensureCompanion();
     const usageUi = ensureUsagePanel();
     const leftSidebarToggle = findLeftSidebarToggle();
     const leftSidebarLabel = leftSidebarToggle?.getAttribute("aria-label") || "";
@@ -3224,7 +3000,7 @@
     const taskRoute = !home && !settingsRoute && Boolean(shellMain);
     setAttribute(root, "data-dream-task-route", taskRoute ? "true" : "false");
     const visibleThreadFooters = [...document.querySelectorAll(
-      'main.main-surface [data-pip-obstacle="thread-footer"]',
+      'main [data-pip-obstacle="thread-footer"]',
     )].filter((footer) => {
       const box = footer.getBoundingClientRect?.();
       return box && box.width > 8 && box.height > 8;
@@ -3232,8 +3008,11 @@
     setAttribute(root, "data-dream-side-task", visibleThreadFooters.length >= 2 ? "open" : "closed");
     const layoutBaseEligible = layoutMode === "classic-three-pane" &&
       !home && taskRoute && wideEnough;
+    // Current Codex owns panel state. Respect close/open clicks and remembered
+    // state instead of reopening controls remounted by React.
+    const nativePanelState = shellMain.matches('[class*="_MainContentSurface_"]');
     if (
-      layoutBaseEligible && showSidebarLabel.test(leftSidebarLabel) &&
+      !nativePanelState && layoutBaseEligible && showSidebarLabel.test(leftSidebarLabel) &&
       !autoOpenedSidebarToggles.has(leftSidebarToggle) && typeof leftSidebarToggle.click === "function"
     ) {
       autoOpenedSidebarToggles.add(leftSidebarToggle);
@@ -3243,7 +3022,7 @@
     const layoutEligible = layoutBaseEligible && leftSidebarOpen && Boolean(summaryToggle);
     let autoOpening = false;
     if (
-      layoutEligible && shouldAutoOpenSummary && summaryToggle.getAttribute("aria-pressed") !== "true" &&
+      !nativePanelState && layoutEligible && shouldAutoOpenSummary && summaryToggle.getAttribute("aria-pressed") !== "true" &&
       !autoOpenedSummaryToggles.has(summaryToggle) && typeof summaryToggle.click === "function"
     ) {
       autoOpenedSummaryToggles.add(summaryToggle);
@@ -3258,18 +3037,23 @@
     setStyleProperty(root, "--dream-three-pane-min-width", `${layoutMinWidth}px`);
     setStyleProperty(root, "--dream-right-panel-width", `${layoutRightWidth}px`);
     const summaryPanelCandidate = summaryOpen
-      ? document.querySelector('[data-pip-obstacle="thread-summary-panel"]') : null;
-    const summaryPanelBox = summaryPanelCandidate?.getBoundingClientRect?.();
+      ? document.querySelector("[data-pip-obstacle='thread-summary-panel']") : null;
+    // Recent Codex builds use the obstacle as an empty hit-test marker.
+    const summaryCard = summaryPanelCandidate?.matches(':empty[aria-hidden="true"]')
+      ? summaryPanelCandidate.nextElementSibling?.querySelector(".overflow-hidden")
+      : summaryPanelCandidate;
+    const summaryPanelBox = summaryCard?.getBoundingClientRect?.();
     const summaryPanel = summaryPanelBox && summaryPanelBox.width > 8 && summaryPanelBox.height > 8
       ? summaryPanelCandidate : null;
     const rightTray = ensureRightTray();
     if (summaryPanel && typeof summaryPanel.getBoundingClientRect === "function") {
       const summaryBox = summaryPanelBox;
       const summaryWidth = Math.round(summaryBox.width);
+      setStyleProperty(usageUi.panel, "--qq-growth-available-height", `${Math.max(240, window.innerHeight - summaryBox.bottom - 28)}px`);
       if (summaryWidth >= 272 && summaryWidth <= 420) {
         setStyleProperty(root, "--dream-summary-panel-width", `${summaryWidth}px`);
       }
-      // Paint a wider blue tray behind Output/Source + companion, inset from the
+      // Paint a wider blue tray behind the native summary and growth center, inset from the
       // window chrome and extending from the title bar down to the bottom edge.
       const trayPad = 14;
       const panelRight = Math.max(8, Math.round(window.innerWidth - summaryBox.right));
@@ -3281,23 +3065,15 @@
       setStyleProperty(rightTray, "width", `${trayWidth}px`);
       setStyleProperty(root, "--dream-right-tray-inset", `${trayPad}px`);
       setStyleProperty(root, "--dream-right-panel-right", `${panelRight}px`);
-      setStyleProperty(usageUi.panel, "left", `${Math.round(summaryBox.left)}px`);
-      setStyleProperty(usageUi.panel, "top", `${Math.round(summaryBox.top)}px`);
-      setStyleProperty(usageUi.panel, "width", `${summaryWidth}px`);
-      setStyleProperty(usageUi.panel, "height", `${Math.round(summaryBox.height)}px`);
-      setStyleProperty(usageUi.toggle, "right", `${panelRight + 10}px`);
-      setStyleProperty(usageUi.toggle, "top", `${Math.round(summaryBox.top) + 8}px`);
+      if (!summaryPanelCandidate.matches(':empty[aria-hidden="true"]')) usageUi.panel.qqFloatingState?.place();
       rightTray.classList.add("is-visible");
     } else {
       rightTray.classList.remove("is-visible");
+      usageUi.panel.style.removeProperty("--qq-growth-available-height");
       root.style.removeProperty("--dream-right-panel-right");
     }
-    // The summary and generic sidebar controls can briefly report the same
-    // pressed state. Show the companion only while the summary is visible.
-    companion.classList.toggle("is-visible", Boolean(summaryPanel));
-    usageUi.panel.classList.toggle("is-available", Boolean(summaryPanel));
-    usageUi.toggle.classList.toggle("is-available", Boolean(summaryPanel));
-    setUsageMode(usageMode);
+    usageUi.panel.classList.toggle("is-available", taskRoute && wideEnough);
+    syncReferenceLayout(usageUi.panel, settingsRoute);
     let chrome = document.getElementById(CHROME_ID);
     let created = false;
     if (!chrome || chrome.parentElement !== document.body) {
@@ -3356,7 +3132,7 @@
     // Route first so data-qq-settings / native settings chrome is decided
     // before the weather layer mounts or paints neon tokens.
     if (route) syncRouteState(shell, { layout });
-    else {
+    else if (rootPass) {
       ensureToggleButton();
       weatherMonitor.ensure();
     }
@@ -3364,6 +3140,9 @@
   };
 
   const removeSkinVisuals = () => {
+    profileCleanup();
+    clearReferenceLayout();
+    document.querySelectorAll(".qq-skin-thread-frame").forEach((node) => node.classList.remove("qq-skin-thread-frame"));
     weatherMonitor.destroy();
     const root = document.documentElement;
     root?.classList.remove("codex-qq-skin", "codex-dream-skin");
@@ -3400,17 +3179,17 @@
         "dream-retro-window-control", "dream-retro-control-summary",
         "dream-retro-control-bottom", "dream-retro-control-sidebar",
       ));
-    companionParts = null;
     usageParts = null;
     chromeParts = null;
-    retroProfileParts = null;
   };
 
   const syncToggleButton = (control) => {
     for (const button of control.querySelectorAll("button[data-skin-mode]")) {
-      const selected = button.dataset.skinMode === skinMode;
-      const unavailable = button.dataset.skinMode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind);
+      const selected = button.dataset.skinMode === skinMode
+        && (skinMode !== "qq" || button.dataset.skinAppearance === qqAppearance);
+      const unavailable = button.dataset.skinMode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind) && LIBRARY_THEMES.length === 0;
       button.disabled = unavailable;
+      button.title = unavailable ? "请先在皮肤库安装自定义主题" : "";
       button.setAttribute("aria-pressed", selected ? "true" : "false");
       button.style.opacity = unavailable ? ".45" : "1";
       button.style.color = selected ? "#fff" : "#3b3f45";
@@ -3505,13 +3284,18 @@
     document.addEventListener?.("mousedown", dismiss, true);
   };
 
-  const selectSkinMode = (mode) => {
+  const selectSkinMode = (mode, appearance) => {
     if (!["native", "qq", "custom"].includes(mode)) return;
-    if (mode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) return;
+    if (mode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) {
+      const anchor = document.getElementById(TOGGLE_ID);
+      if (anchor && LIBRARY_THEMES.length) openLibraryMenu(anchor);
+      return;
+    }
     skinMode = mode;
-    if (skinMode === "qq") forceNativeLightForQQ();
+    if (mode === "qq" && ["light", "dark"].includes(appearance)) qqAppearance = appearance;
+    if (skinMode === "qq") forceNativeAppearanceForQQ();
     else restoreNativeAppearance();
-    THEME = skinMode === "qq" ? QQ_THEME : CUSTOM_THEME;
+    THEME = skinMode === "qq" ? selectedQQTheme() : CUSTOM_THEME;
     ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
     LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
     SOUND = THEME.sound && typeof THEME.sound === "object" ? THEME.sound : {};
@@ -3522,6 +3306,7 @@
     window[DISABLED_KEY] = skinMode === "native";
     try {
       window.localStorage?.setItem(MODE_STORAGE_KEY, skinMode);
+      window.localStorage?.setItem(QQ_APPEARANCE_STORAGE_KEY, qqAppearance);
       window.localStorage?.setItem(ENABLED_STORAGE_KEY, skinMode === "native" ? "false" : "true");
     } catch {}
     const state = window[STATE_KEY];
@@ -3542,16 +3327,16 @@
 
   const ensureToggleButton = () => {
     let control = document.getElementById(TOGGLE_ID);
-    const needsLibrary = LIBRARY_THEMES.length > 0;
-    const hasLibrary = Boolean(control?.querySelector?.("button[data-skin-library]"));
+
     if (
       !control || control.parentElement !== document.body || control.tagName === "BUTTON"
-      || needsLibrary !== hasLibrary
+      || control.dataset.qqModes !== "three"
     ) {
       control?.remove();
       closeLibraryMenu();
       control = document.createElement("div");
       control.id = TOGGLE_ID;
+      control.dataset.qqModes = "three";
       control.setAttribute("role", "group");
       control.setAttribute("aria-label", "切换皮肤");
       control.style.cssText = [
@@ -3561,10 +3346,11 @@
         "background:rgba(248,248,249,.91)", "box-shadow:0 1px 2px rgba(0,0,0,.08),0 5px 14px rgba(0,0,0,.08)",
         "backdrop-filter:blur(14px) saturate(110%)", "-webkit-app-region:no-drag",
       ].join(";");
-      for (const [mode, label] of [["native", "原生"], ["qq", "QQ"], ["custom", "自定义"]]) {
+      for (const [mode, label, appearance] of [["native", "原版"], ["qq", "浅色", "light"], ["qq", "深色", "dark"]]) {
         const button = document.createElement("button");
         button.type = "button";
         button.dataset.skinMode = mode;
+        if (appearance) button.dataset.skinAppearance = appearance;
         button.textContent = label;
         button.style.cssText = [
           "height:22px", "padding:0 9px", "border:0", "border-radius:7px", "white-space:nowrap",
@@ -3574,35 +3360,10 @@
         const activateMode = (event) => {
           event.preventDefault();
           event.stopPropagation();
-          selectSkinMode(mode);
+          selectSkinMode(mode, appearance);
         };
-        // Electron can occasionally consume the synthesized click while the
-        // title bar is being rebuilt. Pointer-up arrives before that drag-region
-        // reconciliation, so handle it as the primary activation path and keep
-        // click as the keyboard/accessibility fallback.
-        button.addEventListener?.("pointerup", activateMode);
         button.addEventListener?.("click", activateMode);
         control.appendChild(button);
-      }
-      if (needsLibrary) {
-        const libraryButton = document.createElement("button");
-        libraryButton.type = "button";
-        libraryButton.dataset.skinLibrary = "recent";
-        libraryButton.setAttribute("aria-label", "最近自定义皮肤");
-        libraryButton.setAttribute("aria-haspopup", "menu");
-        libraryButton.textContent = "▾";
-        libraryButton.style.cssText = [
-          "height:22px", "width:22px", "padding:0", "border:0", "border-radius:7px",
-          "font:700 12px/22px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
-          "cursor:pointer", "user-select:none", "transition:background .16s ease,color .16s ease",
-        ].join(";");
-        libraryButton.addEventListener?.("click", (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          if (document.getElementById(LIBRARY_MENU_ID)) closeLibraryMenu();
-          else openLibraryMenu(libraryButton);
-        });
-        control.appendChild(libraryButton);
       }
       document.body.appendChild(control);
     }
@@ -3630,14 +3391,6 @@
     }
     if (analysisTimer) clearTimeout(analysisTimer);
     if (routeSettleTimer) clearTimeout(routeSettleTimer);
-    if (companionBreakTimer) {
-      clearTimeout(companionBreakTimer);
-      companionBreakTimer = null;
-    }
-    if (blindBoxRevealTimer) {
-      clearTimeout(blindBoxRevealTimer);
-      blindBoxRevealTimer = null;
-    }
     if (state?.resizeHandler) window.removeEventListener("resize", state.resizeHandler);
     if (state?.routeInteractionHandler && typeof document.removeEventListener === "function") {
       document.removeEventListener("click", state.routeInteractionHandler, true);
@@ -3677,27 +3430,52 @@
     scheduler.route ||= route;
     scheduler.layout ||= layout;
     if (scheduler.timeout || scheduler.frame !== null) return;
-    if (typeof requestAnimationFrame === "function") {
+    if ((root || layout) && typeof requestAnimationFrame === "function") {
       scheduler.frame = requestAnimationFrame(flushScheduledEnsure);
       scheduler.timeout = setTimeout(flushScheduledEnsure, 96);
     } else {
-      scheduler.timeout = setTimeout(flushScheduledEnsure, 64);
+      // Streamed text and virtualized rows do not need a shell layout per frame.
+      scheduler.timeout = setTimeout(flushScheduledEnsure, route ? 80 : 250);
     }
   };
-  const observer = new MutationObserver(() => scheduleEnsure({ route: true }));
+  const isSkinNode = (node) => {
+    const element = node?.nodeType === 1 ? node : node?.parentElement;
+    return Boolean(element?.closest?.('[id^="codex-qq-skin-"]'));
+  };
+  const observer = new MutationObserver((records) => {
+    let route = false;
+    let sound = false;
+    for (const record of records) {
+      if (isSkinNode(record.target)) continue;
+      const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+      if (target?.closest('[data-codex-composer="true"]')) continue;
+      const changed = [...record.addedNodes, ...record.removedNodes];
+      if (!record.removedNodes.length && changed.every(isSkinNode)) continue;
+      sound = true;
+      // Conversation rows mount/unmount while scrolling and streaming. Only
+      // replacement of the native composer needs to resync the shell there.
+      const inThread = target?.closest('.thread-scroll-container');
+      const composerChanged = changed.some((node) => node.nodeType === 1 &&
+        (node.matches('[data-pip-obstacle="thread-footer"]') ||
+         node.querySelector('[data-pip-obstacle="thread-footer"]')));
+      if (!inThread || composerChanged) route = true;
+    }
+    if (sound) scheduleEnsure({ route });
+  });
   rootObserver = new MutationObserver(() => {
     if (samplingNativeShell) return;
     scheduleEnsure({ root: true, route: true });
   });
   const resizeHandler = () => scheduleEnsure({ route: true, layout: true });
-  const routeInteractionHandler = () => {
+  const routeInteractionHandler = (event) => {
+    if (isSkinNode(event.target) || event.target?.closest?.('[data-codex-composer="true"]')) return;
     // Profile menus open on click — restyle quickly before the slower route settle.
     try { weatherMonitor.syncAudioUi?.(); } catch {}
     if (routeSettleTimer) clearTimeout(routeSettleTimer);
     routeSettleTimer = setTimeout(() => {
       routeSettleTimer = null;
       scheduleEnsure({ route: true, layout: true });
-    }, 500);
+    }, 120);
   };
   if (typeof ResizeObserver === "function") {
     resizeObserver = new ResizeObserver(() => scheduleEnsure({ route: true, layout: true }));
@@ -3715,7 +3493,6 @@
     cleanup,
     ensureToggleButton,
     setUsageSnapshot,
-    setCompanionSnapshot,
     observer,
     rootObserver,
     resizeObserver,
@@ -3726,6 +3503,7 @@
     routeInteractionHandler,
     soundMonitor,
     weatherMonitor,
+    profileCleanup,
     mediaQuery,
     mediaHandler,
     artUrl,
@@ -3774,7 +3552,7 @@
     attributes: true,
     // Inline styles on <html> are owned by applyRootState. Observing them
     // feeds our own CSS-variable writes back into another full root pass.
-    attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode"],
+    attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode", "data-reduced-motion"],
   });
   if (document.body) {
     rootObserver.observe(document.body, {

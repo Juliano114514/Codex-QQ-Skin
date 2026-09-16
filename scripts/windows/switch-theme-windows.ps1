@@ -15,7 +15,8 @@ $stage = Join-Path $script:StateRoot ('.theme-stage-' + [guid]::NewGuid().ToStri
 $backup = Join-Path $script:StateRoot ('.theme-backup-' + [guid]::NewGuid().ToString('N'))
 Copy-Item -LiteralPath $source -Destination $stage -Recurse
 try {
-  Stop-RecordedInjector
+  # The live injector stages with -NoApply and reloads the payload itself.
+  if (-not $NoApply) { Stop-RecordedInjector }
   if (Test-Path -LiteralPath $script:ThemeDir) { Move-Item -LiteralPath $script:ThemeDir -Destination $backup }
   try {
     Move-Item -LiteralPath $stage -Destination $script:ThemeDir
