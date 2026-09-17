@@ -17,6 +17,7 @@ require_macos_runtime
 for required in \
   "$PROJECT_ROOT/assets/qq-skin.css" \
   "$PROJECT_ROOT/assets/qq-dark.css" \
+  "$PROJECT_ROOT/assets/qq-ui.css" \
   "$PROJECT_ROOT/assets/renderer-inject.js" \
   "$PROJECT_ROOT/assets/codex-pet.png" \
   "$PROJECT_ROOT/assets/retro-window-frame.png" \

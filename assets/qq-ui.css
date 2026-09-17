@@ -1,0 +1,168 @@
+/* Shared UI contract for both QQ appearances. Palette values are supplied by
+   theme.json / theme-dark.json; geometry and type live here, after both skins. */
+html.codex-qq-skin {
+  --qq-font-ui: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+  --qq-font-mono: "Cascadia Code", Consolas, "SFMono-Regular", monospace;
+  --qq-text-caption: 12px;
+  --qq-text-control: 13px;
+  --qq-text-body: 14px;
+  --qq-text-title: 16px;
+  --qq-line-body: 1.6;
+  --qq-space-1: 4px;
+  --qq-space-2: 8px;
+  --qq-space-3: 12px;
+  --qq-space-4: 16px;
+  --qq-control-height: 28px;
+  --qq-card-title-height: 34px;
+  --qq-radius-control: 4px;
+  --qq-radius-card: 6px;
+  --qq-content-top: 70px;
+  --qq-shadow-popup: 0 8px 24px rgb(0 0 0 / .18);
+  --font-sans: var(--qq-font-ui);
+  --font-mono: var(--qq-font-mono);
+  --color-background-mode-toggle-track: var(--ds-panel-2);
+  --color-text-mode-toggle-inactive: var(--ds-muted);
+}
+
+/* Keep fixed descendants viewport-relative: filters on a native header turn
+   its centered mode switch into an offset containing block. Native tab rows
+   must also remain above the side-panel content, with their own hit targets. */
+html.codex-qq-skin[data-dream-shell] main[data-app-shell-main-surface] > header[data-pip-obstacle="app-shell-header"] {
+  top: var(--qq-content-top) !important;
+  height: var(--height-toolbar, 46px) !important;
+  min-height: var(--height-toolbar, 46px) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+html.codex-qq-skin [data-app-shell-tab-row] {
+  background: var(--ds-panel) !important;
+  color: var(--ds-text);
+  border-bottom: 1px solid var(--ds-line);
+  font-family: var(--qq-font-ui);
+}
+html.codex-qq-skin[data-qq-settings="true"] [class*="_MainContentFrame_"] {
+  margin-top: 0 !important;
+}
+html.codex-qq-skin [data-app-shell-tab-controller] [role="tab"] {
+  font-size: var(--qq-text-control);
+}
+html.codex-qq-skin [data-app-shell-tab-controller] [role="tab"][aria-selected="true"] {
+  color: var(--ds-text);
+  font-weight: 600;
+}
+
+/* The native wide-table formula subtracts the reading width from the query
+   container. In the skin's pane layout that container is already the reading
+   column, leaving only a narrow gutter. Keep the native scroller and actions,
+   but size the table viewport against its actual Markdown parent. */
+html.codex-qq-skin [class*="_TableContainer_"][data-wide-block] {
+  --wide-block-width: 100%;
+  width: 100%;
+  max-width: 100%;
+  margin-inline: 0;
+}
+
+/* One selected surface, painted by the native moving indicator. Preserve its
+   transform, grid positions, keyboard handling, disabled state and direction. */
+html.codex-qq-skin [class~="@container/home-mode-toggle"] [role="group"] > button {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  font: 500 var(--qq-text-control)/1.4 var(--qq-font-ui);
+  color: var(--ds-muted);
+}
+html.codex-qq-skin [class~="@container/home-mode-toggle"] [role="group"] > button[aria-pressed="true"] {
+  color: var(--ds-text);
+  font-weight: 600;
+}
+html.codex-qq-skin [class~="@container/home-mode-toggle"] [class*="_indicator_"] {
+  background: var(--ds-panel);
+  border: 1px solid var(--ds-line);
+  box-shadow: 0 1px 3px rgb(0 0 0 / .12);
+}
+
+/* UI, reading content and metadata have separate, bounded type scales.
+   Do not target every descendant: Monaco/xterm and syntax colors stay native. */
+html.codex-qq-skin :is(aside.app-shell-left-panel, [role="menu"], [role="dialog"], #codex-qq-skin-profile-dialog) {
+  font-family: var(--qq-font-ui);
+  font-size: var(--qq-text-control);
+}
+html.codex-qq-skin :is([class*="_markdown"], [class*="markdown-body"]) {
+  font-family: var(--qq-font-ui);
+  font-size: var(--qq-text-body);
+  line-height: var(--qq-line-body);
+  text-shadow: none !important;
+}
+html.codex-qq-skin :is(.qq-skin-profile-presence-row, .qq-skin-usage-label, .qq-skin-usage-footer,
+  .qq-skin-signature-marquee, .qq-skin-profile-token-info small,
+  .qq-skin-usage-metrics span, .qq-skin-usage-activity, .qq-skin-usage-breakdown,
+  .qq-skin-usage-message, .qq-skin-usage-footer button) {
+  font-size: var(--qq-text-caption);
+  line-height: 1.4;
+}
+html.codex-qq-skin .qq-skin-usage-metrics b {
+  font-size: var(--qq-text-title);
+  font-weight: 700;
+}
+html.codex-qq-skin :is(.dream-retro-toolbar, .qq-skin-details-title, .qq-skin-usage-title) {
+  font-family: var(--qq-font-ui);
+  font-size: var(--qq-text-control);
+}
+html.codex-qq-skin #codex-qq-skin-profile-dialog {
+  border-radius: var(--qq-radius-card);
+  box-shadow: var(--qq-shadow-popup);
+}
+html.codex-qq-skin #codex-qq-skin-profile-dialog h2 {
+  padding: var(--qq-space-3) var(--qq-space-4);
+  font-size: var(--qq-text-title);
+}
+html.codex-qq-skin #codex-qq-skin-profile-dialog :is(h3, small, footer > span) {
+  font-size: var(--qq-text-caption);
+}
+html.codex-qq-skin #codex-qq-skin-usage-panel .qq-skin-usage-net-toggle {
+  gap: var(--qq-space-1);
+  font-size: var(--qq-text-caption);
+  line-height: 1.2;
+}
+html.codex-qq-skin[data-dream-shell] #codex-qq-skin-toggle {
+  padding: 2px;
+  border-radius: var(--qq-radius-card) !important;
+  background: var(--ds-panel) !important;
+  border-color: var(--ds-line) !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-dream-shell] #codex-qq-skin-toggle button {
+  padding-inline: var(--qq-space-2) !important;
+  border-radius: var(--qq-radius-control) !important;
+  font: 600 var(--qq-text-caption)/22px var(--qq-font-ui) !important;
+}
+html.codex-qq-skin #codex-qq-skin-profile-dialog :is(input, select, footer > button) {
+  min-height: var(--qq-control-height);
+  border-radius: var(--qq-radius-control);
+}
+html.codex-qq-skin :is(button, a, input, textarea, select, [tabindex="0"]):focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
+}
+
+/* Opaque reading surfaces avoid repeated backdrop sampling on every scroll.
+   Retain native progress animations; only skin decoration is motionless. */
+html.codex-qq-skin main.main-surface:not(.qq-skin-home-shell) article {
+  background: var(--ds-panel);
+  backdrop-filter: none;
+  box-shadow: none;
+}
+html.codex-qq-skin aside.app-shell-left-panel {
+  border-radius: var(--qq-radius-card) !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin :is(#codex-qq-skin-toggle, #codex-qq-skin-usage-panel,
+  #codex-qq-skin-companion, #codex-qq-skin-profile-dialog) {
+  backdrop-filter: none !important;
+}
+html.codex-qq-skin :is(#codex-qq-skin-home-pet, .qq-skin-signature-marquee.is-scrolling > span) {
+  animation: none;
+}

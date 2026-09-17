@@ -13,6 +13,8 @@
 
 > 非 OpenAI、腾讯或 QQ 官方产品。本项目不会修改官方 `.app`、`app.asar`、代码签名、API Key 或 Base URL。
 
+QQ 浅色与深色共用字体、字号、间距和控件规范，保留原生侧边选项卡与 ChatGPT“聊天 / 工作”切换。样式入口和实测性能数据见 [界面规范与性能验证](./docs/ui-style-and-performance.md)。
+
 ## 个人资料与本机统计
 
 - QQ 模式右侧上方默认显示本机 Codex token：今日、近 7 天、历史累计、七日趋势、活跃天数和连续活跃天数。

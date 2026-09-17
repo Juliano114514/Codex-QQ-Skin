@@ -35,6 +35,8 @@
     "data-dream-art-ready", "data-dream-art-fit", "data-dream-three-pane", "data-dream-summary-state", "data-dream-left-sidebar",
     "data-qq-usage-mode", "data-qq-usage-state", "data-qq-weather", "data-qq-settings",
     "data-qq-weather-audio",
+    "data-qq-home-route", "data-qq-native-shell", "data-qq-profile-visible",
+    "data-qq-reference-layout", "data-qq-quick-chat", "data-dream-task-route", "data-dream-side-task",
   ];
   const VERSION = __QQ_SKIN_VERSION_JSON__;
   const STYLE_REVISION = __QQ_SKIN_STYLE_REVISION_JSON__;
@@ -153,6 +155,8 @@
     startupPasses: 0,
     firstEnsureMs: null,
     analysisMs: null,
+    ensureTotalMs: 0,
+    ensureMaxMs: 0,
   };
   let skinEnabled = skinMode !== "native";
   window[DISABLED_KEY] = !skinEnabled;
@@ -2496,6 +2500,7 @@
   const referenceClasses = ["qq-skin-reference-host", "qq-skin-reference-summary", "qq-skin-reference-card", "qq-skin-growth-docked"];
   let detailsCollapsed = false;
   const clearReferenceLayout = () => {
+    setAttribute(document.documentElement, "data-qq-reference-layout", "false");
     const growth = document.getElementById(USAGE_PANEL_ID);
     if (growth?.classList.contains("qq-skin-growth-docked")) document.body.appendChild(growth);
     document.querySelectorAll(".qq-skin-details-title").forEach(node => node.remove());
@@ -2530,6 +2535,7 @@
       panel.classList.remove("is-available");
       return;
     }
+    setAttribute(document.documentElement, "data-qq-reference-layout", "true");
     const marks = new Map([["qq-skin-reference-host", host], ["qq-skin-reference-summary", overlay],
       ["qq-skin-reference-card", card], ["qq-skin-growth-docked", panel]]);
     for (const [name, target] of marks) {
@@ -2543,7 +2549,7 @@
       title.id = "codex-qq-skin-details-title";
       title.className = "qq-skin-details-title qq-skin-window-title";
       const label = document.createElement("span");
-      label.textContent = "chat详情";
+      label.textContent = "会话详情";
       const toggle = document.createElement("button");
       toggle.type = "button";
       toggle.className = "qq-skin-window-toggle";
@@ -2551,7 +2557,7 @@
         card.classList.toggle("qq-skin-details-collapsed", detailsCollapsed);
         toggle.textContent = detailsCollapsed ? "＋" : "−";
         toggle.setAttribute("aria-expanded", String(!detailsCollapsed));
-        toggle.setAttribute("aria-label", `${detailsCollapsed ? "展开" : "收起"}chat详情`);
+        toggle.setAttribute("aria-label", `${detailsCollapsed ? "展开" : "收起"}会话详情`);
       };
       toggle.addEventListener("click", event => {
         event.stopPropagation();
@@ -2584,8 +2590,10 @@
     }
     if (!enabled || !document.querySelector("aside.app-shell-left-panel, main.qq-skin-thread-frame")) {
       document.getElementById(RETRO_PROFILE_ID)?.remove();
+      setAttribute(document.documentElement, "data-qq-profile-visible", "false");
       return;
     }
+    setAttribute(document.documentElement, "data-qq-profile-visible", "true");
     let profile = document.getElementById(RETRO_PROFILE_ID);
     if (!profile || !profile.querySelector(".qq-skin-profile-signature")) {
       profile?.remove();
@@ -2869,6 +2877,11 @@
       [...document.querySelectorAll('[role="main"]')].find((candidate) =>
         candidate.querySelector('[data-feature="game-source"]') &&
         candidate.querySelector('.group\\/home-suggestions')) || null;
+    // Root :has() selectors invalidated thousands of descendants during native
+    // scroll updates. Route markers change only when the matching UI changes.
+    setAttribute(root, "data-qq-home-route", home ? "true" : "false");
+    setAttribute(root, "data-qq-native-shell", shellMain?.matches('[class*="_MainContentSurface_"]') ? "true" : "false");
+    setAttribute(root, "data-qq-quick-chat", document.querySelector('section[data-pip-obstacle="quick-chat"][data-state="open"]') ? "true" : "false");
     for (const candidate of document.querySelectorAll('[role="main"].qq-skin-home')) {
       if (candidate !== home) candidate.classList.remove("qq-skin-home");
     }
@@ -3126,6 +3139,7 @@
     if (window[DISABLED_KEY]) return;
     const root = document.documentElement;
     if (!root) return;
+    const startedAt = now();
     metrics.ensureCalls += 1;
     const shell = rootPass ? applyRootState(root) : null;
     soundMonitor.scan();
@@ -3137,6 +3151,9 @@
       weatherMonitor.ensure();
     }
     if (weatherMonitor.active) weatherMonitor.setStatus(soundMonitor.status);
+    const elapsed = now() - startedAt;
+    metrics.ensureTotalMs += elapsed;
+    metrics.ensureMaxMs = Math.max(metrics.ensureMaxMs, elapsed);
   };
 
   const removeSkinVisuals = () => {
@@ -3448,9 +3465,14 @@
     for (const record of records) {
       if (isSkinNode(record.target)) continue;
       const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+      if (record.type === "attributes") {
+        // Quick Chat can open through a keyboard shortcut without remounting.
+        if (target?.matches('section[data-pip-obstacle="quick-chat"]')) route = true;
+        continue;
+      }
       if (target?.closest('[data-codex-composer="true"]')) continue;
       const changed = [...record.addedNodes, ...record.removedNodes];
-      if (!record.removedNodes.length && changed.every(isSkinNode)) continue;
+      if (changed.length && changed.every(isSkinNode)) continue;
       sound = true;
       // Conversation rows mount/unmount while scrolling and streaming. Only
       // replacement of the native composer needs to resync the shell there.
@@ -3458,9 +3480,13 @@
       const composerChanged = changed.some((node) => node.nodeType === 1 &&
         (node.matches('[data-pip-obstacle="thread-footer"]') ||
          node.querySelector('[data-pip-obstacle="thread-footer"]')));
-      if (!inThread || composerChanged) route = true;
+      // Text updates (including sidebar task titles and token counters) need
+      // status detection, not a DOM-wide layout pass. Structural changes still
+      // detect mounts, tab rows, native panels and navigation.
+      const structureChanged = changed.some((node) => node.nodeType === 1);
+      if ((!inThread && structureChanged) || composerChanged) route = true;
     }
-    if (sound) scheduleEnsure({ route });
+    if (sound || route) scheduleEnsure({ route });
   });
   rootObserver = new MutationObserver(() => {
     if (samplingNativeShell) return;
@@ -3547,6 +3573,8 @@
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
+    attributes: true,
+    attributeFilter: ["data-state"],
   });
   rootObserver.observe(document.documentElement, {
     attributes: true,
@@ -3560,7 +3588,15 @@
       attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode"],
     });
   }
-  const timer = setInterval(() => ensure({ root: false, route: true, layout: true }), 4000);
+  let lastRouteRefresh = Date.now();
+  const timer = setInterval(() => {
+    if (document.visibilityState === "hidden" || window[DISABLED_KEY]) return;
+    const route = Date.now() - lastRouteRefresh >= 30000;
+    if (route) lastRouteRefresh = Date.now();
+    // Mutation/click/resize observers own immediate layout updates. This is a
+    // status heartbeat with a slower fallback for native attribute-only changes.
+    scheduleEnsure({ root: false, route, layout: route });
+  }, 4000);
   window[STATE_KEY].timer = timer;
   window.addEventListener("resize", resizeHandler, { passive: true });
   if (typeof document.addEventListener === "function") {

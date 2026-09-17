@@ -634,7 +634,7 @@ html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mod
   height: auto;
 }
 
-html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell)) body {
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"][data-dream-task-route="true"] body {
   background-image: var(--qq-skin-art) !important;
   background-position: var(--ds-art-position) !important;
   background-size: cover !important;
@@ -642,7 +642,7 @@ html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mod
   background-attachment: fixed !important;
 }
 
-html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell))
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"][data-dream-task-route="true"]
   aside.app-shell-left-panel {
   background: linear-gradient(90deg,
     var(--ds-task-immersive-sidebar),
@@ -655,12 +655,12 @@ html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mod
 
 /* Native sidebar resize chrome inherits the sidebar background and extends
    20px into the main surface. Keeping it clear preserves one continuous image. */
-html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell))
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"][data-dream-task-route="true"]
   aside.app-shell-left-panel::after {
   background: transparent !important;
 }
 
-html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell))
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"][data-dream-task-route="true"]
   main.main-surface:not(.qq-skin-home-shell) {
   background: linear-gradient(90deg,
     var(--ds-task-immersive-edge),
@@ -676,7 +676,7 @@ html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mod
   content: none;
 }
 
-html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell))
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"][data-dream-task-route="true"]
   .composer-surface-chrome {
   background: var(--ds-immersive-composer-solid) !important;
   border: 0 !important;
@@ -687,7 +687,7 @@ html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mod
   backdrop-filter: none !important;
 }
 
-html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main.main-surface:not(.qq-skin-home-shell))
+html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"][data-dream-task-route="true"]
   main.main-surface > header.app-header-tint {
   background: transparent !important;
   border-bottom: 0 !important;
@@ -731,7 +731,7 @@ html.codex-qq-skin:is([data-dream-task-mode="off"], [data-dream-art-task-mode="o
   content: none;
 }
 
-html.codex-qq-skin main.main-surface:not(.qq-skin-home-shell) > :not(header.app-header-tint) {
+html.codex-qq-skin main.main-surface:not([data-app-shell-main-surface]):not(.qq-skin-home-shell) > :not(header.app-header-tint) {
   position: relative;
   z-index: 1;
 }
@@ -763,7 +763,7 @@ html.codex-qq-skin main.main-surface > header.app-header-tint {
   /* Preserve Codex's native fixed header geometry and side-panel controls. */
   background: rgb(var(--ds-panel-rgb) / .90) !important;
   border-bottom: 1px solid var(--ds-line) !important;
-  backdrop-filter: blur(14px) saturate(108%) !important;
+  backdrop-filter: none !important;
 }
 
 #codex-qq-skin-chrome {
@@ -818,11 +818,7 @@ html.codex-qq-skin[data-dream-three-pane="true"] aside.app-shell-left-panel {
 }
 
 /* Settings: collapse the empty native header band above「返回应用」. */
-html.codex-qq-skin:is(
-  :has(input[placeholder*="设置"]),
-  :has(input[placeholder*="設定"]),
-  :has(input[placeholder*="settings" i])
-)
+html.codex-qq-skin[data-qq-settings="true"]
   main.main-surface > header.app-header-tint {
   display: none !important;
   height: 0 !important;
@@ -836,11 +832,7 @@ html.codex-qq-skin:is(
 
 html.codex-qq-skin[data-dream-task-route="true"] main.main-surface
   .app-shell-main-content-frame,
-html.codex-qq-skin:is(
-  :has(input[placeholder*="设置"]),
-  :has(input[placeholder*="設定"]),
-  :has(input[placeholder*="settings" i])
-) main.main-surface
+html.codex-qq-skin[data-qq-settings="true"] main.main-surface
   .app-shell-main-content-frame {
   margin-top: 0 !important;
   padding-top: 0 !important;
@@ -887,7 +879,7 @@ html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summ
   margin-right: 7px !important;
   border: 1px solid rgb(64 122 187 / .55) !important;
   border-radius: 8px !important;
-  background: #f8fcff !important;
+  background: var(--ds-panel) !important;
   color: #17395f !important;
   box-shadow:
     0 8px 20px rgb(20 62 108 / .14),
@@ -1229,12 +1221,7 @@ html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summ
   pointer-events: auto;
 }
 
-html.codex-qq-skin:is(
-  :has(input[placeholder*="设置"]),
-  :has(input[placeholder*="設定"]),
-  :has(input[placeholder*="settings" i]),
-  :has(section[role="dialog"][data-pip-obstacle="quick-chat"][data-state="open"])
-) :is(#codex-qq-skin-usage-panel, #codex-qq-skin-usage-toggle) {
+html.codex-qq-skin:is([data-qq-settings="true"], [data-qq-quick-chat="true"]) :is(#codex-qq-skin-usage-panel, #codex-qq-skin-usage-toggle) {
   display: none !important;
 }
 
@@ -1317,7 +1304,7 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
    the conversation indistinguishable from the task underneath. */
 html.codex-qq-skin[data-dream-shell="light"]
   section[role="dialog"][data-pip-obstacle="quick-chat"] {
-  background: #f8fcff !important;
+  background: var(--ds-panel) !important;
   color: #17395f !important;
   color-scheme: light !important;
   border: 1px solid #6ea4d6 !important;
@@ -1335,15 +1322,9 @@ html.codex-qq-skin[data-dream-shell="light"]
 /* Quick Chat occupies the right side of the window. Hide QQ's right tray,
    companion and the native task summary only while the chat is actually open;
    removing/minimizing the portal makes them reappear automatically. */
-html.codex-qq-skin:has(
-  section[role="dialog"][data-pip-obstacle="quick-chat"][data-state="open"]
-) #codex-qq-skin-right-tray,
-html.codex-qq-skin:has(
-  section[role="dialog"][data-pip-obstacle="quick-chat"][data-state="open"]
-) #codex-qq-skin-companion,
-html.codex-qq-skin:has(
-  section[role="dialog"][data-pip-obstacle="quick-chat"][data-state="open"]
-) [data-pip-obstacle='thread-summary-panel']:not(:empty) {
+html.codex-qq-skin[data-qq-quick-chat="true"] #codex-qq-skin-right-tray,
+html.codex-qq-skin[data-qq-quick-chat="true"] #codex-qq-skin-companion,
+html.codex-qq-skin[data-qq-quick-chat="true"] [data-pip-obstacle='thread-summary-panel']:not(:empty) {
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
@@ -1358,7 +1339,7 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   background: var(--dream-classic-panel) !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel {
   border-right: 1px solid rgb(46 108 172 / .72) !important;
   border-radius: 0 !important;
@@ -1369,13 +1350,13 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
     4px 0 14px rgb(41 91 143 / .12) !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel nav,
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [role="list"],
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel .overflow-y-auto,
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [class*="overflow-y"] {
   width: 100% !important;
   max-width: none !important;
@@ -1386,9 +1367,9 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 /* Full-bleed XP bars for 置顶 / 项目 / 任务.
    Target the shared `nav-section-title` row (JS also marks `.qq-skin-section-bar`).
    Break out of `px-row-x` / `pl-2` so all three bars share the aside width. */
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel .qq-skin-section-bar,
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [class~="group/nav-section-title"] {
   display: flex !important;
   align-items: center !important;
@@ -1410,16 +1391,16 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 }
 
 /* Inner flex-1 wrappers around the toggle must not keep their own inset bar. */
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [class~="group/nav-section-title"]
   *:has(> [data-app-action-sidebar-section-toggle]),
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel .qq-skin-section-bar
   *:has(> [data-app-action-sidebar-section-toggle]),
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [class~="group/nav-section-title"]
   > *:not(button),
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel .qq-skin-section-bar
   > *:not(button) {
   width: auto !important;
@@ -1432,7 +1413,7 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
   flex: 1 1 auto !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-section-toggle] {
   display: flex !important;
   flex: 1 1 auto !important;
@@ -1454,9 +1435,9 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
   box-sizing: border-box !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel .qq-skin-section-bar > button:not([data-app-action-sidebar-section-toggle]),
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel *:has(> [data-app-action-sidebar-section-toggle])
   > button:not([data-app-action-sidebar-section-toggle]) {
   flex: 0 0 auto !important;
@@ -1487,14 +1468,14 @@ html.codex-qq-skin[data-dream-shell="light"]
   outline: none !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-section-toggle] svg {
   color: #477eaf !important;
   opacity: .86 !important;
 }
 
 /* Each project is a small folder panel; stretch to the full sidebar width. */
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [data-sidebar-project-kind][role="listitem"] {
   display: block !important;
   align-self: stretch !important;
@@ -1512,7 +1493,7 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
   box-sizing: border-box !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-project-row] {
   display: flex !important;
   width: 100% !important;
@@ -1529,14 +1510,14 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 }
 
 /* Keep the native transparent/outline folder glyph. */
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-project-row] [data-sidebar-project-kind] {
   color: #5b87b4 !important;
   opacity: .92 !important;
   filter: none;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
   display: flex !important;
   width: calc(100% - 8px) !important;
@@ -1552,13 +1533,13 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
   box-sizing: border-box !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
   border-color: rgb(81 139 194 / .34) !important;
   background: #e6f2fd !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], :has(main.main-surface.qq-skin-home-shell))
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
   border-color: rgb(57 125 190 / .54) !important;
   background: linear-gradient(180deg, #deeffd, #c8e3f9) !important;
@@ -2035,7 +2016,7 @@ html.codex-qq-skin .composer-surface-chrome::before { content: none !important; 
 
 /* A wide image can carry the home screen too. The native hero remains live,
    but the artwork is painted once on the window instead of repeated in a card. */
-html.codex-qq-skin[data-dream-art-wide="true"]:has(main.main-surface.qq-skin-home-shell) body {
+html.codex-qq-skin[data-dream-art-wide="true"][data-qq-home-route="true"] body {
   background-image: var(--qq-skin-art) !important;
   background-position: var(--ds-art-position) !important;
   background-size: cover !important;
@@ -2043,7 +2024,7 @@ html.codex-qq-skin[data-dream-art-wide="true"]:has(main.main-surface.qq-skin-hom
   background-attachment: fixed !important;
 }
 
-html.codex-qq-skin[data-dream-art-wide="true"]:has(main.main-surface.qq-skin-home-shell)
+html.codex-qq-skin[data-dream-art-wide="true"][data-qq-home-route="true"]
   aside.app-shell-left-panel {
   background: linear-gradient(90deg,
     var(--ds-immersive-sidebar),
@@ -2054,7 +2035,7 @@ html.codex-qq-skin[data-dream-art-wide="true"]:has(main.main-surface.qq-skin-hom
   backdrop-filter: none !important;
 }
 
-html.codex-qq-skin[data-dream-art-wide="true"]:has(main.main-surface.qq-skin-home-shell)
+html.codex-qq-skin[data-dream-art-wide="true"][data-qq-home-route="true"]
   aside.app-shell-left-panel::after {
   background: transparent !important;
 }
@@ -2547,11 +2528,7 @@ html.codex-qq-skin[data-dream-shell="light"]
    Its full-height two-column wrapper otherwise starts at y=0, underneath the
    retro title/toolbar. Move both the navigation and details below that chrome
    while preserving the wrapper's bottom edge. */
-html.codex-qq-skin:is(
-  :has(input[placeholder*="设置"]),
-  :has(input[placeholder*="設定"]),
-  :has(input[placeholder*="settings" i])
-)
+html.codex-qq-skin[data-qq-settings="true"]
   div:has(> div.app-shell-left-panel > nav) {
   padding-top: var(--qq-retro-content-top) !important;
   height: 100% !important;
@@ -2560,20 +2537,12 @@ html.codex-qq-skin:is(
 
 /* The native draggable strip is redundant under the retro chrome. Hide only
    that non-interactive spacer; 返回应用 now starts at the safe content edge. */
-html.codex-qq-skin:is(
-  :has(input[placeholder*="设置"]),
-  :has(input[placeholder*="設定"]),
-  :has(input[placeholder*="settings" i])
-)
+html.codex-qq-skin[data-qq-settings="true"]
   .app-shell-left-panel > :first-child:not(nav):not(:has(button, a, [role="button"], [role="link"])) {
   display: none !important;
 }
 
-html.codex-qq-skin:is(
-  :has(input[placeholder*="设置"]),
-  :has(input[placeholder*="設定"]),
-  :has(input[placeholder*="settings" i])
-)
+html.codex-qq-skin[data-qq-settings="true"]
   .app-shell-left-panel > nav {
   position: static !important;
   top: auto !important;
@@ -2659,24 +2628,23 @@ html.codex-qq-skin[data-dream-shell="light"]
   }
 }
 
-/* Codex 26.908 semantic tokens replace the older token-foreground palette.
-   Scope to QQ mode so switching back restores the user's native appearance. */
+/* Native semantic tokens share the theme palette. */
 html.codex-qq-skin {
-  --color-text: #17395f !important;
-  --color-text-primary: #17395f !important;
-  --color-text-secondary: #587795 !important;
-  --color-text-secondary-solid: #587795 !important;
-  --color-text-tertiary: #617e99 !important;
-  --color-text-emphasis: #17395f !important;
-  --color-text-user-message: #17395f !important;
-  --color-text-primary-ghost-hover: #17395f !important;
-  --color-surface: #f8fbfe !important;
-  --color-surface-secondary: #e7f2fc !important;
-  --color-surface-tertiary: #e2f0fc !important;
-  --color-surface-elevated: #ffffff !important;
-  --color-surface-elevated-secondary: #e7f2fc !important;
-  --color-border: rgba(54, 112, 174, .30) !important;
-  --color-border-strong: rgba(54, 112, 174, .50) !important;
+  --color-text: var(--ds-text) !important;
+  --color-text-primary: var(--ds-text) !important;
+  --color-text-secondary: var(--ds-muted) !important;
+  --color-text-secondary-solid: var(--ds-muted) !important;
+  --color-text-tertiary: var(--ds-muted) !important;
+  --color-text-emphasis: var(--ds-text) !important;
+  --color-text-user-message: var(--ds-text) !important;
+  --color-text-primary-ghost-hover: var(--ds-text) !important;
+  --color-surface: var(--ds-panel) !important;
+  --color-surface-secondary: var(--ds-panel-2) !important;
+  --color-surface-tertiary: var(--ds-panel-2) !important;
+  --color-surface-elevated: var(--ds-panel) !important;
+  --color-surface-elevated-secondary: var(--ds-panel-2) !important;
+  --color-border: var(--ds-line) !important;
+  --color-border-strong: var(--ds-accent) !important;
 }
 
 html.codex-qq-skin aside.app-shell-left-panel .text-default,
@@ -2685,17 +2653,13 @@ html.codex-qq-skin aside.app-shell-left-panel [role="button"] {
 }
 
 html.codex-qq-skin [class*="_ComposerLayoutRoot_"] {
-  background: #f8fcff !important;
+  background: var(--ds-panel) !important;
   color: var(--ds-text) !important;
   border: 1px solid var(--ds-line) !important;
 }
 
 /* Keep native settings navigation scrollable. */
-html.codex-qq-skin:is(
-  :has(input[placeholder*="设置"]),
-  :has(input[placeholder*="設定"]),
-  :has(input[placeholder*="settings" i])
-) .app-shell-left-panel > nav {
+html.codex-qq-skin[data-qq-settings="true"] .app-shell-left-panel > nav {
   min-height: 0 !important;
   overflow-y: auto !important;
 }
@@ -2787,10 +2751,12 @@ html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summ
 html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summary-panel']:empty + div header::before {
   background: var(--ds-panel, #f8fcff) !important;
 }
-/* Keep code and terminal glyphs monospaced while using Songti for UI text. */
-html.codex-qq-skin body,
-html.codex-qq-skin body *:not(:is(pre, pre *, code, code *, kbd, samp, .font-mono, .font-mono *, .xterm, .xterm *)) {
-  font-family: "SimSun", "Songti SC", "STSong", serif !important;
+/* Typography inherits through the shell; code editors retain their own font. */
+html.codex-qq-skin body {
+  font-family: var(--qq-font-ui) !important;
+}
+html.codex-qq-skin :is(button, input, textarea, select) {
+  font-family: inherit;
 }
 
 /* The compatibility selector also styles the animation wrapper: clear it. */
@@ -2834,7 +2800,7 @@ html.codex-qq-skin :is(main.main-surface > header.app-header-tint, [class*="_App
 html.codex-qq-skin :is(main.main-surface > header.app-header-tint, [class*="_ApplicationMenuTopBar_"]) button {
   color: var(--ds-text);
 }
-html.codex-qq-skin :is(main.main-surface > header.app-header-tint, [class*="_ApplicationMenuTopBar_"]) button:is(:enabled:hover, [data-state="open"], [aria-pressed="true"]) {
+html.codex-qq-skin :is(main.main-surface > header.app-header-tint, [class*="_ApplicationMenuTopBar_"]) button:not([aria-pressed]):is(:enabled:hover, [data-state="open"]) {
   background: var(--ds-panel-2) !important;
   box-shadow: inset 0 0 0 1px var(--ds-line);
 }
@@ -2850,10 +2816,10 @@ html.codex-qq-skin main.main-surface > header.app-header-tint {
 
 /* QQ2007 reference: a separate status strip, outside the native account row.
    Reserve its height in the app host, rather than covering the composer. */
-html.codex-qq-skin:has(body > #codex-qq-skin-retro-profile) body {
+html.codex-qq-skin[data-qq-profile-visible="true"] body {
   padding-bottom: 40px !important;
 }
-html.codex-qq-skin:has(body > #codex-qq-skin-retro-profile) body > #root {
+html.codex-qq-skin[data-qq-profile-visible="true"] body > #root {
   height: calc(100vh - 40px) !important;
 }
 #codex-qq-skin-retro-profile {
@@ -2906,12 +2872,11 @@ html.codex-qq-skin[data-dream-shell="dark"] #codex-qq-skin-retro-profile {
 /* Current native shell geometry: its frame already reserves the toolbar.
    Move that single inset below QQ's toolbar; never reserve both offsets. */
 html.codex-qq-skin main.qq-skin-thread-frame {
-  padding-top: max(0px, calc(110px - var(--qq-native-shell-top, 36px))) !important;
+  padding-top: max(0px, calc(var(--qq-content-top) - var(--qq-native-shell-top, 36px))) !important;
   background: var(--ds-panel) !important;
 }
-html.codex-qq-skin main.qq-skin-thread-frame [class*="_MainContentFrame_"] {
-  margin-top: 0 !important;
-}
+/* Native frame margins reserve the thread header, while the adjacent tab row
+   starts above the frame. Never flatten both into one content inset. */
 html.codex-qq-skin {
   --qq-card-bar: linear-gradient(#fff, #e2f1fc 48%, #c5e1f6);
   --qq-card-border: #7aa7d0;
@@ -2956,8 +2921,8 @@ html.codex-qq-skin .qq-skin-reference-summary > div {
   gap: 8px;
   padding: 0 !important;
 }
-html.codex-qq-skin:has(.qq-skin-reference-host) #codex-qq-skin-right-tray { display: none; }
-html.codex-qq-skin:has([class*="_MainContentSurface_"]) #codex-qq-skin-usage-panel:not(.qq-skin-growth-docked) {
+html.codex-qq-skin[data-qq-reference-layout="true"] #codex-qq-skin-right-tray { display: none; }
+html.codex-qq-skin[data-qq-native-shell="true"] #codex-qq-skin-usage-panel:not(.qq-skin-growth-docked) {
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
@@ -3019,7 +2984,6 @@ html.codex-qq-skin .qq-skin-details-collapsed > :not(.qq-skin-details-title) { d
     box-shadow: none !important;
     background: transparent !important;
   }
-  html.codex-qq-skin main.qq-skin-thread-frame > [data-pip-obstacle="app-shell-header"],
   html.codex-qq-skin .qq-skin-details-title,
   html.codex-qq-skin .qq-skin-growth-docked .qq-skin-usage-title {
     background: var(--qq-card-bar) !important;
@@ -3029,8 +2993,8 @@ html.codex-qq-skin .qq-skin-details-collapsed > :not(.qq-skin-details-title) { d
   }
   html.codex-qq-skin .qq-skin-details-title,
   html.codex-qq-skin .qq-skin-growth-docked .qq-skin-usage-title {
-    height: 33px !important;
-    min-height: 33px !important;
+    height: calc(var(--qq-card-title-height) - 1px) !important;
+    min-height: calc(var(--qq-card-title-height) - 1px) !important;
     box-sizing: border-box !important;
     font: 600 13px/1.2 var(--font-sans, sans-serif) !important;
   }
