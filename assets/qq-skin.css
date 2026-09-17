@@ -208,6 +208,13 @@ html.codex-qq-skin body > #root {
   background: transparent !important;
 }
 
+/* Native browser webviews are portaled beside #root. Keep them on the same
+   layer as the raised shell so its panel background cannot cover the page.
+   Leave native visibility, clipping and pointer-event control untouched. */
+html.codex-qq-skin body > :has(> [data-browser-sidebar-webview]) {
+  z-index: 3;
+}
+
 /* Codex prepends invisible portal nodes under #root. Select the real app host
    by structure instead of :first-of-type, which targets the portal and leaves
    the sidebar/composer shell at an unconstrained 100vh. */
