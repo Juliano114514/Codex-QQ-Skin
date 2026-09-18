@@ -34,7 +34,7 @@
     "data-dream-art-safe-area", "data-dream-art-task-mode", "data-dream-art-aspect",
     "data-dream-art-ready", "data-dream-art-fit", "data-dream-three-pane", "data-dream-summary-state", "data-dream-left-sidebar",
     "data-qq-usage-mode", "data-qq-usage-state", "data-qq-weather", "data-qq-settings",
-    "data-qq-weather-audio",
+    "data-qq-weather-audio", "data-qq-palette",
     "data-qq-home-route", "data-qq-native-shell", "data-qq-profile-visible",
     "data-qq-reference-layout", "data-qq-quick-chat", "data-dream-task-route", "data-dream-side-task",
   ];
@@ -46,10 +46,11 @@
   const CUSTOM_THEME_KINDS = new Set(["custom-native", "deep-custom"]);
   let skinMode = "qq";
   let qqAppearance = "light";
-  const selectedQQTheme = () => qqAppearance === "dark" && QQ_THEME.variants?.dark
-    ? QQ_THEME.variants.dark : QQ_THEME;
+  const QQ_APPEARANCES = ["light", "dark", "iqiyi"];
+  const selectedQQTheme = () => QQ_THEME.variants?.[qqAppearance] || QQ_THEME;
   try {
-    if (window.localStorage?.getItem(QQ_APPEARANCE_STORAGE_KEY) === "dark") qqAppearance = "dark";
+    const savedAppearance = window.localStorage?.getItem(QQ_APPEARANCE_STORAGE_KEY);
+    if (QQ_APPEARANCES.includes(savedAppearance)) qqAppearance = savedAppearance;
     const savedMode = window.localStorage?.getItem(MODE_STORAGE_KEY);
     const legacyEnabled = window.localStorage?.getItem(ENABLED_STORAGE_KEY);
     if (["native", "qq", "custom"].includes(savedMode)) skinMode = savedMode;
@@ -278,9 +279,10 @@
         root.style.removeProperty(name);
       }
     }
-    setAttribute(root, "data-theme", qqAppearance);
-    root.classList.toggle("electron-dark", qqAppearance === "dark");
-    root.classList.toggle("electron-light", qqAppearance === "light");
+    const appearance = selectedQQTheme().appearance === "dark" ? "dark" : "light";
+    setAttribute(root, "data-theme", appearance);
+    root.classList.toggle("electron-dark", appearance === "dark");
+    root.classList.toggle("electron-light", appearance === "light");
   };
 
   const restoreNativeAppearance = () => {
@@ -2655,7 +2657,7 @@
     if (retroShellParts.penguin && retroShellParts.penguin.src !== qqAvatarUrl) {
       retroShellParts.penguin.src = qqAvatarUrl;
     }
-    setTextContent(retroShellParts.title, `Codex ${qqAppearance === "dark" ? "2008" : "2007"} - ${findRetroTitle()}`);
+    setTextContent(retroShellParts.title, `Codex ${qqAppearance === "iqiyi" ? "爱奇艺" : qqAppearance === "dark" ? "2008" : "2007"} - ${findRetroTitle()}`);
     return retroShell;
   };
 
@@ -2769,6 +2771,7 @@
     ensureStyle(root);
     const shell = resolvedShell();
     setAttribute(root, SHELL_ATTR, shell);
+    setAttribute(root, "data-qq-palette", skinMode === "qq" ? qqAppearance : "");
     setAttribute(root, "data-dream-platform", /Win/i.test(window.navigator?.platform || window.navigator?.userAgent || "") ? "windows" : "other");
     // Hard-isolate art variables: never leave the other mode's wallpaper URL on :root.
     if (skinMode === "qq") {
@@ -3309,7 +3312,7 @@
       return;
     }
     skinMode = mode;
-    if (mode === "qq" && ["light", "dark"].includes(appearance)) qqAppearance = appearance;
+    if (mode === "qq" && QQ_APPEARANCES.includes(appearance)) qqAppearance = appearance;
     if (skinMode === "qq") forceNativeAppearanceForQQ();
     else restoreNativeAppearance();
     THEME = skinMode === "qq" ? selectedQQTheme() : CUSTOM_THEME;
@@ -3347,13 +3350,13 @@
 
     if (
       !control || control.parentElement !== document.body || control.tagName === "BUTTON"
-      || control.dataset.qqModes !== "three"
+      || control.dataset.qqModes !== "four"
     ) {
       control?.remove();
       closeLibraryMenu();
       control = document.createElement("div");
       control.id = TOGGLE_ID;
-      control.dataset.qqModes = "three";
+      control.dataset.qqModes = "four";
       control.setAttribute("role", "group");
       control.setAttribute("aria-label", "切换皮肤");
       control.style.cssText = [
@@ -3363,7 +3366,7 @@
         "background:rgba(248,248,249,.91)", "box-shadow:0 1px 2px rgba(0,0,0,.08),0 5px 14px rgba(0,0,0,.08)",
         "backdrop-filter:blur(14px) saturate(110%)", "-webkit-app-region:no-drag",
       ].join(";");
-      for (const [mode, label, appearance] of [["native", "原版"], ["qq", "浅色", "light"], ["qq", "深色", "dark"]]) {
+      for (const [mode, label, appearance] of [["native", "原版"], ["qq", "浅色", "light"], ["qq", "深色", "dark"], ["qq", "爱奇艺", "iqiyi"]]) {
         const button = document.createElement("button");
         button.type = "button";
         button.dataset.skinMode = mode;

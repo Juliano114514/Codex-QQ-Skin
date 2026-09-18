@@ -556,12 +556,14 @@ async function loadStaticPayloadAssets() {
       })),
       fs.readFile(path.join(root, "assets", "qq-avatars.json"), "utf8"),
       fs.readFile(path.join(root, "assets", "qq-ui.css"), "utf8").then(adaptShellSelectors),
+      fs.readFile(path.join(root, "assets", "theme-iqiyi.json"), "utf8"),
+      fs.readFile(path.join(root, "assets", "qq-iqiyi.css"), "utf8").then(adaptShellSelectors),
     ]).catch((error) => {
       staticPayloadAssets = null;
       throw error;
     });
   }
-  const [baseCss, customCss, template, qqArt, qqThemeJson, pet, retroFrame, qqAvatar, coughAudio, darkCss, darkThemeJson, levelIconCss, avatarJson, uiCss] = await staticPayloadAssets;
+  const [baseCss, customCss, template, qqArt, qqThemeJson, pet, retroFrame, qqAvatar, coughAudio, darkCss, darkThemeJson, levelIconCss, avatarJson, uiCss, iqiyiThemeJson, iqiyiCss] = await staticPayloadAssets;
   const qqTheme = JSON.parse(qqThemeJson);
   qqTheme.avatarLibrary = JSON.parse(avatarJson);
   qqTheme.notificationAudio = Object.fromEntries(await Promise.all(
@@ -570,8 +572,8 @@ async function loadStaticPayloadAssets() {
       return [event, `data:audio/wav;base64,${bytes.toString("base64")}`];
     }),
   ));
-  qqTheme.variants = { dark: JSON.parse(darkThemeJson) };
-  const css = `${baseCss}\n${darkCss}\n${uiCss}\n${levelIconCss.join("\n")}`;
+  qqTheme.variants = { dark: JSON.parse(darkThemeJson), iqiyi: JSON.parse(iqiyiThemeJson) };
+  const css = `${baseCss}\n${darkCss}\n${uiCss}\n${iqiyiCss}\n${levelIconCss.join("\n")}`;
   return { css, customCss, template, qqArt, qqTheme, pet, retroFrame, qqAvatar, coughAudio, cacheHit };
 }
 
@@ -1226,7 +1228,7 @@ function watchPayloadSources(themeDir, onDirty) {
         const name = filename ? String(filename) : "";
         const staticChanged = directory === assetsRoot &&
           (!name || name === "qq-skin.css" || name === "custom-skin.css" || name === "renderer-inject.js" ||
-            name === "portal-hero.png" || name === "theme.json" || name === "theme-dark.json" || name === "qq-dark.css" || name === "qq-ui.css" ||
+            name === "portal-hero.png" || name === "theme.json" || name === "theme-dark.json" || name === "theme-iqiyi.json" || name === "qq-iqiyi.css" || name === "qq-dark.css" || name === "qq-ui.css" ||
             name === "codex-pet.png" || name === "retro-window-frame.png" ||
             name === "qq-avatar.png" || name === "qq-avatars.json" || name === "level-icons" || name === "audio");
         if (kind === "static" && !staticChanged) return;
