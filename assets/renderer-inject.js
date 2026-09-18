@@ -19,7 +19,6 @@
   const MODE_STORAGE_KEY = "codex-qq-skin-mode";
   const QQ_APPEARANCE_STORAGE_KEY = "codex-qq-skin-appearance";
   const LIBRARY_SWITCH_KEY = "codex-qq-skin-library-switch";
-  const USAGE_NET_MODE_KEY = "codex-qq-skin-usage-net-mode";
   const USAGE_REFRESH_KEY = "codex-qq-skin-usage-refresh";
   const PROFILE_STORAGE_KEY = "codex-qq-skin-profile-v1";
   const PROFILE_DIALOG_ID = "codex-qq-skin-profile-dialog";
@@ -250,7 +249,10 @@
 
   const setTextContent = (node, value) => {
     if (node && node.textContent !== value) {
-      node.textContent = value;
+      // A text update should not remove/reinsert children: that invalidates
+      // ancestor :has() selectors throughout the native application shell.
+      if (node.childNodes.length === 1 && node.firstChild.nodeType === 3) node.firstChild.nodeValue = value;
+      else node.textContent = value;
       metrics.textWrites += 1;
     }
   };
@@ -766,10 +768,6 @@
   let usageSnapshot = window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ && typeof window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ === "object"
     ? window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__
     : { schemaVersion: 1, status: "loading", scope: "device" };
-  let usageNetMode = false;
-  try {
-    usageNetMode = window.localStorage?.getItem(USAGE_NET_MODE_KEY) === "true";
-  } catch {}
   let retroShellParts = null;
   let observedShellMain = null;
   let observedReferenceHost = null;
@@ -2007,19 +2005,71 @@
     return String(Math.round(number));
   };
 
-  const visibleUsageTokens = (value) => {
-    const effective = Math.max(0, Number(value?.effectiveTokens) || 0);
-    if (usageNetMode) return effective;
-    const total = Number(value?.totalTokens);
-    return Number.isFinite(total) && total >= 0
-      ? total
-      : effective + Math.max(0, Number(value?.cachedInputTokens) || 0);
-  };
+  const visibleUsageTokens = (value) => Math.max(0, Number(value?.totalTokens) || 0);
 
-  const setUsageNetMode = (enabled) => {
-    usageNetMode = Boolean(enabled);
-    try { window.localStorage?.setItem(USAGE_NET_MODE_KEY, String(usageNetMode)); } catch {}
-    renderUsageSnapshot();
+  // Read only the native query cache. No extra account requests or stored identity.
+  // Rediscover after a root replacement; unsupported native versions show unavailable.
+  let nativeUsageClient = null;
+  let nativeUsageRoot = null;
+  let nextNativeUsageDiscovery = 0;
+  const readNativeRateLimit = () => {
+    try {
+      const root = document.getElementById("root");
+      const key = root && Object.keys(root).find(key => key.startsWith("__reactContainer"));
+      const container = key ? root[key] : null;
+      if (container !== nativeUsageRoot) {
+        nativeUsageRoot = container;
+        nativeUsageClient = null;
+        nextNativeUsageDiscovery = 0;
+      }
+      if (!nativeUsageClient && Date.now() >= nextNativeUsageDiscovery) {
+        nextNativeUsageDiscovery = Date.now() + 30_000;
+        const queue = [container?.stateNode?.current || container?.current || container];
+        const seen = new Set();
+        for (let index = 0; index < queue.length && seen.size < 1500; index++) {
+          const fiber = queue[index];
+          if (!fiber || seen.has(fiber)) continue;
+          seen.add(fiber);
+          const candidate = fiber.memoizedProps?.value || fiber.memoizedProps?.client;
+          if (typeof candidate?.getQueryData === "function" && typeof candidate?.getQueryCache === "function") {
+            nativeUsageClient = candidate;
+            break;
+          }
+          queue.push(fiber.child, fiber.sibling);
+        }
+      }
+      const rate = nativeUsageClient?.getQueryData(["rate-limit-status"])?.rate_limit;
+      const windows = [rate?.primary_window, rate?.secondary_window]
+        .filter(value => Number.isFinite(value?.used_percent));
+      return windows.reduce((current, value) => !current || value.used_percent > current.used_percent ||
+        (value.used_percent === current.used_percent && (value.reset_at ?? 0) > (current.reset_at ?? 0))
+        ? value : current, null);
+    } catch { return null; }
+  };
+  // Matches Codex's native rate-limit reset formatter (24-hour threshold).
+  const formatUsageReset = (seconds) => {
+    if (!Number.isFinite(seconds)) return null;
+    const date = new Date(seconds * 1000);
+    if (!Number.isFinite(date.getTime())) return null;
+    const remaining = Math.floor((date.getTime() - Date.now()) / 1000);
+    if (remaining <= 0) return new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(0, "second");
+    return new Intl.DateTimeFormat(undefined, remaining < 86400
+      ? { timeStyle: "short" } : { month: "short", day: "numeric" }).format(date);
+  };
+  const renderQuotaProgress = () => {
+    if (!usageParts?.quotaFill) return;
+    const rate = readNativeRateLimit();
+    const remaining = rate ? clamp(100 - rate.used_percent, 0, 100) : null;
+    const reset = formatUsageReset(rate?.reset_at);
+    setStyleProperty(usageParts.quotaFill, "width", `${remaining ?? 0}%`);
+    setTextContent(usageParts.quotaText, rate
+      ? `${Math.round(remaining)}% 剩余 · ${reset ? `${reset} 重置` : "重置时间未知"}` : "额度暂不可用");
+    const bar = usageParts.quotaFill.parentElement;
+    if (rate) setAttribute(bar, "aria-valuenow", String(remaining));
+    else bar.removeAttribute("aria-valuenow");
+    setAttribute(bar, "aria-valuetext", usageParts.quotaText.textContent);
+    const hours = rate?.limit_window_seconds / 3600;
+    setAttribute(bar, "title", rate ? `Codex 额度 · ${hours >= 24 ? `${hours / 24} 天` : `${hours} 小时`}窗口（取剩余最少的窗口）` : "等待 Codex 原生额度数据");
   };
 
   // Profile data belongs to the skin, never to the native account or composer.
@@ -2042,16 +2092,14 @@
     signature: personalProfile.signature ?? THEME.tagline ?? "今天也和 Codex 一起把 Bug 聊下线。",
   });
   const profileAvatar = (id, small = false) => avatarLibrary.get(id)?.[small ? "small" : "large"] || qqAvatarUrl;
-  // Always use lifetime total, including cache; the net switch only filters charts.
+  // Level progression always uses lifetime total, including cache.
   const profileProgress = () => {
     const lifetime = usageSnapshot?.totals?.lifetime;
-    const total = Number(lifetime?.totalTokens);
-    const tokens = Math.max(0, Number.isFinite(total) ? total
-      : (Number(lifetime?.effectiveTokens) || 0) + (Number(lifetime?.cachedInputTokens) || 0));
+    const tokens = visibleUsageTokens(lifetime);
     const step = 250_000_000;
     const level = Math.floor(tokens / step);
     const remaining = step - tokens % step;
-    return { level, tokens, percent: (tokens % step) / step * 100,
+    return { level, tokens, nextThreshold: (level + 1) * step, percent: tokens / ((level + 1) * step) * 100,
       tooltip: lifetime ? `升级还需${(remaining / 1_000_000).toFixed(2)}M` : "正在读取历史 Token 用量" };
   };
   const profileLevelIcons = (level) => {
@@ -2263,7 +2311,8 @@
     const parts = usageParts;
     if (!parts?.panel) return;
     syncPersonalProfile();
-    if (parts.hasRendered && parts.renderedSnapshot === usageSnapshot && parts.renderedNetMode === usageNetMode) return;
+    if (parts.hasRendered && parts.renderedSnapshot === usageSnapshot) return;
+    renderQuotaProgress();
     const snapshot = usageSnapshot && typeof usageSnapshot === "object" ? usageSnapshot : { status: "error" };
     const status = ["loading", "indexing", "empty", "ready", "error"].includes(snapshot.status)
       ? snapshot.status : "error";
@@ -2277,30 +2326,31 @@
     setTextContent(parts.week, formatTokenCount(visibleUsageTokens(totals.week)));
     setTextContent(parts.lifetime, formatTokenCount(visibleUsageTokens(lifetime)));
     setAttribute(parts.progressFill.parentElement, "title", growth.tooltip);
-    parts.progressFill?.style?.setProperty?.("width", `${clamp(Math.round(Number(growth.percent) || 0), 0, 100)}%`);
+    setAttribute(parts.progressFill.parentElement, "aria-valuenow", String(growth.percent));
+    setTextContent(parts.progressText, `${(growth.tokens / 1_000_000_000).toFixed(2)} B / ${(growth.nextThreshold / 1_000_000_000).toFixed(2)} B`);
+    setStyleProperty(parts.progressFill, "width", `${clamp(Math.round(Number(growth.percent) || 0), 0, 100)}%`);
     setTextContent(parts.activity,
       `活跃 ${Math.max(0, Number(snapshot.activity?.activeDays) || 0)} 天 · 连续 ${Math.max(0, Number(snapshot.activity?.streakDays) || 0)} 天`);
     setTextContent(parts.breakdown,
       `输入 ${formatTokenCount(lifetime.inputTokens)} · 输出 ${formatTokenCount(lifetime.outputTokens)} · 推理 ${formatTokenCount(lifetime.reasoningOutputTokens)} · 缓存 ${formatTokenCount(lifetime.cachedInputTokens)}`);
-    if (parts.netToggle) {
-      setAttribute(parts.netToggle, "aria-checked", usageNetMode ? "true" : "false");
-      setAttribute(parts.netToggle, "title", usageNetMode
-        ? "当前已排除缓存 Token，点击切换为总用量"
-        : "当前包含缓存 Token，开启后只看净用量");
-      parts.netToggle.classList?.toggle?.("is-on", usageNetMode);
-    }
 
     if (parts.chart) {
       const chart = Array.isArray(snapshot.chart) ? snapshot.chart.slice(-7) : [];
       const maximum = Math.max(1, ...chart.map(visibleUsageTokens));
-      parts.chart.innerHTML = chart.length
-        ? chart.map((item) => {
-          const value = visibleUsageTokens(item);
-          const height = value > 0 ? Math.max(9, Math.round(value / maximum * 100)) : 4;
-          const day = String(item?.date || "").slice(5);
-          return `<i style="--usage-bar:${height}%" title="${day} · ${formatTokenCount(value)} token"><span></span></i>`;
-        }).join("")
-        : "<i style=\"--usage-bar:4%\"><span></span></i>".repeat(7);
+      const count = chart.length || 7;
+      while (parts.chart.children.length > count) parts.chart.lastElementChild.remove();
+      while (parts.chart.children.length < count) {
+        const bar = document.createElement("i");
+        bar.appendChild(document.createElement("span"));
+        parts.chart.appendChild(bar);
+      }
+      [...parts.chart.children].forEach((bar, index) => {
+        const item = chart[index];
+        const value = visibleUsageTokens(item);
+        const height = value > 0 ? Math.max(9, Math.round(value / maximum * 100)) : 4;
+        setStyleProperty(bar, "--usage-bar", `${height}%`);
+        setAttribute(bar, "title", item ? `${String(item.date || "").slice(5)} · ${formatTokenCount(value)} token` : "");
+      });
     }
 
     let message = "";
@@ -2321,14 +2371,14 @@
       : "--:--";
     setTextContent(parts.updated, `本机统计 · 更新于 ${timeText}`);
     if (parts.refreshButton) {
-      parts.refreshButton.disabled = status === "loading" || status === "indexing";
-      parts.refreshButton.textContent = status === "indexing" ? "索引中" : "刷新";
+      const disabled = status === "loading" || status === "indexing";
+      if (parts.refreshButton.disabled !== disabled) parts.refreshButton.disabled = disabled;
+      setTextContent(parts.refreshButton, status === "indexing" ? "索引中" : "刷新");
     }
     // Shell interactions do not change statistics. Rebuilding the chart and
     // level icons on every route pass needlessly invalidates style and paint.
     parts.hasRendered = true;
     parts.renderedSnapshot = usageSnapshot;
-    parts.renderedNetMode = usageNetMode;
   };
 
   const setUsageSnapshot = (snapshot) => {
@@ -2355,9 +2405,13 @@
             <div class="qq-skin-profile-identity"><button type="button" data-profile-field="name" aria-label="打开个人资料"></button><span class="qq-skin-level-icons" tabindex="0"></span></div>
             <div class="qq-skin-profile-presence-row"><span class="qq-skin-presence" data-profile-field="status"><i></i><span></span></span><span class="qq-skin-signature-marquee"><span data-profile-field="signature"></span></span></div>
           </div>
-          <button class="qq-skin-usage-net-toggle" type="button" role="switch" aria-checked="false" data-usage-action="net"><span>净用量</span><i></i></button>
         </div>
-        <div class="qq-skin-level-progress"><i></i></div>
+        <div class="qq-skin-profile-progress">
+          <div class="qq-skin-level-progress" role="progressbar" aria-label="等级进度" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+          <small data-usage-progress="level"></small>
+          <div class="qq-skin-level-progress qq-skin-quota-progress" role="progressbar" aria-label="Codex 剩余额度" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+          <small data-usage-progress="quota"></small>
+        </div>
         <div class="qq-skin-usage-metrics">
           <div><b data-usage-metric="today">0</b><span>今日 Token</span></div>
           <div><b data-usage-metric="week">0</b><span>近 7 天</span></div>
@@ -2388,7 +2442,9 @@
         message: panel.querySelector(".qq-skin-usage-message"),
         updated: panel.querySelector(".qq-skin-usage-footer span"),
         refreshButton: panel.querySelector('[data-usage-action="refresh"]'),
-        netToggle: panel.querySelector('[data-usage-action="net"]'),
+        progressText: panel.querySelector('[data-usage-progress="level"]'),
+        quotaFill: panel.querySelector(".qq-skin-quota-progress i"),
+        quotaText: panel.querySelector('[data-usage-progress="quota"]'),
       };
       usageParts.refreshButton?.addEventListener?.("click", (event) => {
         event.preventDefault();
@@ -2399,11 +2455,7 @@
           usageParts.refreshButton.textContent = "刷新中";
         }
       });
-      usageParts.netToggle?.addEventListener?.("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        setUsageNetMode(!usageNetMode);
-      });
+
     }
     renderUsageSnapshot();
 
@@ -2714,8 +2766,9 @@
       const action = button.dataset.retroAction;
       const target = findNativeRetroAction(action);
       const fallback = action === "skills" ? findNativeRetroAction("plugins") : null;
-      button.hidden = !(target || fallback);
-      button.disabled = !(target || fallback);
+      const unavailable = !(target || fallback);
+      if (button.hidden !== unavailable) button.hidden = unavailable;
+      if (button.disabled !== unavailable) button.disabled = unavailable;
       button.setAttribute("aria-disabled", target || fallback ? "false" : "true");
       if (button.dataset.retroActionBound === "true") continue;
       button.dataset.retroActionBound = "true";
@@ -3673,6 +3726,7 @@
   let lastRouteRefresh = Date.now();
   const timer = setInterval(() => {
     if (document.visibilityState === "hidden" || window[DISABLED_KEY]) return;
+    renderQuotaProgress();
     const route = Date.now() - lastRouteRefresh >= 30000;
     if (route) lastRouteRefresh = Date.now();
     // Mutation/click/resize observers own immediate layout updates. This is a

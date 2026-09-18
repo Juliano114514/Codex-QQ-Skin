@@ -40,7 +40,6 @@ function emptyTotals() {
     outputTokens: 0,
     reasoningOutputTokens: 0,
     cachedInputTokens: 0,
-    effectiveTokens: 0,
     totalTokens: 0,
   };
 }
@@ -50,8 +49,7 @@ function addBucket(target, bucket) {
   target.outputTokens += safeCount(bucket.outputTokens);
   target.reasoningOutputTokens += safeCount(bucket.reasoningOutputTokens);
   target.cachedInputTokens += safeCount(bucket.cachedInputTokens);
-  target.effectiveTokens = target.inputTokens + target.outputTokens + target.reasoningOutputTokens;
-  target.totalTokens = target.effectiveTokens + target.cachedInputTokens;
+  target.totalTokens = target.inputTokens + target.outputTokens + target.reasoningOutputTokens + target.cachedInputTokens;
   return target;
 }
 
@@ -90,7 +88,7 @@ export function aggregateUsage({ buckets = [], sessions = [], heartbeatDates = [
     const key = shiftDateKey(todayKey, offset);
     const totals = daily.get(key) || emptyTotals();
     addTotals(week, totals);
-    chart.push({ date: key, effectiveTokens: totals.effectiveTokens, totalTokens: totals.totalTokens });
+    chart.push({ date: key, totalTokens: totals.totalTokens });
   }
   const lifetime = emptyTotals();
   for (const totals of daily.values()) addTotals(lifetime, totals);

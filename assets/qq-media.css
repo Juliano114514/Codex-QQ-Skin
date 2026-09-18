@@ -1,7 +1,7 @@
 /* Media palettes share geometry with qq-dark.css and qq-ui.css.
    Colors come from theme-iqiyi.json / themes-media.json. See docs/media-palettes-2026.md. */
 html.codex-qq-skin[data-qq-palette-family="media"] {
-  --qq-font-ui: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --qq-font-ui: "QQ Media PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --qq-radius-control: 8px;
   --qq-radius-card: 10px;
   --qq-radius-action: 8px;
@@ -87,7 +87,7 @@ html.codex-qq-skin[data-qq-palette-family="media"] :is(
   .qq-skin-usage-metrics > div, .qq-skin-usage-message,
   .qq-skin-usage-title small, .qq-skin-usage-title button,
   .qq-skin-usage-footer button, :where(#codex-qq-skin-usage-toggle),
-  .qq-skin-level-progress, .qq-skin-usage-net-toggle i,
+  .qq-skin-level-progress,
   .dream-retro-native-controls .dream-retro-cloned-control,
   .dream-retro-toolbar button:is(:hover, :focus-visible)
 ) {
@@ -130,8 +130,7 @@ html.codex-qq-skin[data-qq-palette-family="media"] .qq-skin-home .group\/home-su
 html.codex-qq-skin[data-qq-palette-family="media"] :is(.qq-skin-usage-level-main > b, .qq-skin-usage-metrics b) {
   color: var(--qq-text-accent);
 }
-html.codex-qq-skin[data-qq-palette-family="media"] .qq-skin-usage-chart > i > span,
-html.codex-qq-skin[data-qq-palette-family="media"] .qq-skin-usage-net-toggle.is-on i {
+html.codex-qq-skin[data-qq-palette-family="media"] .qq-skin-usage-chart > i > span {
   background: var(--qq-night-selected) !important;
 }
 html.codex-qq-skin[data-qq-palette-family="media"] :not(pre) > code {
@@ -164,12 +163,12 @@ html.codex-qq-skin[data-qq-palette-family="media"] :focus-visible {
 /* Platform character is configured here; shared component rules follow below.
    Website observations and adapted values: docs/media-palettes-2026.md. */
 html.codex-qq-skin[data-qq-palette="iqiyi"] {
-  --qq-font-ui: Harmony_Regular, "HarmonyOS Sans SC", PingFangSC-Regular, "Microsoft YaHei", sans-serif;
+  --qq-font-ui: "HarmonyOS Sans SC", Harmony_Regular, PingFangSC-Regular, "Microsoft YaHei", sans-serif;
   --qq-radius-card: 8px;
   --qq-night-selected: linear-gradient(100deg, #00cc4c, #00da5a);
 }
 html.codex-qq-skin[data-qq-palette="douyin"] {
-  --qq-font-ui: "PingFang SC", DFPKingGothicGB-Regular, "Microsoft YaHei UI", sans-serif;
+  --qq-font-ui: "DFP King Gothic GB", "QQ Media PingFang SC", "Microsoft YaHei UI", sans-serif;
   --qq-radius-control: 12px;
   --qq-radius-card: 12px;
   --qq-radius-action: 12px;
@@ -177,24 +176,24 @@ html.codex-qq-skin[data-qq-palette="douyin"] {
   --qq-brand-wash: linear-gradient(110deg, rgb(var(--ds-accent-rgb) / .12), rgb(var(--ds-secondary-rgb) / .04) 80%);
 }
 html.codex-qq-skin[data-qq-palette="kuaishou"] {
-  --qq-font-ui: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  --qq-font-ui: "QQ Media PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --qq-radius-card: 8px;
   --qq-night-selected: linear-gradient(100deg, #ff5000, #ff9b54);
 }
 html.codex-qq-skin[data-qq-palette="tencent"] {
-  --qq-font-ui: PingFangSC-Regular, "PingFang SC", Tahoma, "Microsoft YaHei", sans-serif;
+  --qq-font-ui: "QQ Media PingFang SC", PingFangSC-Regular, Tahoma, "Microsoft YaHei", sans-serif;
   --qq-radius-card: 8px;
   --qq-radius-action: 999px;
   --qq-night-selected: linear-gradient(100deg, #ff650f, #ffad4d);
   --qq-brand-wash: linear-gradient(110deg, rgb(var(--ds-accent-rgb) / .06), transparent 65%);
 }
 html.codex-qq-skin[data-qq-palette="youku"] {
-  --qq-font-ui: "PingFang SC", "Microsoft YaHei", Helvetica, Arial, Verdana, Tahoma, sans-serif;
+  --qq-font-ui: "QQ Media PingFang SC", "Microsoft YaHei", Helvetica, Arial, Verdana, Tahoma, sans-serif;
   --qq-radius-action: 999px;
   --qq-night-selected: linear-gradient(100deg, #24bfff, #70dcff);
 }
 html.codex-qq-skin[data-qq-palette="mango"] {
-  --qq-font-ui: PingFangSC-Regular, "PingFang SC", Arial, "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  --qq-font-ui: "QQ Media PingFang SC", PingFangSC-Regular, Arial, "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
   --qq-radius-card: 12px;
   --qq-radius-action: 22px;
   --qq-night-selected: linear-gradient(90deg, #ff5f00, #ffa552);
@@ -311,4 +310,55 @@ html.codex-qq-skin[data-qq-palette-family="media"] :is(pre, :not(pre) > code) {
 html.codex-qq-skin[data-qq-palette-family="media"] :is(.qq-skin-home [data-feature="game-source"],
   .qq-skin-home .group\/home-suggestions button) {
   text-shadow: none !important;
+}
+
+/* Profile fields own their focus geometry; native input rings must not leak in. */
+html.codex-qq-skin[data-qq-palette-family="media"] #codex-qq-skin-profile-dialog :is(input, textarea, select) {
+  color-scheme: dark;
+  caret-color: var(--ds-accent);
+  box-sizing: border-box;
+  line-height: 20px;
+  padding: 6px 9px;
+}
+html.codex-qq-skin[data-qq-palette-family="media"] #codex-qq-skin-profile-dialog :is(input, select) {
+  height: 34px;
+}
+html.codex-qq-skin[data-qq-palette-family="media"] #codex-qq-skin-profile-dialog label {
+  align-items: start;
+  line-height: 34px;
+}
+html.codex-qq-skin[data-qq-palette-family="media"] #codex-qq-skin-profile-dialog :is(input, textarea, select):focus {
+  border-color: var(--ds-accent) !important;
+  outline: 2px solid rgb(var(--ds-accent-rgb) / .35) !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette-family="media"] #codex-qq-skin-profile-dialog :is(input, textarea)::selection {
+  background: var(--ds-accent);
+  color: var(--ds-on-accent);
+  -webkit-text-fill-color: var(--ds-on-accent);
+}
+html.codex-qq-skin[data-qq-palette-family="media"] #codex-qq-skin-profile-dialog {
+  font-family: var(--qq-font-ui);
+}
+
+/* Official website subsets contain numerals, not a complete Chinese alphabet.
+   Embedded by injector.mjs so the installed skin works without network requests. */
+@font-face { font-family: "IQYHT"; src: url("__QQ_FONT_IQYHT_Regular__") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "IQYHT"; src: url("__QQ_FONT_IQYHT_Medium__") format("truetype"); font-weight: 500 600; font-display: swap; }
+@font-face { font-family: "IQYHT"; src: url("__QQ_FONT_IQYHT_Bold__") format("truetype"); font-weight: 700 900; font-display: swap; }
+@font-face { font-family: "QY_Digital"; src: url("__QQ_FONT_QY_Digital_Regular__") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "QY_Digital"; src: url("__QQ_FONT_QY_Digital_SemiBold__") format("truetype"); font-weight: 500 900; font-display: swap; }
+html.codex-qq-skin[data-qq-palette="iqiyi"] { --qq-font-numeric: "IQYHT", var(--qq-font-ui); }
+html.codex-qq-skin[data-qq-palette="youku"] { --qq-font-numeric: "QY_Digital", var(--qq-font-ui); }
+html.codex-qq-skin:is([data-qq-palette="iqiyi"], [data-qq-palette="youku"]) #codex-qq-skin-usage-panel :is(.qq-skin-usage-metrics b, .qq-skin-profile-progress small) {
+  font-family: var(--qq-font-numeric) !important;
+}
+
+@font-face { font-family: "HarmonyOS Sans SC"; src: url("__QQ_FONT_HarmonyOS_Sans_SC_Regular__") format("truetype"); font-weight: 400 500; font-display: swap; }
+@font-face { font-family: "HarmonyOS Sans SC"; src: url("__QQ_FONT_HarmonyOS_Sans_SC_Bold__") format("truetype"); font-weight: 600 900; font-display: swap; }
+@font-face { font-family: "QQ Media PingFang SC"; src: url("__QQ_FONT_PingFangSC_Regular__") format("opentype"); font-weight: 400 500; font-display: swap; }
+@font-face { font-family: "QQ Media PingFang SC"; src: url("__QQ_FONT_PingFangSC_Semibold__") format("opentype"); font-weight: 600 900; font-display: swap; }
+html.codex-qq-skin[data-qq-palette="douyin"] :is(strong, b, h1, h2, h3, .qq-skin-usage-title, .qq-skin-details-title) {
+  font-family: "DFP King Gothic GB Medium", var(--qq-font-ui);
 }

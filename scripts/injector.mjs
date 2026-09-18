@@ -558,7 +558,16 @@ async function loadStaticPayloadAssets() {
       fs.readFile(path.join(root, "assets", "qq-ui.css"), "utf8").then(adaptShellSelectors),
       fs.readFile(path.join(root, "assets", "theme-iqiyi.json"), "utf8"),
       fs.readFile(path.join(root, "assets", "themes-media.json"), "utf8"),
-      fs.readFile(path.join(root, "assets", "qq-media.css"), "utf8").then(adaptShellSelectors),
+      fs.readFile(path.join(root, "assets", "qq-media.css"), "utf8").then(async (css) => {
+        for (const file of ["IQYHT-Regular.ttf", "IQYHT-Medium.ttf", "IQYHT-Bold.ttf", "QY_Digital-Regular.ttf", "QY_Digital-SemiBold.ttf",
+          "HarmonyOS_Sans_SC_Regular.ttf", "HarmonyOS_Sans_SC_Bold.ttf", "PingFangSC-Regular.otf", "PingFangSC-Semibold.otf"]) {
+          const bytes = await fs.readFile(path.join(root, "assets", "fonts", file));
+          const name = path.basename(file, path.extname(file)).replaceAll("-", "_");
+          const mime = file.endsWith(".otf") ? "font/otf" : "font/ttf";
+          css = css.replace(`__QQ_FONT_${name}__`, `data:${mime};base64,${bytes.toString("base64")}`);
+        }
+        return adaptShellSelectors(css + "\n" + await fs.readFile(path.join(root, "assets", "fonts", "DFPKingGothicGB.css"), "utf8"));
+      }),
     ]).catch((error) => {
       staticPayloadAssets = null;
       throw error;
@@ -607,14 +616,12 @@ function sanitizeUsageTotals(value) {
   const outputTokens = finiteCount(value?.outputTokens);
   const reasoningOutputTokens = finiteCount(value?.reasoningOutputTokens);
   const cachedInputTokens = finiteCount(value?.cachedInputTokens);
-  const effectiveTokens = inputTokens + outputTokens + reasoningOutputTokens;
   return {
     inputTokens,
     outputTokens,
     reasoningOutputTokens,
     cachedInputTokens,
-    effectiveTokens,
-    totalTokens: effectiveTokens + cachedInputTokens,
+    totalTokens: inputTokens + outputTokens + reasoningOutputTokens + cachedInputTokens,
   };
 }
 
@@ -666,8 +673,7 @@ export function sanitizeUsageSnapshot(value) {
   }
   snapshot.chart = Array.isArray(value?.chart) ? value.chart.slice(-7).map((item) => ({
     date: /^\d{4}-\d{2}-\d{2}$/.test(String(item?.date || "")) ? item.date : "",
-    effectiveTokens: finiteCount(item?.effectiveTokens),
-    totalTokens: finiteCount(item?.totalTokens) || finiteCount(item?.effectiveTokens),
+    totalTokens: finiteCount(item?.totalTokens),
   })) : [];
   return snapshot;
 }
@@ -1081,7 +1087,7 @@ async function verifySession(session) {
       usageMode: document.documentElement.getAttribute('data-qq-usage-mode'),
       usageStatus: usageSnapshot?.status ?? usagePanelNode?.dataset?.usageStatus ?? null,
       usageLevel: usageSnapshot?.growth?.level ?? null,
-      usageToday: usageSnapshot?.totals?.today?.effectiveTokens ?? null,
+      usageToday: usageSnapshot?.totals?.today?.totalTokens ?? null,
       viewport: { width: innerWidth, height: innerHeight },
       documentOverflow: {
         x: document.documentElement.scrollWidth > document.documentElement.clientWidth,
