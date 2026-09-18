@@ -36,12 +36,19 @@ html.codex-qq-skin[data-dream-shell] main[data-app-shell-main-surface] > header[
   top: var(--qq-content-top) !important;
   height: var(--height-toolbar, 46px) !important;
   min-height: var(--height-toolbar, 46px) !important;
-  background: var(--ds-panel) !important;
+  background: transparent !important;
   border: 0 !important;
-  border-bottom: 1px solid var(--ds-line) !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
   filter: none !important;
+}
+/* The final native header slot spans the right panel's tab strip. Painting the
+   entire fixed header hides those tabs. Only the conversation title needs an
+   opaque surface; native slots keep their sizing, drag and pointer handling. */
+html.codex-qq-skin [data-testid="app-shell-header-context-menu-surface"],
+html.codex-qq-skin [data-test-id="header-shell-slot"]:first-child {
+  background: var(--ds-panel);
+  border-bottom: 1px solid var(--ds-line);
 }
 /* The native pinned-summary layout removes its toolbar inset. Our dock keeps
    that toolbar visible, so reserve its row for both the conversation and dock. */

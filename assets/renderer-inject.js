@@ -198,6 +198,10 @@
   previous?.soundMonitor?.cleanup?.();
   previous?.weatherMonitor?.destroy?.();
   previous?.profileCleanup?.();
+  previous?.closeLibraryMenu?.();
+  // This title lives inside React's summary card, outside the owned panels
+  // removed below. Its click closure must not retain an old payload generation.
+  document.querySelectorAll('.qq-skin-details-title').forEach((node) => node.remove());
   // Rebuild floating chrome that closes over the previous generation. Keep the
   // shared <style id="codex-qq-skin-style"> node when a skin stays enabled so
   // reinject can reuse it; native mode must strip every painted leftover.
@@ -3594,6 +3598,12 @@
     const element = node?.nodeType === 1 ? node : node?.parentElement;
     return Boolean(element?.closest?.('[id^="codex-qq-skin-"]'));
   };
+  // Text, syntax highlighting and virtualized rows are content updates, not
+  // navigation. Only native shell mounts need a geometry/profile pass. Keep
+  // footer mounts here, but let their stop/approval buttons use the status path.
+  const shellMountSelector = 'main, aside.app-shell-left-panel, [role="main"], [role="dialog"], [role="menu"], [role="listbox"], [data-pip-obstacle], [data-app-shell-tab-row], [data-app-action-sidebar-section-toggle], .home-banners';
+  const hasMatchingNode = (nodes, selector) => nodes.some((node) => node.nodeType === 1 &&
+    (node.matches(selector) || node.querySelector(selector)));
   const observer = new MutationObserver((records) => {
     let route = false;
     let sound = false;
@@ -3608,18 +3618,9 @@
       if (target?.closest('[data-codex-composer="true"]')) continue;
       const changed = [...record.addedNodes, ...record.removedNodes];
       if (changed.length && changed.every(isSkinNode)) continue;
-      sound = true;
-      // Conversation rows mount/unmount while scrolling and streaming. Only
-      // replacement of the native composer needs to resync the shell there.
-      const inThread = target?.closest('.thread-scroll-container');
-      const composerChanged = changed.some((node) => node.nodeType === 1 &&
-        (node.matches('[data-pip-obstacle="thread-footer"]') ||
-         node.querySelector('[data-pip-obstacle="thread-footer"]')));
-      // Text updates (including sidebar task titles and token counters) need
-      // status detection, not a DOM-wide layout pass. Structural changes still
-      // detect mounts, tab rows, native panels and navigation.
-      const structureChanged = changed.some((node) => node.nodeType === 1);
-      if ((!inThread && structureChanged) || composerChanged) route = true;
+      if (target?.closest('button, [role="button"]') ||
+          hasMatchingNode(changed, 'button, [role="button"]')) sound = true;
+      if (hasMatchingNode(changed, shellMountSelector)) route = true;
     }
     if (sound || route) scheduleEnsure({ route });
   });
@@ -3629,7 +3630,7 @@
   });
   const resizeHandler = () => scheduleEnsure({ route: true, layout: true });
   const routeInteractionHandler = (event) => {
-    if (isSkinNode(event.target) || event.target?.closest?.('[data-codex-composer="true"]')) return;
+    if (isSkinNode(event.target) || event.target?.closest?.('.thread-scroll-container, [data-codex-composer="true"]')) return;
     // Profile menus open on click — restyle quickly before the slower route settle.
     try { weatherMonitor.syncAudioUi?.(); } catch {}
     if (routeSettleTimer) clearTimeout(routeSettleTimer);
@@ -3665,6 +3666,7 @@
     soundMonitor,
     weatherMonitor,
     profileCleanup,
+    closeLibraryMenu,
     mediaQuery,
     mediaHandler,
     artUrl,
