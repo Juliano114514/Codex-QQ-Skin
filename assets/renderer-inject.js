@@ -19,7 +19,6 @@
   const MODE_STORAGE_KEY = "codex-qq-skin-mode";
   const QQ_APPEARANCE_STORAGE_KEY = "codex-qq-skin-appearance";
   const LIBRARY_SWITCH_KEY = "codex-qq-skin-library-switch";
-  const USAGE_NET_MODE_KEY = "codex-qq-skin-usage-net-mode";
   const USAGE_REFRESH_KEY = "codex-qq-skin-usage-refresh";
   const PROFILE_STORAGE_KEY = "codex-qq-skin-profile-v1";
   const PROFILE_DIALOG_ID = "codex-qq-skin-profile-dialog";
@@ -34,7 +33,7 @@
     "data-dream-art-safe-area", "data-dream-art-task-mode", "data-dream-art-aspect",
     "data-dream-art-ready", "data-dream-art-fit", "data-dream-three-pane", "data-dream-summary-state", "data-dream-left-sidebar",
     "data-qq-usage-mode", "data-qq-usage-state", "data-qq-weather", "data-qq-settings",
-    "data-qq-weather-audio",
+    "data-qq-weather-audio", "data-qq-palette", "data-qq-palette-family",
     "data-qq-home-route", "data-qq-native-shell", "data-qq-profile-visible",
     "data-qq-reference-layout", "data-qq-quick-chat", "data-dream-task-route", "data-dream-side-task",
   ];
@@ -46,10 +45,12 @@
   const CUSTOM_THEME_KINDS = new Set(["custom-native", "deep-custom"]);
   let skinMode = "qq";
   let qqAppearance = "light";
-  const selectedQQTheme = () => qqAppearance === "dark" && QQ_THEME.variants?.dark
-    ? QQ_THEME.variants.dark : QQ_THEME;
+  const QQ_APPEARANCES = ["light", ...Object.keys(QQ_THEME.variants || {})];
+  const MEDIA_APPEARANCES = QQ_APPEARANCES.filter((key) => !["light", "dark"].includes(key));
+  const selectedQQTheme = () => QQ_THEME.variants?.[qqAppearance] || QQ_THEME;
   try {
-    if (window.localStorage?.getItem(QQ_APPEARANCE_STORAGE_KEY) === "dark") qqAppearance = "dark";
+    const savedAppearance = window.localStorage?.getItem(QQ_APPEARANCE_STORAGE_KEY);
+    if (QQ_APPEARANCES.includes(savedAppearance)) qqAppearance = savedAppearance;
     const savedMode = window.localStorage?.getItem(MODE_STORAGE_KEY);
     const legacyEnabled = window.localStorage?.getItem(ENABLED_STORAGE_KEY);
     if (["native", "qq", "custom"].includes(savedMode)) skinMode = savedMode;
@@ -197,6 +198,10 @@
   previous?.soundMonitor?.cleanup?.();
   previous?.weatherMonitor?.destroy?.();
   previous?.profileCleanup?.();
+  previous?.closeLibraryMenu?.();
+  // This title lives inside React's summary card, outside the owned panels
+  // removed below. Its click closure must not retain an old payload generation.
+  document.querySelectorAll('.qq-skin-details-title').forEach((node) => node.remove());
   // Rebuild floating chrome that closes over the previous generation. Keep the
   // shared <style id="codex-qq-skin-style"> node when a skin stays enabled so
   // reinject can reuse it; native mode must strip every painted leftover.
@@ -248,7 +253,10 @@
 
   const setTextContent = (node, value) => {
     if (node && node.textContent !== value) {
-      node.textContent = value;
+      // A text update should not remove/reinsert children: that invalidates
+      // ancestor :has() selectors throughout the native application shell.
+      if (node.childNodes.length === 1 && node.firstChild.nodeType === 3) node.firstChild.nodeValue = value;
+      else node.textContent = value;
       metrics.textWrites += 1;
     }
   };
@@ -278,9 +286,10 @@
         root.style.removeProperty(name);
       }
     }
-    setAttribute(root, "data-theme", qqAppearance);
-    root.classList.toggle("electron-dark", qqAppearance === "dark");
-    root.classList.toggle("electron-light", qqAppearance === "light");
+    const appearance = selectedQQTheme().appearance === "dark" ? "dark" : "light";
+    setAttribute(root, "data-theme", appearance);
+    root.classList.toggle("electron-dark", appearance === "dark");
+    root.classList.toggle("electron-light", appearance === "light");
   };
 
   const restoreNativeAppearance = () => {
@@ -763,10 +772,6 @@
   let usageSnapshot = window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ && typeof window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ === "object"
     ? window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__
     : { schemaVersion: 1, status: "loading", scope: "device" };
-  let usageNetMode = false;
-  try {
-    usageNetMode = window.localStorage?.getItem(USAGE_NET_MODE_KEY) === "true";
-  } catch {}
   let retroShellParts = null;
   let observedShellMain = null;
   let observedReferenceHost = null;
@@ -2004,19 +2009,71 @@
     return String(Math.round(number));
   };
 
-  const visibleUsageTokens = (value) => {
-    const effective = Math.max(0, Number(value?.effectiveTokens) || 0);
-    if (usageNetMode) return effective;
-    const total = Number(value?.totalTokens);
-    return Number.isFinite(total) && total >= 0
-      ? total
-      : effective + Math.max(0, Number(value?.cachedInputTokens) || 0);
-  };
+  const visibleUsageTokens = (value) => Math.max(0, Number(value?.totalTokens) || 0);
 
-  const setUsageNetMode = (enabled) => {
-    usageNetMode = Boolean(enabled);
-    try { window.localStorage?.setItem(USAGE_NET_MODE_KEY, String(usageNetMode)); } catch {}
-    renderUsageSnapshot();
+  // Read only the native query cache. No extra account requests or stored identity.
+  // Rediscover after a root replacement; unsupported native versions show unavailable.
+  let nativeUsageClient = null;
+  let nativeUsageRoot = null;
+  let nextNativeUsageDiscovery = 0;
+  const readNativeRateLimit = () => {
+    try {
+      const root = document.getElementById("root");
+      const key = root && Object.keys(root).find(key => key.startsWith("__reactContainer"));
+      const container = key ? root[key] : null;
+      if (container !== nativeUsageRoot) {
+        nativeUsageRoot = container;
+        nativeUsageClient = null;
+        nextNativeUsageDiscovery = 0;
+      }
+      if (!nativeUsageClient && Date.now() >= nextNativeUsageDiscovery) {
+        nextNativeUsageDiscovery = Date.now() + 30_000;
+        const queue = [container?.stateNode?.current || container?.current || container];
+        const seen = new Set();
+        for (let index = 0; index < queue.length && seen.size < 1500; index++) {
+          const fiber = queue[index];
+          if (!fiber || seen.has(fiber)) continue;
+          seen.add(fiber);
+          const candidate = fiber.memoizedProps?.value || fiber.memoizedProps?.client;
+          if (typeof candidate?.getQueryData === "function" && typeof candidate?.getQueryCache === "function") {
+            nativeUsageClient = candidate;
+            break;
+          }
+          queue.push(fiber.child, fiber.sibling);
+        }
+      }
+      const rate = nativeUsageClient?.getQueryData(["rate-limit-status"])?.rate_limit;
+      const windows = [rate?.primary_window, rate?.secondary_window]
+        .filter(value => Number.isFinite(value?.used_percent));
+      return windows.reduce((current, value) => !current || value.used_percent > current.used_percent ||
+        (value.used_percent === current.used_percent && (value.reset_at ?? 0) > (current.reset_at ?? 0))
+        ? value : current, null);
+    } catch { return null; }
+  };
+  // Matches Codex's native rate-limit reset formatter (24-hour threshold).
+  const formatUsageReset = (seconds) => {
+    if (!Number.isFinite(seconds)) return null;
+    const date = new Date(seconds * 1000);
+    if (!Number.isFinite(date.getTime())) return null;
+    const remaining = Math.floor((date.getTime() - Date.now()) / 1000);
+    if (remaining <= 0) return new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(0, "second");
+    return new Intl.DateTimeFormat(undefined, remaining < 86400
+      ? { timeStyle: "short" } : { month: "short", day: "numeric" }).format(date);
+  };
+  const renderQuotaProgress = () => {
+    if (!usageParts?.quotaFill) return;
+    const rate = readNativeRateLimit();
+    const remaining = rate ? clamp(100 - rate.used_percent, 0, 100) : null;
+    const reset = formatUsageReset(rate?.reset_at);
+    setStyleProperty(usageParts.quotaFill, "width", `${remaining ?? 0}%`);
+    setTextContent(usageParts.quotaText, rate
+      ? `${Math.round(remaining)}% 剩余 · ${reset ? `${reset} 重置` : "重置时间未知"}` : "额度暂不可用");
+    const bar = usageParts.quotaFill.parentElement;
+    if (rate) setAttribute(bar, "aria-valuenow", String(remaining));
+    else bar.removeAttribute("aria-valuenow");
+    setAttribute(bar, "aria-valuetext", usageParts.quotaText.textContent);
+    const hours = rate?.limit_window_seconds / 3600;
+    setAttribute(bar, "title", rate ? `Codex 额度 · ${hours >= 24 ? `${hours / 24} 天` : `${hours} 小时`}窗口（取剩余最少的窗口）` : "等待 Codex 原生额度数据");
   };
 
   // Profile data belongs to the skin, never to the native account or composer.
@@ -2039,16 +2096,14 @@
     signature: personalProfile.signature ?? THEME.tagline ?? "今天也和 Codex 一起把 Bug 聊下线。",
   });
   const profileAvatar = (id, small = false) => avatarLibrary.get(id)?.[small ? "small" : "large"] || qqAvatarUrl;
-  // Always use lifetime total, including cache; the net switch only filters charts.
+  // Level progression always uses lifetime total, including cache.
   const profileProgress = () => {
     const lifetime = usageSnapshot?.totals?.lifetime;
-    const total = Number(lifetime?.totalTokens);
-    const tokens = Math.max(0, Number.isFinite(total) ? total
-      : (Number(lifetime?.effectiveTokens) || 0) + (Number(lifetime?.cachedInputTokens) || 0));
+    const tokens = visibleUsageTokens(lifetime);
     const step = 250_000_000;
     const level = Math.floor(tokens / step);
     const remaining = step - tokens % step;
-    return { level, tokens, percent: (tokens % step) / step * 100,
+    return { level, tokens, nextThreshold: (level + 1) * step, percent: tokens / ((level + 1) * step) * 100,
       tooltip: lifetime ? `升级还需${(remaining / 1_000_000).toFixed(2)}M` : "正在读取历史 Token 用量" };
   };
   const profileLevelIcons = (level) => {
@@ -2260,7 +2315,8 @@
     const parts = usageParts;
     if (!parts?.panel) return;
     syncPersonalProfile();
-    if (parts.hasRendered && parts.renderedSnapshot === usageSnapshot && parts.renderedNetMode === usageNetMode) return;
+    if (parts.hasRendered && parts.renderedSnapshot === usageSnapshot) return;
+    renderQuotaProgress();
     const snapshot = usageSnapshot && typeof usageSnapshot === "object" ? usageSnapshot : { status: "error" };
     const status = ["loading", "indexing", "empty", "ready", "error"].includes(snapshot.status)
       ? snapshot.status : "error";
@@ -2274,30 +2330,31 @@
     setTextContent(parts.week, formatTokenCount(visibleUsageTokens(totals.week)));
     setTextContent(parts.lifetime, formatTokenCount(visibleUsageTokens(lifetime)));
     setAttribute(parts.progressFill.parentElement, "title", growth.tooltip);
-    parts.progressFill?.style?.setProperty?.("width", `${clamp(Math.round(Number(growth.percent) || 0), 0, 100)}%`);
+    setAttribute(parts.progressFill.parentElement, "aria-valuenow", String(growth.percent));
+    setTextContent(parts.progressText, `${(growth.tokens / 1_000_000_000).toFixed(2)} B / ${(growth.nextThreshold / 1_000_000_000).toFixed(2)} B`);
+    setStyleProperty(parts.progressFill, "width", `${clamp(Math.round(Number(growth.percent) || 0), 0, 100)}%`);
     setTextContent(parts.activity,
       `活跃 ${Math.max(0, Number(snapshot.activity?.activeDays) || 0)} 天 · 连续 ${Math.max(0, Number(snapshot.activity?.streakDays) || 0)} 天`);
     setTextContent(parts.breakdown,
       `输入 ${formatTokenCount(lifetime.inputTokens)} · 输出 ${formatTokenCount(lifetime.outputTokens)} · 推理 ${formatTokenCount(lifetime.reasoningOutputTokens)} · 缓存 ${formatTokenCount(lifetime.cachedInputTokens)}`);
-    if (parts.netToggle) {
-      setAttribute(parts.netToggle, "aria-checked", usageNetMode ? "true" : "false");
-      setAttribute(parts.netToggle, "title", usageNetMode
-        ? "当前已排除缓存 Token，点击切换为总用量"
-        : "当前包含缓存 Token，开启后只看净用量");
-      parts.netToggle.classList?.toggle?.("is-on", usageNetMode);
-    }
 
     if (parts.chart) {
       const chart = Array.isArray(snapshot.chart) ? snapshot.chart.slice(-7) : [];
       const maximum = Math.max(1, ...chart.map(visibleUsageTokens));
-      parts.chart.innerHTML = chart.length
-        ? chart.map((item) => {
-          const value = visibleUsageTokens(item);
-          const height = value > 0 ? Math.max(9, Math.round(value / maximum * 100)) : 4;
-          const day = String(item?.date || "").slice(5);
-          return `<i style="--usage-bar:${height}%" title="${day} · ${formatTokenCount(value)} token"><span></span></i>`;
-        }).join("")
-        : "<i style=\"--usage-bar:4%\"><span></span></i>".repeat(7);
+      const count = chart.length || 7;
+      while (parts.chart.children.length > count) parts.chart.lastElementChild.remove();
+      while (parts.chart.children.length < count) {
+        const bar = document.createElement("i");
+        bar.appendChild(document.createElement("span"));
+        parts.chart.appendChild(bar);
+      }
+      [...parts.chart.children].forEach((bar, index) => {
+        const item = chart[index];
+        const value = visibleUsageTokens(item);
+        const height = value > 0 ? Math.max(9, Math.round(value / maximum * 100)) : 4;
+        setStyleProperty(bar, "--usage-bar", `${height}%`);
+        setAttribute(bar, "title", item ? `${String(item.date || "").slice(5)} · ${formatTokenCount(value)} token` : "");
+      });
     }
 
     let message = "";
@@ -2318,14 +2375,14 @@
       : "--:--";
     setTextContent(parts.updated, `本机统计 · 更新于 ${timeText}`);
     if (parts.refreshButton) {
-      parts.refreshButton.disabled = status === "loading" || status === "indexing";
-      parts.refreshButton.textContent = status === "indexing" ? "索引中" : "刷新";
+      const disabled = status === "loading" || status === "indexing";
+      if (parts.refreshButton.disabled !== disabled) parts.refreshButton.disabled = disabled;
+      setTextContent(parts.refreshButton, status === "indexing" ? "索引中" : "刷新");
     }
     // Shell interactions do not change statistics. Rebuilding the chart and
     // level icons on every route pass needlessly invalidates style and paint.
     parts.hasRendered = true;
     parts.renderedSnapshot = usageSnapshot;
-    parts.renderedNetMode = usageNetMode;
   };
 
   const setUsageSnapshot = (snapshot) => {
@@ -2352,9 +2409,13 @@
             <div class="qq-skin-profile-identity"><button type="button" data-profile-field="name" aria-label="打开个人资料"></button><span class="qq-skin-level-icons" tabindex="0"></span></div>
             <div class="qq-skin-profile-presence-row"><span class="qq-skin-presence" data-profile-field="status"><i></i><span></span></span><span class="qq-skin-signature-marquee"><span data-profile-field="signature"></span></span></div>
           </div>
-          <button class="qq-skin-usage-net-toggle" type="button" role="switch" aria-checked="false" data-usage-action="net"><span>净用量</span><i></i></button>
         </div>
-        <div class="qq-skin-level-progress"><i></i></div>
+        <div class="qq-skin-profile-progress">
+          <div class="qq-skin-level-progress" role="progressbar" aria-label="等级进度" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+          <small data-usage-progress="level"></small>
+          <div class="qq-skin-level-progress qq-skin-quota-progress" role="progressbar" aria-label="Codex 剩余额度" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+          <small data-usage-progress="quota"></small>
+        </div>
         <div class="qq-skin-usage-metrics">
           <div><b data-usage-metric="today">0</b><span>今日 Token</span></div>
           <div><b data-usage-metric="week">0</b><span>近 7 天</span></div>
@@ -2385,7 +2446,9 @@
         message: panel.querySelector(".qq-skin-usage-message"),
         updated: panel.querySelector(".qq-skin-usage-footer span"),
         refreshButton: panel.querySelector('[data-usage-action="refresh"]'),
-        netToggle: panel.querySelector('[data-usage-action="net"]'),
+        progressText: panel.querySelector('[data-usage-progress="level"]'),
+        quotaFill: panel.querySelector(".qq-skin-quota-progress i"),
+        quotaText: panel.querySelector('[data-usage-progress="quota"]'),
       };
       usageParts.refreshButton?.addEventListener?.("click", (event) => {
         event.preventDefault();
@@ -2396,11 +2459,7 @@
           usageParts.refreshButton.textContent = "刷新中";
         }
       });
-      usageParts.netToggle?.addEventListener?.("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        setUsageNetMode(!usageNetMode);
-      });
+
     }
     renderUsageSnapshot();
 
@@ -2655,7 +2714,9 @@
     if (retroShellParts.penguin && retroShellParts.penguin.src !== qqAvatarUrl) {
       retroShellParts.penguin.src = qqAvatarUrl;
     }
-    setTextContent(retroShellParts.title, `Codex ${qqAppearance === "dark" ? "2008" : "2007"} - ${findRetroTitle()}`);
+    const themeTitle = MEDIA_APPEARANCES.includes(qqAppearance)
+      ? selectedQQTheme().name.split(" · ")[0] : qqAppearance === "dark" ? "2008" : "2007";
+    setTextContent(retroShellParts.title, `Codex ${themeTitle} - ${findRetroTitle()}`);
     return retroShell;
   };
 
@@ -2709,8 +2770,9 @@
       const action = button.dataset.retroAction;
       const target = findNativeRetroAction(action);
       const fallback = action === "skills" ? findNativeRetroAction("plugins") : null;
-      button.hidden = !(target || fallback);
-      button.disabled = !(target || fallback);
+      const unavailable = !(target || fallback);
+      if (button.hidden !== unavailable) button.hidden = unavailable;
+      if (button.disabled !== unavailable) button.disabled = unavailable;
       button.setAttribute("aria-disabled", target || fallback ? "false" : "true");
       if (button.dataset.retroActionBound === "true") continue;
       button.dataset.retroActionBound = "true";
@@ -2769,6 +2831,8 @@
     ensureStyle(root);
     const shell = resolvedShell();
     setAttribute(root, SHELL_ATTR, shell);
+    setAttribute(root, "data-qq-palette", skinMode === "qq" ? qqAppearance : "");
+    setAttribute(root, "data-qq-palette-family", skinMode === "qq" && MEDIA_APPEARANCES.includes(qqAppearance) ? "media" : "");
     setAttribute(root, "data-dream-platform", /Win/i.test(window.navigator?.platform || window.navigator?.userAgent || "") ? "windows" : "other");
     // Hard-isolate art variables: never leave the other mode's wallpaper URL on :root.
     if (skinMode === "qq") {
@@ -3217,18 +3281,24 @@
     }
     const libraryButton = control.querySelector("button[data-skin-library]");
     if (libraryButton) {
-      const unavailable = !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind) && LIBRARY_THEMES.length === 0;
-      libraryButton.disabled = unavailable;
-      libraryButton.style.opacity = unavailable ? ".45" : "1";
-      libraryButton.style.color = skinMode === "custom" ? "#fff" : "#3b3f45";
-      libraryButton.style.background = skinMode === "custom"
+      const selected = skinMode === "custom" || (skinMode === "qq" && MEDIA_APPEARANCES.includes(qqAppearance));
+      libraryButton.setAttribute("aria-pressed", String(selected));
+      libraryButton.title = selected ? `当前主题：${THEME.name}` : "选择更多主题";
+      libraryButton.style.color = selected ? "#fff" : "#3b3f45";
+      libraryButton.style.background = selected
         ? "linear-gradient(180deg,#4ba9f0 0%,#166fc8 100%)"
         : "transparent";
     }
   };
 
-  const closeLibraryMenu = () => {
+  let libraryMenuCleanup = null;
+  const closeLibraryMenu = ({ restoreFocus = false } = {}) => {
+    libraryMenuCleanup?.();
+    libraryMenuCleanup = null;
     document.getElementById(LIBRARY_MENU_ID)?.remove();
+    const anchor = document.querySelector(`#${TOGGLE_ID} [data-skin-library]`);
+    anchor?.setAttribute("aria-expanded", "false");
+    if (restoreFocus) anchor?.focus();
   };
 
   const requestLibrarySwitch = (themeId) => {
@@ -3247,69 +3317,125 @@
 
   const openLibraryMenu = (anchor) => {
     closeLibraryMenu();
-    if (!LIBRARY_THEMES.length) return;
     const menu = document.createElement("div");
     menu.id = LIBRARY_MENU_ID;
     menu.setAttribute("role", "menu");
-    menu.setAttribute("aria-label", "最近自定义皮肤");
+    menu.setAttribute("aria-label", "更多主题");
+    const dark = skinMode !== "native" ? resolvedShell() === "dark"
+      : document.documentElement.classList.contains("electron-dark");
+    const foreground = dark ? "#f2f3f5" : "#253345";
+    const muted = dark ? "#a6a8b0" : "#607080";
+    const hover = dark ? "rgba(255,255,255,.10)" : "rgba(22,111,200,.09)";
     const rect = typeof anchor.getBoundingClientRect === "function"
       ? anchor.getBoundingClientRect()
       : { bottom: 36, right: 210 };
     menu.style.cssText = [
       "position:fixed", `top:${Math.round(rect.bottom + 6)}px`, `right:${Math.max(12, Math.round(window.innerWidth - rect.right))}px`,
-      "z-index:2147483001", "min-width:168px", "max-width:240px", "max-height:260px", "overflow:auto",
+      "z-index:2147483001", "width:248px", "max-width:calc(100vw - 24px)",
+      `max-height:${Math.max(80, window.innerHeight - rect.bottom - 24)}px`, "overflow:auto",
       "padding:4px", "border:1px solid rgba(82,88,98,.18)", "border-radius:10px",
-      "background:rgba(248,248,249,.97)", "box-shadow:0 8px 24px rgba(0,0,0,.14)",
-      "backdrop-filter:blur(14px) saturate(110%)", "-webkit-app-region:no-drag",
+      `background:${dark ? "#202127" : "#f8f8f9"}`, `color:${foreground}`,
+      "box-shadow:0 8px 24px rgba(0,0,0,.24)", "-webkit-app-region:no-drag",
     ].join(";");
-    for (const item of LIBRARY_THEMES.slice(0, 8)) {
+    const heading = (text) => {
+      const label = document.createElement("div");
+      label.textContent = text;
+      label.style.cssText = `padding:8px 10px 4px;font:500 var(--qq-text-caption, 12px)/1.5 var(--qq-font-ui, system-ui);color:${muted}`;
+      menu.appendChild(label);
+    };
+    const addOption = ({ id, label, selected, colors, activate }) => {
       const option = document.createElement("button");
       option.type = "button";
-      option.setAttribute("role", "menuitem");
-      option.dataset.themeId = item.id;
-      const label = typeof item.name === "string" && item.name.trim() ? item.name.trim() : item.id;
-      option.textContent = skinMode === "custom" && item.active ? `✓ ${label}` : label;
-      option.title = item.id;
+      option.setAttribute("role", "menuitemradio");
+      option.setAttribute("aria-checked", String(selected));
+      option.dataset.themeId = id;
+      option.setAttribute("aria-label", label);
+      option.title = label;
+      option.tabIndex = -1;
       option.style.cssText = [
-        "display:block", "width:100%", "text-align:left", "height:28px", "padding:0 10px",
-        "border:0", "border-radius:7px", "background:transparent", "cursor:pointer",
-        "font:500 12px/28px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
-        "color:#2f3338", "white-space:nowrap", "overflow:hidden", "text-overflow:ellipsis",
+        "display:flex", "align-items:center", "gap:8px", "width:100%", "text-align:left", "height:36px", "padding:0 10px",
+        "border:0", "border-radius:6px", `background:${selected ? hover : "transparent"}`, "cursor:pointer",
+        "font:500 13px/20px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
+        `color:${foreground}`, "white-space:nowrap", "-webkit-app-region:no-drag",
       ].join(";");
-      option.addEventListener?.("mouseenter", () => { option.style.background = "rgba(22,111,200,.12)"; });
-      option.addEventListener?.("mouseleave", () => { option.style.background = "transparent"; });
+      const swatch = document.createElement("span");
+      swatch.setAttribute("aria-hidden", "true");
+      swatch.style.cssText = `width:18px;height:18px;flex:none;border-radius:50%;border:1px solid ${muted};background:${colors ? `linear-gradient(135deg,${colors.background} 45%,${colors.accent} 46%,${colors.accentAlt})` : hover}`;
+      const name = document.createElement("span");
+      name.textContent = label;
+      name.style.cssText = "flex:1;overflow:hidden;text-overflow:ellipsis";
+      const check = document.createElement("span");
+      check.setAttribute("aria-hidden", "true");
+      check.textContent = selected ? "✓" : "";
+      option.append(swatch, name, check);
+      const highlight = () => { option.style.background = hover; };
+      const unhighlight = () => { option.style.background = selected ? hover : "transparent"; };
+      option.addEventListener("mouseenter", highlight);
+      option.addEventListener("mouseleave", unhighlight);
+      option.addEventListener("focus", highlight);
+      option.addEventListener("blur", unhighlight);
       option.addEventListener?.("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        requestLibrarySwitch(item.id);
+        closeLibraryMenu({ restoreFocus: true });
+        activate();
       });
       menu.appendChild(option);
+    };
+    heading("平台深色配色");
+    for (const appearance of MEDIA_APPEARANCES) {
+      const item = QQ_THEME.variants[appearance];
+      addOption({ id: item.id, label: item.name, colors: item.colors,
+        selected: skinMode === "qq" && qqAppearance === appearance,
+        activate: () => selectSkinMode("qq", appearance) });
     }
-    const hint = document.createElement("div");
-    hint.textContent = "完整管理请打开 App";
-    hint.style.cssText = [
-      "margin:4px 6px 2px", "font:400 10px/14px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
-      "color:#8a9098",
-    ].join(";");
-    menu.appendChild(hint);
     document.body.appendChild(menu);
+    anchor.setAttribute("aria-expanded", "true");
+    const options = [...menu.querySelectorAll("button")];
+    (options.find((option) => option.getAttribute("aria-checked") === "true") || options[0])?.focus();
     const dismiss = (event) => {
       if (menu.contains(event?.target) || anchor.contains?.(event?.target)) return;
       closeLibraryMenu();
-      document.removeEventListener?.("mousedown", dismiss, true);
+    };
+    const onKey = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closeLibraryMenu({ restoreFocus: true });
+      } else if (event.key === "Tab") {
+        closeLibraryMenu({ restoreFocus: true });
+      } else if (["Enter", " "].includes(event.key) && options.includes(document.activeElement)) {
+        event.preventDefault();
+        event.stopPropagation();
+        document.activeElement.click();
+      } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+        event.preventDefault();
+        const current = options.indexOf(document.activeElement);
+        const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1
+          : (current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length;
+        options[next]?.focus();
+      }
     };
     document.addEventListener?.("mousedown", dismiss, true);
+    menu.addEventListener("keydown", onKey);
+    window.addEventListener("resize", closeLibraryMenu);
+    libraryMenuCleanup = () => {
+      document.removeEventListener("mousedown", dismiss, true);
+      menu.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", closeLibraryMenu);
+    };
   };
 
   const selectSkinMode = (mode, appearance) => {
     if (!["native", "qq", "custom"].includes(mode)) return;
+    closeLibraryMenu();
     if (mode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) {
       const anchor = document.getElementById(TOGGLE_ID);
       if (anchor && LIBRARY_THEMES.length) openLibraryMenu(anchor);
       return;
     }
     skinMode = mode;
-    if (mode === "qq" && ["light", "dark"].includes(appearance)) qqAppearance = appearance;
+    if (mode === "qq" && QQ_APPEARANCES.includes(appearance)) qqAppearance = appearance;
     if (skinMode === "qq") forceNativeAppearanceForQQ();
     else restoreNativeAppearance();
     THEME = skinMode === "qq" ? selectedQQTheme() : CUSTOM_THEME;
@@ -3347,13 +3473,13 @@
 
     if (
       !control || control.parentElement !== document.body || control.tagName === "BUTTON"
-      || control.dataset.qqModes !== "three"
+      || control.dataset.qqModes !== "more-v1"
     ) {
       control?.remove();
       closeLibraryMenu();
       control = document.createElement("div");
       control.id = TOGGLE_ID;
-      control.dataset.qqModes = "three";
+      control.dataset.qqModes = "more-v1";
       control.setAttribute("role", "group");
       control.setAttribute("aria-label", "切换皮肤");
       control.style.cssText = [
@@ -3363,10 +3489,15 @@
         "background:rgba(248,248,249,.91)", "box-shadow:0 1px 2px rgba(0,0,0,.08),0 5px 14px rgba(0,0,0,.08)",
         "backdrop-filter:blur(14px) saturate(110%)", "-webkit-app-region:no-drag",
       ].join(";");
-      for (const [mode, label, appearance] of [["native", "原版"], ["qq", "浅色", "light"], ["qq", "深色", "dark"]]) {
+      for (const [mode, label, appearance] of [["native", "原生"], ["qq", "浅色", "light"], ["qq", "深色", "dark"], ["more", "更多"]]) {
         const button = document.createElement("button");
         button.type = "button";
-        button.dataset.skinMode = mode;
+        if (mode === "more") {
+          button.dataset.skinLibrary = "more";
+          button.setAttribute("aria-haspopup", "menu");
+          button.setAttribute("aria-expanded", "false");
+          button.setAttribute("aria-controls", LIBRARY_MENU_ID);
+        } else button.dataset.skinMode = mode;
         if (appearance) button.dataset.skinAppearance = appearance;
         button.textContent = label;
         button.style.cssText = [
@@ -3377,9 +3508,17 @@
         const activateMode = (event) => {
           event.preventDefault();
           event.stopPropagation();
-          selectSkinMode(mode, appearance);
+          if (mode !== "more") selectSkinMode(mode, appearance);
+          else if (document.getElementById(LIBRARY_MENU_ID)) closeLibraryMenu({ restoreFocus: true });
+          else openLibraryMenu(button);
         };
         button.addEventListener?.("click", activateMode);
+        if (mode === "more") button.addEventListener("keydown", (event) => {
+          if (event.key === "ArrowDown") {
+            event.preventDefault();
+            openLibraryMenu(button);
+          }
+        });
         control.appendChild(button);
       }
       document.body.appendChild(control);
@@ -3395,7 +3534,7 @@
     restoreNativeAppearance();
     removeSkinVisuals();
     document.getElementById(TOGGLE_ID)?.remove();
-    document.getElementById(LIBRARY_MENU_ID)?.remove();
+    closeLibraryMenu();
     document.getElementById(WEATHER_AUDIO_ID)?.remove();
     state?.observer?.disconnect();
     state?.rootObserver?.disconnect();
@@ -3459,6 +3598,12 @@
     const element = node?.nodeType === 1 ? node : node?.parentElement;
     return Boolean(element?.closest?.('[id^="codex-qq-skin-"]'));
   };
+  // Text, syntax highlighting and virtualized rows are content updates, not
+  // navigation. Only native shell mounts need a geometry/profile pass. Keep
+  // footer mounts here, but let their stop/approval buttons use the status path.
+  const shellMountSelector = 'main, aside.app-shell-left-panel, [role="main"], [role="dialog"], [role="menu"], [role="listbox"], [data-pip-obstacle], [data-app-shell-tab-row], [data-app-action-sidebar-section-toggle], .home-banners';
+  const hasMatchingNode = (nodes, selector) => nodes.some((node) => node.nodeType === 1 &&
+    (node.matches(selector) || node.querySelector(selector)));
   const observer = new MutationObserver((records) => {
     let route = false;
     let sound = false;
@@ -3473,18 +3618,9 @@
       if (target?.closest('[data-codex-composer="true"]')) continue;
       const changed = [...record.addedNodes, ...record.removedNodes];
       if (changed.length && changed.every(isSkinNode)) continue;
-      sound = true;
-      // Conversation rows mount/unmount while scrolling and streaming. Only
-      // replacement of the native composer needs to resync the shell there.
-      const inThread = target?.closest('.thread-scroll-container');
-      const composerChanged = changed.some((node) => node.nodeType === 1 &&
-        (node.matches('[data-pip-obstacle="thread-footer"]') ||
-         node.querySelector('[data-pip-obstacle="thread-footer"]')));
-      // Text updates (including sidebar task titles and token counters) need
-      // status detection, not a DOM-wide layout pass. Structural changes still
-      // detect mounts, tab rows, native panels and navigation.
-      const structureChanged = changed.some((node) => node.nodeType === 1);
-      if ((!inThread && structureChanged) || composerChanged) route = true;
+      if (target?.closest('button, [role="button"]') ||
+          hasMatchingNode(changed, 'button, [role="button"]')) sound = true;
+      if (hasMatchingNode(changed, shellMountSelector)) route = true;
     }
     if (sound || route) scheduleEnsure({ route });
   });
@@ -3494,7 +3630,7 @@
   });
   const resizeHandler = () => scheduleEnsure({ route: true, layout: true });
   const routeInteractionHandler = (event) => {
-    if (isSkinNode(event.target) || event.target?.closest?.('[data-codex-composer="true"]')) return;
+    if (isSkinNode(event.target) || event.target?.closest?.('.thread-scroll-container, [data-codex-composer="true"]')) return;
     // Profile menus open on click — restyle quickly before the slower route settle.
     try { weatherMonitor.syncAudioUi?.(); } catch {}
     if (routeSettleTimer) clearTimeout(routeSettleTimer);
@@ -3530,6 +3666,7 @@
     soundMonitor,
     weatherMonitor,
     profileCleanup,
+    closeLibraryMenu,
     mediaQuery,
     mediaHandler,
     artUrl,
@@ -3591,6 +3728,7 @@
   let lastRouteRefresh = Date.now();
   const timer = setInterval(() => {
     if (document.visibilityState === "hidden" || window[DISABLED_KEY]) return;
+    renderQuotaProgress();
     const route = Date.now() - lastRouteRefresh >= 30000;
     if (route) lastRouteRefresh = Date.now();
     // Mutation/click/resize observers own immediate layout updates. This is a

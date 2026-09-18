@@ -556,12 +556,24 @@ async function loadStaticPayloadAssets() {
       })),
       fs.readFile(path.join(root, "assets", "qq-avatars.json"), "utf8"),
       fs.readFile(path.join(root, "assets", "qq-ui.css"), "utf8").then(adaptShellSelectors),
+      fs.readFile(path.join(root, "assets", "theme-iqiyi.json"), "utf8"),
+      fs.readFile(path.join(root, "assets", "themes-media.json"), "utf8"),
+      fs.readFile(path.join(root, "assets", "qq-media.css"), "utf8").then(async (css) => {
+        for (const file of ["IQYHT-Regular.ttf", "IQYHT-Medium.ttf", "IQYHT-Bold.ttf", "QY_Digital-Regular.ttf", "QY_Digital-SemiBold.ttf",
+          "HarmonyOS_Sans_SC_Regular.ttf", "HarmonyOS_Sans_SC_Bold.ttf", "PingFangSC-Regular.otf", "PingFangSC-Semibold.otf"]) {
+          const bytes = await fs.readFile(path.join(root, "assets", "fonts", file));
+          const name = path.basename(file, path.extname(file)).replaceAll("-", "_");
+          const mime = file.endsWith(".otf") ? "font/otf" : "font/ttf";
+          css = css.replace(`__QQ_FONT_${name}__`, `data:${mime};base64,${bytes.toString("base64")}`);
+        }
+        return adaptShellSelectors(css + "\n" + await fs.readFile(path.join(root, "assets", "fonts", "DFPKingGothicGB.css"), "utf8"));
+      }),
     ]).catch((error) => {
       staticPayloadAssets = null;
       throw error;
     });
   }
-  const [baseCss, customCss, template, qqArt, qqThemeJson, pet, retroFrame, qqAvatar, coughAudio, darkCss, darkThemeJson, levelIconCss, avatarJson, uiCss] = await staticPayloadAssets;
+  const [baseCss, customCss, template, qqArt, qqThemeJson, pet, retroFrame, qqAvatar, coughAudio, darkCss, darkThemeJson, levelIconCss, avatarJson, uiCss, iqiyiThemeJson, mediaThemesJson, mediaCss] = await staticPayloadAssets;
   const qqTheme = JSON.parse(qqThemeJson);
   qqTheme.avatarLibrary = JSON.parse(avatarJson);
   qqTheme.notificationAudio = Object.fromEntries(await Promise.all(
@@ -570,8 +582,14 @@ async function loadStaticPayloadAssets() {
       return [event, `data:audio/wav;base64,${bytes.toString("base64")}`];
     }),
   ));
-  qqTheme.variants = { dark: JSON.parse(darkThemeJson) };
-  const css = `${baseCss}\n${darkCss}\n${uiCss}\n${levelIconCss.join("\n")}`;
+  const iqiyiTheme = JSON.parse(iqiyiThemeJson);
+  qqTheme.variants = {
+    dark: JSON.parse(darkThemeJson),
+    iqiyi: iqiyiTheme,
+    ...Object.fromEntries(Object.entries(JSON.parse(mediaThemesJson)).map(([key, variant]) =>
+      [key, { ...iqiyiTheme, ...variant }])),
+  };
+  const css = `${baseCss}\n${darkCss}\n${uiCss}\n${mediaCss}\n${levelIconCss.join("\n")}`;
   return { css, customCss, template, qqArt, qqTheme, pet, retroFrame, qqAvatar, coughAudio, cacheHit };
 }
 
@@ -598,14 +616,12 @@ function sanitizeUsageTotals(value) {
   const outputTokens = finiteCount(value?.outputTokens);
   const reasoningOutputTokens = finiteCount(value?.reasoningOutputTokens);
   const cachedInputTokens = finiteCount(value?.cachedInputTokens);
-  const effectiveTokens = inputTokens + outputTokens + reasoningOutputTokens;
   return {
     inputTokens,
     outputTokens,
     reasoningOutputTokens,
     cachedInputTokens,
-    effectiveTokens,
-    totalTokens: effectiveTokens + cachedInputTokens,
+    totalTokens: inputTokens + outputTokens + reasoningOutputTokens + cachedInputTokens,
   };
 }
 
@@ -657,8 +673,7 @@ export function sanitizeUsageSnapshot(value) {
   }
   snapshot.chart = Array.isArray(value?.chart) ? value.chart.slice(-7).map((item) => ({
     date: /^\d{4}-\d{2}-\d{2}$/.test(String(item?.date || "")) ? item.date : "",
-    effectiveTokens: finiteCount(item?.effectiveTokens),
-    totalTokens: finiteCount(item?.totalTokens) || finiteCount(item?.effectiveTokens),
+    totalTokens: finiteCount(item?.totalTokens),
   })) : [];
   return snapshot;
 }
@@ -1072,7 +1087,7 @@ async function verifySession(session) {
       usageMode: document.documentElement.getAttribute('data-qq-usage-mode'),
       usageStatus: usageSnapshot?.status ?? usagePanelNode?.dataset?.usageStatus ?? null,
       usageLevel: usageSnapshot?.growth?.level ?? null,
-      usageToday: usageSnapshot?.totals?.today?.effectiveTokens ?? null,
+      usageToday: usageSnapshot?.totals?.today?.totalTokens ?? null,
       viewport: { width: innerWidth, height: innerHeight },
       documentOverflow: {
         x: document.documentElement.scrollWidth > document.documentElement.clientWidth,
@@ -1226,7 +1241,7 @@ function watchPayloadSources(themeDir, onDirty) {
         const name = filename ? String(filename) : "";
         const staticChanged = directory === assetsRoot &&
           (!name || name === "qq-skin.css" || name === "custom-skin.css" || name === "renderer-inject.js" ||
-            name === "portal-hero.png" || name === "theme.json" || name === "theme-dark.json" || name === "qq-dark.css" || name === "qq-ui.css" ||
+            name === "portal-hero.png" || name === "theme.json" || name === "theme-dark.json" || name === "theme-iqiyi.json" || name === "themes-media.json" || name === "qq-media.css" || name === "qq-dark.css" || name === "qq-ui.css" ||
             name === "codex-pet.png" || name === "retro-window-frame.png" ||
             name === "qq-avatar.png" || name === "qq-avatars.json" || name === "level-icons" || name === "audio");
         if (kind === "static" && !staticChanged) return;

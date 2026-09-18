@@ -234,7 +234,7 @@ html.codex-qq-skin[data-dream-shell="dark"] :is(.qq-skin-usage-level-main > b, .
   color: #75d5ed;
 }
 
-html.codex-qq-skin[data-dream-shell="dark"] :is(.qq-skin-usage-level-main > small, .qq-skin-usage-metrics span, .qq-skin-usage-net-toggle, .qq-skin-usage-breakdown, .qq-skin-usage-activity) {
+html.codex-qq-skin[data-dream-shell="dark"] :is(.qq-skin-usage-level-main > small, .qq-skin-usage-metrics span, .qq-skin-usage-breakdown, .qq-skin-usage-activity) {
   color: var(--ds-muted);
 }
 
@@ -254,12 +254,11 @@ html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-usage-chart > i > span {
   background: linear-gradient(180deg, #66cbd9, #187496);
 }
 
-html.codex-qq-skin[data-dream-shell="dark"] :is(.qq-skin-level-progress, .qq-skin-usage-net-toggle i) {
+html.codex-qq-skin[data-dream-shell="dark"] :is(.qq-skin-level-progress) {
   background: #122633;
   border-color: #46758e;
 }
 
-html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-usage-net-toggle.is-on i { background: #268da6; }
 
 /* Home keeps live Codex controls and the existing penguin, with a quiet canvas. */
 html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home-stack > div:first-child > div:first-child {
