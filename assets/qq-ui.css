@@ -1,7 +1,7 @@
-/* Shared UI contract for both QQ appearances. Palette values are supplied by
-   theme.json / theme-dark.json; geometry and type live here, after both skins. */
+/* Shared UI contract for classic and media appearances. Palette values come
+   from theme JSON; platform font/radius overrides follow in qq-media.css. */
 html.codex-qq-skin {
-  --qq-font-ui: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+  --qq-font-ui: SimSun, "宋体", "Songti SC", serif;
   --qq-font-mono: "Cascadia Code", Consolas, "SFMono-Regular", monospace;
   --qq-text-caption: 12px;
   --qq-text-control: 13px;
@@ -18,6 +18,11 @@ html.codex-qq-skin {
   --qq-radius-card: 6px;
   --qq-content-top: 70px;
   --qq-shadow-popup: 0 8px 24px rgb(0 0 0 / .18);
+  --qq-weight-label: 600;
+  --qq-line-control: 1.5;
+  --qq-surface-hover: color-mix(in srgb, var(--ds-text) 8%, var(--ds-panel));
+  --qq-surface-selected: color-mix(in srgb, var(--ds-green) 14%, var(--ds-panel));
+  --qq-text-accent: var(--ds-lime);
   --font-sans: var(--qq-font-ui);
   --font-mono: var(--qq-font-mono);
   --color-background-mode-toggle-track: var(--ds-panel-2);
@@ -165,4 +170,59 @@ html.codex-qq-skin :is(#codex-qq-skin-toggle, #codex-qq-skin-usage-panel,
 }
 html.codex-qq-skin :is(#codex-qq-skin-home-pet, .qq-skin-signature-marquee.is-scrolling > span) {
   animation: none;
+}
+
+/* Runtime UI contract: keep type and interaction sizing shared across palettes.
+   Do not apply to the installer/site, terminal glyphs, or editor syntax tokens. */
+html.codex-qq-skin :is(#codex-qq-skin-usage-panel, #codex-qq-skin-companion,
+  #codex-qq-skin-profile-dialog, #codex-qq-skin-library-menu, .qq-skin-reference-card) {
+  font-family: var(--qq-font-ui);
+  font-size: var(--qq-text-control);
+  line-height: var(--qq-line-control);
+}
+html.codex-qq-skin :is(.qq-skin-details-title, .qq-skin-usage-title, .qq-skin-profile-dialog-title) {
+  font: var(--qq-weight-label) var(--qq-text-control)/var(--qq-line-control) var(--qq-font-ui) !important;
+  min-height: var(--qq-card-title-height);
+}
+html.codex-qq-skin :is(.dream-retro-titlebar strong, .qq-skin-usage-title small,
+  .qq-skin-usage-title button, .qq-skin-usage-footer button) {
+  font-family: var(--qq-font-ui) !important;
+}
+html.codex-qq-skin :is(.qq-skin-profile-identity > button, .qq-skin-usage-level-main > b) {
+  font-size: var(--qq-text-control);
+  line-height: var(--qq-line-control);
+}
+html.codex-qq-skin #codex-qq-skin-profile-dialog :is(small, .qq-skin-profile-avatar-edit) {
+  font-size: var(--qq-text-caption);
+  line-height: var(--qq-line-control);
+}
+html.codex-qq-skin #codex-qq-skin-library-menu button {
+  font: 500 var(--qq-text-control)/var(--qq-line-control) var(--qq-font-ui) !important;
+  color: var(--ds-text) !important;
+}
+html.codex-qq-skin :is(.qq-skin-usage-metrics, .qq-skin-usage-breakdown, .qq-skin-profile-token-info) {
+  font-variant-numeric: tabular-nums;
+}
+html.codex-qq-skin :is(.qq-skin-usage-message, .qq-skin-usage-breakdown, .qq-skin-profile-token-info) {
+  overflow-wrap: anywhere;
+}
+html.codex-qq-skin :is(.qq-skin-reference-card, #codex-qq-skin-usage-panel) {
+  border-radius: var(--qq-radius-card) !important;
+}
+html.codex-qq-skin :is(.qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button) {
+  border-radius: var(--qq-radius-control) !important;
+}
+html.codex-qq-skin #codex-qq-skin-profile-dialog {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+}
+html.codex-qq-skin :is(#codex-qq-skin-profile-dialog, #codex-qq-skin-library-menu) button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.codex-qq-skin :is(#codex-qq-skin-toggle, #codex-qq-skin-library-menu, #codex-qq-skin-profile-dialog) * {
+    transition: none !important;
+  }
 }

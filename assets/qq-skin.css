@@ -2996,7 +2996,7 @@ html.codex-qq-skin .qq-skin-details-collapsed > :not(.qq-skin-details-title) { d
     height: calc(var(--qq-card-title-height) - 1px) !important;
     min-height: calc(var(--qq-card-title-height) - 1px) !important;
     box-sizing: border-box !important;
-    font: 600 13px/1.2 var(--font-sans, sans-serif) !important;
+    font: var(--qq-weight-label, 600) var(--qq-text-control, 13px)/var(--qq-line-control, 1.5) var(--qq-font-ui, sans-serif) !important;
   }
   html.codex-qq-skin .qq-skin-reference-card header {
     position: relative !important;
@@ -3016,7 +3016,7 @@ html.codex-qq-skin .qq-skin-details-collapsed > :not(.qq-skin-details-title) { d
     flex-shrink: 0 !important;
     overflow: visible !important;
     margin: 0 !important;
-    border-radius: 2px !important;
+    border-radius: var(--qq-radius-card, 6px) !important;
     box-shadow: none !important;
   }
   html.codex-qq-skin .qq-skin-reference-card {
@@ -3027,7 +3027,7 @@ html.codex-qq-skin .qq-skin-details-collapsed > :not(.qq-skin-details-title) { d
   html.codex-qq-skin [data-composer-utility-bar-variant="home"] [class*="_ComposerLayoutBody_"] {
     background: var(--ds-panel) !important;
     border: 0 !important;
-    border-radius: 6px !important;
+    border-radius: var(--qq-radius-card, 6px) !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
   }

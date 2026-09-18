@@ -1,0 +1,92 @@
+{
+  "douyin": {
+    "id": "qq-douyin",
+    "name": "抖音 · 霓虹玫红",
+    "brandSubtitle": "DOUYIN · CODEX",
+    "tagline": "抖音 · 霓虹玫红，让灵感继续。",
+    "colors": {
+      "background": "#161823",
+      "panel": "#20222e",
+      "panelAlt": "#2b2d3a",
+      "accent": "#fe2c55",
+      "accentAlt": "#ff7897",
+      "secondary": "#25f4ee",
+      "highlight": "#25f4ee",
+      "text": "#f2f3f5",
+      "muted": "#a6a8b0",
+      "line": "rgba(255, 255, 255, .12)"
+    }
+  },
+  "kuaishou": {
+    "id": "qq-kuaishou",
+    "name": "快手 · 活力橙",
+    "brandSubtitle": "KUAISHOU · CODEX",
+    "tagline": "快手 · 活力橙，让灵感继续。",
+    "colors": {
+      "background": "#171820",
+      "panel": "#20212b",
+      "panelAlt": "#252836",
+      "accent": "#ff5000",
+      "accentAlt": "#ff9b54",
+      "secondary": "#ff2e6c",
+      "highlight": "#ff2e6c",
+      "text": "#f2f3f5",
+      "muted": "#a6a8b0",
+      "line": "rgba(255, 255, 255, .12)"
+    }
+  },
+  "tencent": {
+    "id": "qq-tencent",
+    "name": "腾讯视频 · 暖橙影院",
+    "brandSubtitle": "TENCENT VIDEO · CODEX",
+    "tagline": "腾讯视频 · 暖橙影院，让灵感继续。",
+    "colors": {
+      "background": "#111111",
+      "panel": "#141414",
+      "panelAlt": "#1f1f1f",
+      "accent": "#ff650f",
+      "accentAlt": "#ffad4d",
+      "secondary": "#00c8a0",
+      "highlight": "#00c8a0",
+      "text": "#f2f3f5",
+      "muted": "#a6a8b0",
+      "line": "rgba(255, 255, 255, .12)"
+    }
+  },
+  "youku": {
+    "id": "qq-youku",
+    "name": "优酷 · 冰蓝光影",
+    "brandSubtitle": "YOUKU · CODEX",
+    "tagline": "优酷 · 冰蓝光影，让灵感继续。",
+    "colors": {
+      "background": "#141517",
+      "panel": "#1d1e20",
+      "panelAlt": "#252629",
+      "accent": "#24bfff",
+      "accentAlt": "#70dcff",
+      "secondary": "#ff8b24",
+      "highlight": "#ff8b24",
+      "text": "#f2f3f5",
+      "muted": "#a6a8b0",
+      "line": "rgba(255, 255, 255, .12)"
+    }
+  },
+  "mango": {
+    "id": "qq-mango",
+    "name": "芒果 TV · 青春橙",
+    "brandSubtitle": "MANGO TV · CODEX",
+    "tagline": "芒果 TV · 青春橙，让灵感继续。",
+    "colors": {
+      "background": "#131619",
+      "panel": "#191e23",
+      "panelAlt": "#242b31",
+      "accent": "#ff5f00",
+      "accentAlt": "#ffa552",
+      "secondary": "#ffc56e",
+      "highlight": "#ffc56e",
+      "text": "#f2f3f5",
+      "muted": "#a6a8b0",
+      "line": "rgba(255, 255, 255, .12)"
+    }
+  }
+}

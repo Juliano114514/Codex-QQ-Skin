@@ -34,7 +34,7 @@
     "data-dream-art-safe-area", "data-dream-art-task-mode", "data-dream-art-aspect",
     "data-dream-art-ready", "data-dream-art-fit", "data-dream-three-pane", "data-dream-summary-state", "data-dream-left-sidebar",
     "data-qq-usage-mode", "data-qq-usage-state", "data-qq-weather", "data-qq-settings",
-    "data-qq-weather-audio", "data-qq-palette",
+    "data-qq-weather-audio", "data-qq-palette", "data-qq-palette-family",
     "data-qq-home-route", "data-qq-native-shell", "data-qq-profile-visible",
     "data-qq-reference-layout", "data-qq-quick-chat", "data-dream-task-route", "data-dream-side-task",
   ];
@@ -46,7 +46,8 @@
   const CUSTOM_THEME_KINDS = new Set(["custom-native", "deep-custom"]);
   let skinMode = "qq";
   let qqAppearance = "light";
-  const QQ_APPEARANCES = ["light", "dark", "iqiyi"];
+  const QQ_APPEARANCES = ["light", ...Object.keys(QQ_THEME.variants || {})];
+  const MEDIA_APPEARANCES = QQ_APPEARANCES.filter((key) => !["light", "dark"].includes(key));
   const selectedQQTheme = () => QQ_THEME.variants?.[qqAppearance] || QQ_THEME;
   try {
     const savedAppearance = window.localStorage?.getItem(QQ_APPEARANCE_STORAGE_KEY);
@@ -2657,7 +2658,9 @@
     if (retroShellParts.penguin && retroShellParts.penguin.src !== qqAvatarUrl) {
       retroShellParts.penguin.src = qqAvatarUrl;
     }
-    setTextContent(retroShellParts.title, `Codex ${qqAppearance === "iqiyi" ? "爱奇艺" : qqAppearance === "dark" ? "2008" : "2007"} - ${findRetroTitle()}`);
+    const themeTitle = MEDIA_APPEARANCES.includes(qqAppearance)
+      ? selectedQQTheme().name.split(" · ")[0] : qqAppearance === "dark" ? "2008" : "2007";
+    setTextContent(retroShellParts.title, `Codex ${themeTitle} - ${findRetroTitle()}`);
     return retroShell;
   };
 
@@ -2772,6 +2775,7 @@
     const shell = resolvedShell();
     setAttribute(root, SHELL_ATTR, shell);
     setAttribute(root, "data-qq-palette", skinMode === "qq" ? qqAppearance : "");
+    setAttribute(root, "data-qq-palette-family", skinMode === "qq" && MEDIA_APPEARANCES.includes(qqAppearance) ? "media" : "");
     setAttribute(root, "data-dream-platform", /Win/i.test(window.navigator?.platform || window.navigator?.userAgent || "") ? "windows" : "other");
     // Hard-isolate art variables: never leave the other mode's wallpaper URL on :root.
     if (skinMode === "qq") {
@@ -3220,18 +3224,24 @@
     }
     const libraryButton = control.querySelector("button[data-skin-library]");
     if (libraryButton) {
-      const unavailable = !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind) && LIBRARY_THEMES.length === 0;
-      libraryButton.disabled = unavailable;
-      libraryButton.style.opacity = unavailable ? ".45" : "1";
-      libraryButton.style.color = skinMode === "custom" ? "#fff" : "#3b3f45";
-      libraryButton.style.background = skinMode === "custom"
+      const selected = skinMode === "custom" || (skinMode === "qq" && MEDIA_APPEARANCES.includes(qqAppearance));
+      libraryButton.setAttribute("aria-pressed", String(selected));
+      libraryButton.title = selected ? `当前主题：${THEME.name}` : "选择更多主题";
+      libraryButton.style.color = selected ? "#fff" : "#3b3f45";
+      libraryButton.style.background = selected
         ? "linear-gradient(180deg,#4ba9f0 0%,#166fc8 100%)"
         : "transparent";
     }
   };
 
-  const closeLibraryMenu = () => {
+  let libraryMenuCleanup = null;
+  const closeLibraryMenu = ({ restoreFocus = false } = {}) => {
+    libraryMenuCleanup?.();
+    libraryMenuCleanup = null;
     document.getElementById(LIBRARY_MENU_ID)?.remove();
+    const anchor = document.querySelector(`#${TOGGLE_ID} [data-skin-library]`);
+    anchor?.setAttribute("aria-expanded", "false");
+    if (restoreFocus) anchor?.focus();
   };
 
   const requestLibrarySwitch = (themeId) => {
@@ -3250,62 +3260,118 @@
 
   const openLibraryMenu = (anchor) => {
     closeLibraryMenu();
-    if (!LIBRARY_THEMES.length) return;
     const menu = document.createElement("div");
     menu.id = LIBRARY_MENU_ID;
     menu.setAttribute("role", "menu");
-    menu.setAttribute("aria-label", "最近自定义皮肤");
+    menu.setAttribute("aria-label", "更多主题");
+    const dark = skinMode !== "native" ? resolvedShell() === "dark"
+      : document.documentElement.classList.contains("electron-dark");
+    const foreground = dark ? "#f2f3f5" : "#253345";
+    const muted = dark ? "#a6a8b0" : "#607080";
+    const hover = dark ? "rgba(255,255,255,.10)" : "rgba(22,111,200,.09)";
     const rect = typeof anchor.getBoundingClientRect === "function"
       ? anchor.getBoundingClientRect()
       : { bottom: 36, right: 210 };
     menu.style.cssText = [
       "position:fixed", `top:${Math.round(rect.bottom + 6)}px`, `right:${Math.max(12, Math.round(window.innerWidth - rect.right))}px`,
-      "z-index:2147483001", "min-width:168px", "max-width:240px", "max-height:260px", "overflow:auto",
+      "z-index:2147483001", "width:248px", "max-width:calc(100vw - 24px)",
+      `max-height:${Math.max(80, window.innerHeight - rect.bottom - 24)}px`, "overflow:auto",
       "padding:4px", "border:1px solid rgba(82,88,98,.18)", "border-radius:10px",
-      "background:rgba(248,248,249,.97)", "box-shadow:0 8px 24px rgba(0,0,0,.14)",
-      "backdrop-filter:blur(14px) saturate(110%)", "-webkit-app-region:no-drag",
+      `background:${dark ? "#202127" : "#f8f8f9"}`, `color:${foreground}`,
+      "box-shadow:0 8px 24px rgba(0,0,0,.24)", "-webkit-app-region:no-drag",
     ].join(";");
-    for (const item of LIBRARY_THEMES.slice(0, 8)) {
+    const heading = (text) => {
+      const label = document.createElement("div");
+      label.textContent = text;
+      label.style.cssText = `padding:8px 10px 4px;font:500 var(--qq-text-caption, 12px)/1.5 var(--qq-font-ui, system-ui);color:${muted}`;
+      menu.appendChild(label);
+    };
+    const addOption = ({ id, label, selected, colors, activate }) => {
       const option = document.createElement("button");
       option.type = "button";
-      option.setAttribute("role", "menuitem");
-      option.dataset.themeId = item.id;
-      const label = typeof item.name === "string" && item.name.trim() ? item.name.trim() : item.id;
-      option.textContent = skinMode === "custom" && item.active ? `✓ ${label}` : label;
-      option.title = item.id;
+      option.setAttribute("role", "menuitemradio");
+      option.setAttribute("aria-checked", String(selected));
+      option.dataset.themeId = id;
+      option.setAttribute("aria-label", label);
+      option.title = label;
+      option.tabIndex = -1;
       option.style.cssText = [
-        "display:block", "width:100%", "text-align:left", "height:28px", "padding:0 10px",
-        "border:0", "border-radius:7px", "background:transparent", "cursor:pointer",
-        "font:500 12px/28px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
-        "color:#2f3338", "white-space:nowrap", "overflow:hidden", "text-overflow:ellipsis",
+        "display:flex", "align-items:center", "gap:8px", "width:100%", "text-align:left", "height:36px", "padding:0 10px",
+        "border:0", "border-radius:6px", `background:${selected ? hover : "transparent"}`, "cursor:pointer",
+        "font:500 13px/20px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
+        `color:${foreground}`, "white-space:nowrap", "-webkit-app-region:no-drag",
       ].join(";");
-      option.addEventListener?.("mouseenter", () => { option.style.background = "rgba(22,111,200,.12)"; });
-      option.addEventListener?.("mouseleave", () => { option.style.background = "transparent"; });
+      const swatch = document.createElement("span");
+      swatch.setAttribute("aria-hidden", "true");
+      swatch.style.cssText = `width:18px;height:18px;flex:none;border-radius:50%;border:1px solid ${muted};background:${colors ? `linear-gradient(135deg,${colors.background} 45%,${colors.accent} 46%,${colors.accentAlt})` : hover}`;
+      const name = document.createElement("span");
+      name.textContent = label;
+      name.style.cssText = "flex:1;overflow:hidden;text-overflow:ellipsis";
+      const check = document.createElement("span");
+      check.setAttribute("aria-hidden", "true");
+      check.textContent = selected ? "✓" : "";
+      option.append(swatch, name, check);
+      const highlight = () => { option.style.background = hover; };
+      const unhighlight = () => { option.style.background = selected ? hover : "transparent"; };
+      option.addEventListener("mouseenter", highlight);
+      option.addEventListener("mouseleave", unhighlight);
+      option.addEventListener("focus", highlight);
+      option.addEventListener("blur", unhighlight);
       option.addEventListener?.("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        requestLibrarySwitch(item.id);
+        closeLibraryMenu({ restoreFocus: true });
+        activate();
       });
       menu.appendChild(option);
+    };
+    heading("平台深色配色");
+    for (const appearance of MEDIA_APPEARANCES) {
+      const item = QQ_THEME.variants[appearance];
+      addOption({ id: item.id, label: item.name, colors: item.colors,
+        selected: skinMode === "qq" && qqAppearance === appearance,
+        activate: () => selectSkinMode("qq", appearance) });
     }
-    const hint = document.createElement("div");
-    hint.textContent = "完整管理请打开 App";
-    hint.style.cssText = [
-      "margin:4px 6px 2px", "font:400 10px/14px -apple-system,BlinkMacSystemFont,\"PingFang SC\",sans-serif",
-      "color:#8a9098",
-    ].join(";");
-    menu.appendChild(hint);
     document.body.appendChild(menu);
+    anchor.setAttribute("aria-expanded", "true");
+    const options = [...menu.querySelectorAll("button")];
+    (options.find((option) => option.getAttribute("aria-checked") === "true") || options[0])?.focus();
     const dismiss = (event) => {
       if (menu.contains(event?.target) || anchor.contains?.(event?.target)) return;
       closeLibraryMenu();
-      document.removeEventListener?.("mousedown", dismiss, true);
+    };
+    const onKey = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closeLibraryMenu({ restoreFocus: true });
+      } else if (event.key === "Tab") {
+        closeLibraryMenu({ restoreFocus: true });
+      } else if (["Enter", " "].includes(event.key) && options.includes(document.activeElement)) {
+        event.preventDefault();
+        event.stopPropagation();
+        document.activeElement.click();
+      } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+        event.preventDefault();
+        const current = options.indexOf(document.activeElement);
+        const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1
+          : (current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length;
+        options[next]?.focus();
+      }
     };
     document.addEventListener?.("mousedown", dismiss, true);
+    menu.addEventListener("keydown", onKey);
+    window.addEventListener("resize", closeLibraryMenu);
+    libraryMenuCleanup = () => {
+      document.removeEventListener("mousedown", dismiss, true);
+      menu.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", closeLibraryMenu);
+    };
   };
 
   const selectSkinMode = (mode, appearance) => {
     if (!["native", "qq", "custom"].includes(mode)) return;
+    closeLibraryMenu();
     if (mode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) {
       const anchor = document.getElementById(TOGGLE_ID);
       if (anchor && LIBRARY_THEMES.length) openLibraryMenu(anchor);
@@ -3350,13 +3416,13 @@
 
     if (
       !control || control.parentElement !== document.body || control.tagName === "BUTTON"
-      || control.dataset.qqModes !== "four"
+      || control.dataset.qqModes !== "more-v1"
     ) {
       control?.remove();
       closeLibraryMenu();
       control = document.createElement("div");
       control.id = TOGGLE_ID;
-      control.dataset.qqModes = "four";
+      control.dataset.qqModes = "more-v1";
       control.setAttribute("role", "group");
       control.setAttribute("aria-label", "切换皮肤");
       control.style.cssText = [
@@ -3366,10 +3432,15 @@
         "background:rgba(248,248,249,.91)", "box-shadow:0 1px 2px rgba(0,0,0,.08),0 5px 14px rgba(0,0,0,.08)",
         "backdrop-filter:blur(14px) saturate(110%)", "-webkit-app-region:no-drag",
       ].join(";");
-      for (const [mode, label, appearance] of [["native", "原版"], ["qq", "浅色", "light"], ["qq", "深色", "dark"], ["qq", "爱奇艺", "iqiyi"]]) {
+      for (const [mode, label, appearance] of [["native", "原生"], ["qq", "浅色", "light"], ["qq", "深色", "dark"], ["more", "更多"]]) {
         const button = document.createElement("button");
         button.type = "button";
-        button.dataset.skinMode = mode;
+        if (mode === "more") {
+          button.dataset.skinLibrary = "more";
+          button.setAttribute("aria-haspopup", "menu");
+          button.setAttribute("aria-expanded", "false");
+          button.setAttribute("aria-controls", LIBRARY_MENU_ID);
+        } else button.dataset.skinMode = mode;
         if (appearance) button.dataset.skinAppearance = appearance;
         button.textContent = label;
         button.style.cssText = [
@@ -3380,9 +3451,17 @@
         const activateMode = (event) => {
           event.preventDefault();
           event.stopPropagation();
-          selectSkinMode(mode, appearance);
+          if (mode !== "more") selectSkinMode(mode, appearance);
+          else if (document.getElementById(LIBRARY_MENU_ID)) closeLibraryMenu({ restoreFocus: true });
+          else openLibraryMenu(button);
         };
         button.addEventListener?.("click", activateMode);
+        if (mode === "more") button.addEventListener("keydown", (event) => {
+          if (event.key === "ArrowDown") {
+            event.preventDefault();
+            openLibraryMenu(button);
+          }
+        });
         control.appendChild(button);
       }
       document.body.appendChild(control);
@@ -3398,7 +3477,7 @@
     restoreNativeAppearance();
     removeSkinVisuals();
     document.getElementById(TOGGLE_ID)?.remove();
-    document.getElementById(LIBRARY_MENU_ID)?.remove();
+    closeLibraryMenu();
     document.getElementById(WEATHER_AUDIO_ID)?.remove();
     state?.observer?.disconnect();
     state?.rootObserver?.disconnect();
