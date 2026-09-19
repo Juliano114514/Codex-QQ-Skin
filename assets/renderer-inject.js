@@ -842,9 +842,9 @@
       .filter((button) => !button.disabled && button.getAttribute?.("aria-disabled") !== "true" &&
         button.getAttribute?.("aria-hidden") !== "true");
     const isStopButton = (button) => stopPattern.test(buttonLabel(button));
-    const findRunning = () => visibleButtons().some(isStopButton);
-    const findApproval = () => {
-      const action = visibleButtons().find((button) => {
+    const findRunning = (buttons = visibleButtons()) => buttons.some(isStopButton);
+    const findApproval = (buttons = visibleButtons()) => {
+      const action = buttons.find((button) => {
         const label = buttonLabel(button);
         if (!approvalActionPattern.test(label)) return false;
         const turn = button.closest?.('[data-turn-key], [data-testid*="approval" i]');
@@ -974,7 +974,7 @@
     };
 
     const play = (eventName) => {
-      if (!enabled || configuredVolume <= 0) return false;
+      if (window[DISABLED_KEY] || !enabled || configuredVolume <= 0) return false;
       const recording = skinMode === "qq" ? QQ_THEME.notificationAudio?.[eventName] : null;
       if (recording && typeof window.Audio === "function") {
         try {
@@ -1031,8 +1031,9 @@
 
     const scan = () => {
       const nextRoute = `${window.location?.pathname || ""}${window.location?.search || ""}`;
-      const running = findRunning();
-      const approval = findApproval();
+      const buttons = visibleButtons();
+      const running = findRunning(buttons);
+      const approval = findApproval(buttons);
       if (!initialized || nextRoute !== routeKey) {
         initialized = true;
         routeKey = nextRoute;
@@ -1067,7 +1068,8 @@
     };
 
     const unlock = () => {
-      if (!enabled) return;
+      if (!enabled || window[DISABLED_KEY]) return;
+      if (audioContext?.state === "running" && !startupCuePending) return;
       const context = ensureAudioContext();
       const playStartupCue = () => {
         if (!startupCuePending) return;
@@ -1088,13 +1090,17 @@
       if (button && isStopButton(button)) cancelledUntil = Date.now() + 3000;
       unlock();
     };
-    document.addEventListener?.("pointerdown", unlock, true);
-    document.addEventListener?.("keydown", unlock, true);
-    document.addEventListener?.("click", clickGuard, true);
-    window.addEventListener?.("online", handleOnline);
-    window.addEventListener?.("offline", handleOffline);
+    const resume = () => {
+      initialized = false;
+      document.addEventListener?.("pointerdown", unlock, true);
+      document.addEventListener?.("keydown", unlock, true);
+      document.addEventListener?.("click", clickGuard, true);
+      window.addEventListener?.("online", handleOnline);
+      window.addEventListener?.("offline", handleOffline);
+    };
 
     return {
+      resume,
       bindButton,
       bindStatus(listener) {
         statusListener = typeof listener === "function" ? listener : null;
@@ -3458,6 +3464,7 @@
       state.themeId = THEME.id || (skinMode === "qq" ? "qq-stable" : "custom");
     }
     removeSkinVisuals();
+    syncRuntime();
     if (skinMode !== "native") ensure({ root: true, route: true, layout: true });
     // Always re-assert the toggle above retro chrome so Electron drag regions
     // created during ensure() cannot swallow the next click.
@@ -3487,7 +3494,7 @@
         "display:flex", "align-items:center", "gap:2px", "padding:2px",
         "border:1px solid rgba(82,88,98,.18)", "border-radius:10px",
         "background:rgba(248,248,249,.91)", "box-shadow:0 1px 2px rgba(0,0,0,.08),0 5px 14px rgba(0,0,0,.08)",
-        "backdrop-filter:blur(14px) saturate(110%)", "-webkit-app-region:no-drag",
+        "-webkit-app-region:no-drag",
       ].join(";");
       for (const [mode, label, appearance] of [["native", "原生"], ["qq", "浅色", "light"], ["qq", "深色", "dark"], ["more", "更多"]]) {
         const button = document.createElement("button");
@@ -3582,6 +3589,7 @@
     ensure(pending);
   };
   const scheduleEnsure = ({ root = false, route = true, layout = false } = {}) => {
+    if (window[DISABLED_KEY]) return;
     scheduler.root ||= root;
     scheduler.route ||= route;
     scheduler.layout ||= layout;
@@ -3605,6 +3613,7 @@
   const hasMatchingNode = (nodes, selector) => nodes.some((node) => node.nodeType === 1 &&
     (node.matches(selector) || node.querySelector(selector)));
   const observer = new MutationObserver((records) => {
+    if (window[DISABLED_KEY]) return;
     let route = false;
     let sound = false;
     for (const record of records) {
@@ -3615,7 +3624,7 @@
         if (target?.matches('section[data-pip-obstacle="quick-chat"]')) route = true;
         continue;
       }
-      if (target?.closest('[data-codex-composer="true"]')) continue;
+      if (target?.closest('[data-codex-composer="true"], [contenteditable="true"], textarea, input')) continue;
       const changed = [...record.addedNodes, ...record.removedNodes];
       if (changed.length && changed.every(isSkinNode)) continue;
       if (target?.closest('button, [role="button"]') ||
@@ -3630,7 +3639,7 @@
   });
   const resizeHandler = () => scheduleEnsure({ route: true, layout: true });
   const routeInteractionHandler = (event) => {
-    if (isSkinNode(event.target) || event.target?.closest?.('.thread-scroll-container, [data-codex-composer="true"]')) return;
+    if (window[DISABLED_KEY] || isSkinNode(event.target) || event.target?.closest?.('.thread-scroll-container, [data-codex-composer="true"]')) return;
     // Profile menus open on click — restyle quickly before the slower route settle.
     try { weatherMonitor.syncAudioUi?.(); } catch {}
     if (routeSettleTimer) clearTimeout(routeSettleTimer);
@@ -3707,68 +3716,97 @@
   }
   for (const url of Object.values(previous?.deepThemeUrls || {})) URL.revokeObjectURL(url);
 
-  observer.observe(document.documentElement, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["data-state"],
-  });
-  rootObserver.observe(document.documentElement, {
-    attributes: true,
-    // Inline styles on <html> are owned by applyRootState. Observing them
-    // feeds our own CSS-variable writes back into another full root pass.
-    attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode", "data-reduced-motion"],
-  });
-  if (document.body) {
-    rootObserver.observe(document.body, {
+  let runtimeActive = false;
+  const syncRuntime = ({ startup = false } = {}) => {
+    if (runtimeActive) {
+      observer.disconnect();
+      rootObserver.disconnect();
+      resizeObserver?.disconnect();
+      observedShellMain = null;
+      observedReferenceHost = null;
+      clearInterval(window[STATE_KEY].timer);
+      clearInterval(window[STATE_KEY].startupTimer);
+      window[STATE_KEY].timer = null;
+      window[STATE_KEY].startupTimer = null;
+      if (scheduler.timeout) clearTimeout(scheduler.timeout);
+      if (scheduler.frame !== null) cancelAnimationFrame(scheduler.frame);
+      Object.assign(scheduler, { timeout: null, frame: null, root: false, route: false, layout: false });
+      if (routeSettleTimer) clearTimeout(routeSettleTimer);
+      routeSettleTimer = null;
+      window.removeEventListener("resize", resizeHandler);
+      document.removeEventListener?.("click", routeInteractionHandler, true);
+      mediaQuery?.removeEventListener?.("change", mediaHandler);
+      soundMonitor.cleanup();
+      runtimeActive = false;
+    }
+    if (window[DISABLED_KEY]) return;
+    runtimeActive = true;
+    soundMonitor.resume();
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
       attributes: true,
-      attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode"],
+      attributeFilter: ["data-state"],
     });
-  }
-  let lastRouteRefresh = Date.now();
-  const timer = setInterval(() => {
-    if (document.visibilityState === "hidden" || window[DISABLED_KEY]) return;
-    renderQuotaProgress();
-    const route = Date.now() - lastRouteRefresh >= 30000;
-    if (route) lastRouteRefresh = Date.now();
-    // Mutation/click/resize observers own immediate layout updates. This is a
-    // status heartbeat with a slower fallback for native attribute-only changes.
-    scheduleEnsure({ root: false, route, layout: route });
-  }, 4000);
-  window[STATE_KEY].timer = timer;
-  window.addEventListener("resize", resizeHandler, { passive: true });
-  if (typeof document.addEventListener === "function") {
-    document.addEventListener("click", routeInteractionHandler, true);
-  }
-  if (mediaHandler && mediaQuery) {
-    mediaQuery.addEventListener("change", mediaHandler);
-  }
-  // Codex mounts its fixed shell, composer and account footer across several
-  // React commits. Refresh their cached geometry during that bounded startup
-  // window, reproducing the useful layout effect of toggling a native panel.
-  const startupResizePasses = new Set([1, 2, 4, 8, 12, 16]);
-  let startupPass = 0;
-  const startupTimer = setInterval(() => {
-    const state = window[STATE_KEY];
-    if (state?.installToken !== installToken || window[DISABLED_KEY]) {
-      clearInterval(startupTimer);
-      return;
+    rootObserver.observe(document.documentElement, {
+      attributes: true,
+      // Inline styles on <html> are owned by applyRootState. Observing them
+      // feeds our own CSS-variable writes back into another full root pass.
+      attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode", "data-reduced-motion"],
+    });
+    if (document.body) {
+      rootObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode"],
+      });
     }
-    startupPass += 1;
-    metrics.startupPasses = startupPass;
-    scheduleEnsure({ route: true, layout: true });
-    if (
-      startupResizePasses.has(startupPass) &&
-      typeof window.dispatchEvent === "function" && typeof window.Event === "function"
-    ) {
-      window.dispatchEvent(new window.Event("resize"));
+    let lastRouteRefresh = Date.now();
+    const timer = setInterval(() => {
+      if (document.visibilityState === "hidden" || window[DISABLED_KEY]) return;
+      renderQuotaProgress();
+      const route = Date.now() - lastRouteRefresh >= 30000;
+      if (route) lastRouteRefresh = Date.now();
+      // Mutation/click/resize observers own immediate layout updates. This is a
+      // status heartbeat with a slower fallback for native attribute-only changes.
+      scheduleEnsure({ root: false, route, layout: route });
+    }, 4000);
+    window[STATE_KEY].timer = timer;
+    window.addEventListener("resize", resizeHandler, { passive: true });
+    if (typeof document.addEventListener === "function") {
+      document.addEventListener("click", routeInteractionHandler, true);
     }
-    if (startupPass >= 16) {
-      clearInterval(startupTimer);
-      if (state.startupTimer === startupTimer) state.startupTimer = null;
+    if (mediaHandler && mediaQuery) {
+      mediaQuery.addEventListener("change", mediaHandler);
     }
-  }, 250);
-  window[STATE_KEY].startupTimer = startupTimer;
+    if (!startup) return;
+    // Codex mounts its fixed shell, composer and account footer across several
+    // React commits. Refresh their cached geometry during that bounded startup
+    // window, reproducing the useful layout effect of toggling a native panel.
+    const startupResizePasses = new Set([1, 2, 4, 8, 12, 16]);
+    let startupPass = 0;
+    const startupTimer = setInterval(() => {
+      const state = window[STATE_KEY];
+      if (state?.installToken !== installToken || window[DISABLED_KEY]) {
+        clearInterval(startupTimer);
+        return;
+      }
+      startupPass += 1;
+      metrics.startupPasses = startupPass;
+      scheduleEnsure({ route: true, layout: true });
+      if (
+        startupResizePasses.has(startupPass) &&
+        typeof window.dispatchEvent === "function" && typeof window.Event === "function"
+      ) {
+        window.dispatchEvent(new window.Event("resize"));
+      }
+      if (startupPass >= 16) {
+        clearInterval(startupTimer);
+        if (state.startupTimer === startupTimer) state.startupTimer = null;
+      }
+    }, 250);
+    window[STATE_KEY].startupTimer = startupTimer;
+  };
+  syncRuntime({ startup: true });
   // Only analyze the uploaded custom image while custom mode is active. QQ must
   // never adopt that analysis after a mode switch or a late analysis callback.
   const analysisPromise = (skinMode === "custom" && !artAnalysis)

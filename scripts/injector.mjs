@@ -1267,7 +1267,7 @@ function watchPayloadSources(themeDir, onDirty) {
 async function runWatch(options) {
   let current = await loadPayload(options.themeDir);
   const sessions = new Map();
-  const rejected = new Set();
+  const rejected = new Map();
   let usageSnapshot = sanitizeUsageSnapshot({ status: "loading", generatedAt: new Date().toISOString() });
   let usageRefreshPromise = null;
   let nextUsageRefreshAt = 0;
@@ -1447,6 +1447,9 @@ async function runWatch(options) {
       }
 
       const activeIds = new Set(targets.map((target) => target.id));
+      for (const id of rejected.keys()) {
+        if (!activeIds.has(id)) rejected.delete(id);
+      }
       for (const [id, record] of sessions) {
         if (!activeIds.has(id) || record.session.closed) {
           record.session.close();
@@ -1456,10 +1459,24 @@ async function runWatch(options) {
 
       for (const target of targets) {
         if (sessions.has(target.id)) continue;
+        const rejection = rejected.get(target.id);
+        if (rejection?.url === target.url && Date.now() < rejection.retryAt) continue;
         let session;
         let record;
         try {
           session = await connectTarget(target, options.port);
+          // Overlay and detached pages share app:// with the main window.
+          // Probe before sending the large asset payload, and back off failures.
+          const probe = await waitForCodexProbe(session);
+          if (!probe?.codex) {
+            session.close();
+            if (!rejected.has(target.id)) {
+              console.error(`[qq-skin] rejected non-Codex app target ${target.id}`);
+            }
+            rejected.set(target.id, { url: target.url, retryAt: Date.now() + 30000 });
+            continue;
+          }
+          rejected.delete(target.id);
           record = { session, earlyScriptId: null, needsLoadFallback: false };
           try {
             record.earlyScriptId = await registerEarly(session, current.payload, current.revision);
@@ -1468,17 +1485,6 @@ async function runWatch(options) {
             record.needsLoadFallback = true;
             console.error(`[qq-skin] early injection unavailable: ${error.message}`);
           }
-          const probe = await waitForCodexProbe(session);
-          if (!probe?.codex) {
-            await removeEarly(record);
-            session.close();
-            if (!rejected.has(target.id)) {
-              console.error(`[qq-skin] rejected non-Codex app target ${target.id}`);
-              rejected.add(target.id);
-            }
-            continue;
-          }
-          rejected.delete(target.id);
           session.on("Page.loadEventFired", () => {
             setTimeout(async () => {
               if (record.needsLoadFallback) {
