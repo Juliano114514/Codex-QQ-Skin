@@ -2102,15 +2102,13 @@
     signature: personalProfile.signature ?? THEME.tagline ?? "今天也和 Codex 一起把 Bug 聊下线。",
   });
   const profileAvatar = (id, small = false) => avatarLibrary.get(id)?.[small ? "small" : "large"] || qqAvatarUrl;
-  // Level progression always uses lifetime total, including cache.
+  const formatGrowthDays = (value) => String(Math.round(Math.max(0, Number(value) || 0) * 100) / 100);
+  // Reuse the persisted active-day growth and QQ level curve from the worker.
   const profileProgress = () => {
-    const lifetime = usageSnapshot?.totals?.lifetime;
-    const tokens = visibleUsageTokens(lifetime);
-    const step = 250_000_000;
-    const level = Math.floor(tokens / step);
-    const remaining = step - tokens % step;
-    return { level, tokens, nextThreshold: (level + 1) * step, percent: tokens / ((level + 1) * step) * 100,
-      tooltip: lifetime ? `升级还需${(remaining / 1_000_000).toFixed(2)}M` : "正在读取历史 Token 用量" };
+    const growth = usageSnapshot?.growth;
+    return { level: growth?.level || 0, days: growth?.points || 0,
+      earned: growth?.earned || 0, span: growth?.span || 5, percent: growth?.percent || 0,
+      tooltip: growth ? `升级还需 ${formatGrowthDays(growth.remaining)} 天` : "正在读取活跃成长天数" };
   };
   const profileLevelIcons = (level) => {
     const labels = { crown: "皇冠", sun: "太阳", moon: "月亮", star: "星星" };
@@ -2206,7 +2204,7 @@
                 <label>个性签名：<textarea name="signature" maxlength="120" rows="3"></textarea></label>
                 <label>在线状态：<select name="presence"><option value="online">在线</option><option value="invisible">隐身</option><option value="offline">离线</option></select></label>
                 <div class="qq-skin-profile-rank"><span>用户等级：</span><b data-draft-level></b><span class="qq-skin-level-icons"></span></div>
-                <div class="qq-skin-profile-token-info"><span data-draft-tokens></span><span data-draft-progress></span><small>历史总用量每满 0.25B Token 升一级</small></div>
+                <div class="qq-skin-profile-token-info"><span data-draft-tokens></span><span data-draft-progress></span></div>
               </div>
             </section>
             <section data-profile-page="avatar" hidden>
@@ -2227,8 +2225,8 @@
     const icons = dialog.querySelector(".qq-skin-level-icons");
     icons.innerHTML = profileLevelIcons(progress.level);
     icons.title = progress.tooltip;
-    dialog.querySelector("[data-draft-tokens]").textContent = `历史总用量：${formatTokenCount(progress.tokens)} Token`;
-    dialog.querySelector("[data-draft-progress]").textContent = progress.tooltip;
+    dialog.querySelector("[data-draft-tokens]").textContent = `累计成长：${formatGrowthDays(progress.days)} 天`;
+    dialog.querySelector("[data-draft-progress]").textContent = `本级进度：${formatGrowthDays(progress.earned)}天 / ${formatGrowthDays(progress.span)}天`;
     const updatePreview = () => {
       for (const image of dialog.querySelectorAll("[data-draft-avatar]")) image.src = profileAvatar(draft.avatar);
       dialog.querySelector("[data-draft-small]").src = profileAvatar(draft.avatar, true);
@@ -2337,10 +2335,12 @@
     setTextContent(parts.lifetime, formatTokenCount(visibleUsageTokens(lifetime)));
     setAttribute(parts.progressFill.parentElement, "title", growth.tooltip);
     setAttribute(parts.progressFill.parentElement, "aria-valuenow", String(growth.percent));
-    setTextContent(parts.progressText, `${(growth.tokens / 1_000_000_000).toFixed(2)} B / ${(growth.nextThreshold / 1_000_000_000).toFixed(2)} B`);
+    setTextContent(parts.progressText, `${formatGrowthDays(growth.earned)}天 / ${formatGrowthDays(growth.span)}天`);
     setStyleProperty(parts.progressFill, "width", `${clamp(Math.round(Number(growth.percent) || 0), 0, 100)}%`);
     setTextContent(parts.activity,
       `活跃 ${Math.max(0, Number(snapshot.activity?.activeDays) || 0)} 天 · 连续 ${Math.max(0, Number(snapshot.activity?.streakDays) || 0)} 天`);
+    setTextContent(parts.todayActivity,
+      `今日活跃度 ${formatTokenCount(visibleUsageTokens(totals.today))} / ${formatTokenCount(snapshot.growth?.dailyTokenTarget || 10_000)}，已加速 ${formatGrowthDays(snapshot.growth?.todayBonus)} 天`);
     setTextContent(parts.breakdown,
       `输入 ${formatTokenCount(lifetime.inputTokens)} · 输出 ${formatTokenCount(lifetime.outputTokens)} · 推理 ${formatTokenCount(lifetime.reasoningOutputTokens)} · 缓存 ${formatTokenCount(lifetime.cachedInputTokens)}`);
 
@@ -2429,7 +2429,7 @@
         </div>
         <div class="qq-skin-usage-chart" aria-label="近七天 token 趋势"></div>
         <div class="qq-skin-usage-activity"></div>
-        <div class="qq-skin-usage-breakdown"></div>
+        <div class="qq-skin-usage-breakdown"><div data-usage-today-activity></div><div data-usage-token-breakdown></div></div>
         <div class="qq-skin-usage-message"></div>
         <div class="qq-skin-usage-footer"><span></span><button type="button" data-usage-action="refresh">刷新</button></div>`;
       document.body.appendChild(panel);
@@ -2448,7 +2448,8 @@
         lifetime: panel.querySelector('[data-usage-metric="lifetime"]'),
         chart: panel.querySelector(".qq-skin-usage-chart"),
         activity: panel.querySelector(".qq-skin-usage-activity"),
-        breakdown: panel.querySelector(".qq-skin-usage-breakdown"),
+        todayActivity: panel.querySelector("[data-usage-today-activity]"),
+        breakdown: panel.querySelector("[data-usage-token-breakdown]"),
         message: panel.querySelector(".qq-skin-usage-message"),
         updated: panel.querySelector(".qq-skin-usage-footer span"),
         refreshButton: panel.querySelector('[data-usage-action="refresh"]'),

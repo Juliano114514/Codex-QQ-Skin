@@ -663,6 +663,10 @@ export function sanitizeUsageSnapshot(value) {
     snapshot.growth = {
       points: Math.max(0, Math.min(1_000_000_000, Number(value.growth.points) || 0)),
       level,
+      earned: Math.max(0, Number(value.growth.earned) || 0),
+      span: Math.max(1, Number(value.growth.span) || ((Number(value.growth.ceiling) || 0) - (Number(value.growth.floor) || 0))),
+      todayBonus: Math.max(0, Math.min(2, Number(value.growth.todayBonus) || 0)),
+      dailyTokenTarget: finiteCount(value.growth.dailyTokenTarget) || 10_000,
       remaining: Math.max(0, Math.min(1_000_000_000, Number(value.growth.remaining) || 0)),
       percent: finiteCount(value.growth.percent, 100),
       icons: Array.isArray(value.growth.icons) ? value.growth.icons.slice(0, 16).map((item) => ({

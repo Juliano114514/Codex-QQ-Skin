@@ -894,7 +894,7 @@ html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summ
   height: min(420px, var(--qq-growth-available-height, calc(100vh - 90px)));
   z-index: 43;
   display: grid;
-  grid-template-rows: 34px 64px 76px 58px minmax(48px, 1fr) 24px 46px auto 28px;
+  grid-template-rows: 34px 64px 76px 58px minmax(48px, 1fr) 24px auto auto 28px;
   overflow: hidden;
   border: 1px solid rgb(64 122 187 / .66);
   border-radius: 8px;
@@ -3143,6 +3143,6 @@ html.codex-qq-skin :is(.qq-skin-details-title, .qq-skin-growth-docked .qq-skin-u
 
 #codex-qq-skin-usage-panel .qq-skin-usage-message { grid-row: 8; }
 #codex-qq-skin-usage-panel .qq-skin-usage-footer { grid-row: 9; }
-#codex-qq-skin-usage-panel .qq-skin-usage-breakdown { white-space: normal; padding-block: 5px; font-size: 10px; }
+#codex-qq-skin-usage-panel .qq-skin-usage-breakdown { display: flex; flex-direction: column; gap: 0; white-space: normal; padding-block: 8px; font-size: 10px; }
 #codex-qq-skin-usage-panel .qq-skin-usage-title { justify-content: flex-start; gap: 6px; }
 #codex-qq-skin-usage-panel .qq-skin-profile-settings { margin-left: auto; }

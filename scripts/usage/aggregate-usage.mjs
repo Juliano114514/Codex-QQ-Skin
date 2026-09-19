@@ -1,5 +1,7 @@
 import {
   dailyGrowth,
+  nextTokenGrowthTarget,
+  tokenGrowthBonus,
   levelProgress,
 } from "./level-rules.mjs";
 
@@ -114,6 +116,8 @@ export function aggregateUsage({ buckets = [], sessions = [], heartbeatDates = [
     growth: {
       points: growth,
       computedPoints: computedGrowth,
+      todayBonus: tokenGrowthBonus(today.totalTokens),
+      dailyTokenTarget: nextTokenGrowthTarget(today.totalTokens),
       ...level,
     },
     chart,

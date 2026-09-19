@@ -26,7 +26,7 @@ assert.equal(tokenGrowthBonus(100_000), 0.5);
 assert.equal(tokenGrowthBonus(500_000), 0.75);
 assert.equal(tokenGrowthBonus(2_000_000), 1);
 assert.equal(dailyGrowth(50_000), 1.25);
-assert.equal(dailyGrowth(99_000_000), 2);
+assert.equal(dailyGrowth(99_000_000), 3);
 assert.equal(dailyGrowth(99_000_000, false), 0);
 
 for (const level of [0, 1, 3, 4, 15, 16, 32, 63, 64, 128]) {
