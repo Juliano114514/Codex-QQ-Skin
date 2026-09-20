@@ -102,6 +102,12 @@ html.codex-qq-skin [class~="@container/home-mode-toggle"] [class*="_indicator_"]
   box-shadow: 0 1px 3px rgb(0 0 0 / .12);
 }
 
+/* Mermaid uses the same native wide-block calculation as tables. Keep finished
+   diagrams within the reading column; streaming placeholders retain native sizing. */
+html.codex-qq-skin [class*="_MermaidWideBlock_"]:not(:has([data-mermaid-streaming])) {
+  --wide-block-width: 100%;
+}
+
 /* UI, reading content and metadata have separate, bounded type scales.
    Do not target every descendant: Monaco/xterm and syntax colors stay native. */
 html.codex-qq-skin :is(aside.app-shell-left-panel, [role="menu"], [role="dialog"], #codex-qq-skin-profile-dialog) {
