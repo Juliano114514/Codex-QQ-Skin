@@ -16,13 +16,13 @@ html.codex-qq-skin[data-qq-palette-family="media"] {
   --qq-night-selected: linear-gradient(90deg, var(--ds-green), var(--ds-lime));
   --qq-night-border: var(--ds-line);
   --qq-night-glint: inset 0 1px rgb(255 255 255 / .04);
-  --color-text-emphasis: #fff !important;
-  --color-text-primary-ghost-hover: #fff !important;
+  --color-text-emphasis: var(--ds-text) !important;
+  --color-text-primary-ghost-hover: var(--ds-text) !important;
   --color-surface-elevated: var(--ds-panel-2) !important;
   --color-surface-elevated-secondary: var(--ds-panel-2) !important;
   --color-border-strong: rgb(var(--ds-text-rgb) / .28) !important;
   --color-token-dropdown-background: var(--ds-panel-2);
-  --ds-on-accent: var(--ds-bg);
+  --ds-on-accent: #18191c;
 }
 
 html.codex-qq-skin[data-qq-palette-family="media"] body,
@@ -146,7 +146,7 @@ html.codex-qq-skin[data-qq-palette-family="media"] #codex-qq-skin-toggle button 
 }
 html.codex-qq-skin[data-qq-palette-family="media"] #codex-qq-skin-toggle button[aria-pressed="true"] {
   background: var(--qq-night-selected) !important;
-  color: var(--ds-bg) !important;
+  color: var(--ds-on-accent) !important;
 }
 html.codex-qq-skin[data-qq-palette-family="media"] .loading-shimmer-pure-text [class*="_cadencedShimmerHighlight_"] {
   color: var(--ds-lime);
@@ -154,7 +154,7 @@ html.codex-qq-skin[data-qq-palette-family="media"] .loading-shimmer-pure-text [c
 }
 html.codex-qq-skin[data-qq-palette-family="media"] ::selection {
   background: rgb(var(--ds-accent-rgb) / .3);
-  color: #fff;
+  color: var(--ds-text);
 }
 html.codex-qq-skin[data-qq-palette-family="media"] :focus-visible {
   outline-color: var(--ds-accent);
@@ -186,6 +186,7 @@ html.codex-qq-skin[data-qq-palette="douyin"] {
   --qq-radius-control: 8px;
   --qq-radius-card: 16px;
   --qq-radius-action: 8px;
+  --qq-platform-composer-radius: 12px;
   --qq-surface-selected: #30323e;
   --qq-surface-hover: #252733;
   --qq-night-selected: #fe2c55;
@@ -205,6 +206,7 @@ html.codex-qq-skin[data-qq-palette="kuaishou"] {
   --qq-radius-control: 8px;
   --qq-radius-card: 8px;
   --qq-radius-action: 999px;
+  --qq-platform-composer-radius: 12px;
   --qq-text-accent: #ff995e;
   --qq-surface-selected: #30313d;
   --qq-surface-hover: #262733;
@@ -432,7 +434,7 @@ html.codex-qq-skin[data-qq-palette-family="media"] :is(.qq-skin-home [data-featu
 
 /* Profile fields own their focus geometry; native input rings must not leak in. */
 html.codex-qq-skin[data-qq-palette-family="media"] #codex-qq-skin-profile-dialog :is(input, textarea, select) {
-  color-scheme: dark;
+  color-scheme: inherit;
   caret-color: var(--ds-accent);
   box-sizing: border-box;
   line-height: 20px;
@@ -1266,50 +1268,62 @@ html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [d
   border-color: var(--qq-text-accent) !important;
 }
 
-/* Bilibili: white content, fine neutral outlines, selective pink interaction.
-   Current website tokens and official phone/tablet previews: docs/media-palettes-2026.md.
-   This light palette uses native light syntax/editor colors; existing palettes stay intact. */
+/* Shared two-appearance language. Each brand retains its font and geometry.
+   Light surfaces also neutralize classic QQ's blue paint; Bilibili uses the
+   same component contract in both appearances. Values are semantic tokens. */
 html.codex-qq-skin[data-qq-palette="bilibili"] {
-  color-scheme: light !important;
   --qq-font-ui: "QQ Media PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Microsoft YaHei", sans-serif;
   --qq-radius-control: 6px;
   --qq-radius-card: 12px;
   --qq-radius-action: 8px;
+  --qq-platform-composer-radius: 8px;
+}
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) {
+  --qq-platform-card: var(--ds-panel);
+  --qq-platform-composer: var(--ds-panel);
+  --qq-platform-shadow: none;
+  --qq-platform-nav-shadow: none;
+  --qq-platform-focus-shadow: 0 0 0 2px var(--qq-surface-selected);
+  --qq-platform-bubble: var(--qq-surface-selected);
+  --qq-platform-metric: var(--ds-panel-2);
+  --qq-platform-chart: var(--ds-panel-2);
+  --qq-platform-bar: color-mix(in srgb, var(--ds-lime) 70%, var(--ds-panel));
+  --qq-platform-home: var(--qq-brand-wash);
   --qq-shadow-popup: 0 8px 30px rgb(24 25 28 / .12);
-  --qq-text-accent: #b92b60;
-  --qq-surface-selected: #ffecf1;
-  --qq-surface-hover: #f6f7f8;
-  --qq-night-title: #fff;
-  --qq-night-bar: #fff;
-  --qq-night-selected: #ff6699;
-  --qq-night-border: #e3e5e7;
+  --qq-text-accent: var(--ds-lime);
+  --qq-surface-selected: color-mix(in srgb, var(--ds-green) 10%, var(--ds-panel));
+  --qq-surface-hover: var(--ds-panel-2);
+  --qq-night-title: var(--ds-panel);
+  --qq-night-bar: var(--ds-panel);
+  --qq-night-selected: var(--ds-green);
+  --qq-night-border: var(--ds-line);
   --qq-night-glint: none;
-  --qq-brand-wash: linear-gradient(110deg, #fff3f7, #fff 75%);
-  --qq-card-bar: #fff;
-  --qq-card-border: #e3e5e7;
-  --qq-platform-sidebar: #fff;
-  --qq-platform-heading: #fff;
-  --qq-platform-edge: inset 0 -1px #ffecf1;
+  --qq-brand-wash: linear-gradient(110deg, color-mix(in srgb, var(--ds-green) 6%, var(--ds-panel)), var(--ds-panel) 75%);
+  --qq-card-bar: var(--ds-panel);
+  --qq-card-border: var(--ds-line);
+  --qq-platform-sidebar: var(--ds-panel);
+  --qq-platform-heading: var(--ds-panel);
+  --qq-platform-edge: inset 0 -1px var(--qq-surface-selected);
   --ds-on-accent: #18191c;
-  --dream-classic-panel: #fff;
-  --dream-classic-panel-alt: #f6f7f8;
-  --dream-classic-line: #e3e5e7;
-  --dream-classic-line-soft: #e3e5e7;
-  --dream-classic-selected: #ffecf1;
+  --dream-classic-panel: var(--ds-panel);
+  --dream-classic-panel-alt: var(--ds-panel-2);
+  --dream-classic-line: var(--ds-line);
+  --dream-classic-line-soft: var(--ds-line);
+  --dream-classic-selected: var(--qq-surface-selected);
   --color-token-text-primary: var(--ds-text);
   --color-token-text-secondary: var(--ds-muted);
   --color-token-foreground: var(--ds-text);
-  --color-token-main-surface-primary: #fff;
-  --color-token-main-surface-secondary: #f6f7f8;
-  --color-token-sidebar-surface-primary: #fff;
+  --color-token-main-surface-primary: var(--ds-panel);
+  --color-token-main-surface-secondary: var(--ds-panel-2);
+  --color-token-sidebar-surface-primary: var(--ds-panel);
   --color-text-emphasis: var(--ds-text) !important;
   --color-text-primary-ghost-hover: var(--ds-text) !important;
-  --color-surface-elevated: #fff !important;
-  --color-surface-elevated-secondary: #f6f7f8 !important;
-  --color-token-dropdown-background: #fff;
+  --color-surface-elevated: var(--ds-panel) !important;
+  --color-surface-elevated-secondary: var(--ds-panel-2) !important;
+  --color-token-dropdown-background: var(--ds-panel);
 }
 
-html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) :is(
   #codex-qq-skin-retro-shell, .dream-retro-titlebar, .dream-retro-toolbar,
   #codex-qq-skin-retro-profile, .dream-retro-body-frame
 ) {
@@ -1317,11 +1331,11 @@ html.codex-qq-skin[data-qq-palette="bilibili"] :is(
   box-shadow: none !important;
   text-shadow: none !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] :is(.dream-retro-titlebar, .dream-retro-toolbar) {
-  background: #fff !important;
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) :is(.dream-retro-titlebar, .dream-retro-toolbar) {
+  background: var(--ds-panel) !important;
   color: var(--ds-text) !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] #root :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) #root :is(
   .qq-skin-section-bar, [class~="group/nav-section-title"]
 ) {
   background: transparent !important;
@@ -1331,125 +1345,124 @@ html.codex-qq-skin[data-qq-palette="bilibili"] #root :is(
   text-shadow: none !important;
   font-weight: 400;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) aside.app-shell-left-panel :is(
   [data-app-action-sidebar-project-row], [data-app-action-sidebar-thread-row]
 ) {
-  border-radius: 6px;
+  border-radius: var(--qq-radius-control);
   border-color: transparent;
   text-shadow: none !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
   background: var(--qq-surface-hover) !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) :is(
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"],
   #codex-qq-skin-profile-dialog nav > button[aria-current="page"],
   #codex-qq-skin-library-menu button[aria-checked="true"]
 ) {
-  background: #ffecf1 !important;
+  background: var(--qq-surface-selected) !important;
   color: var(--qq-text-accent) !important;
   box-shadow: none !important;
   font-weight: 600;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] #root :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) #root :is(
   #codex-qq-skin-usage-panel, #codex-qq-skin-right-tray, .qq-skin-reference-card,
   [data-pip-obstacle="thread-summary-panel"]:not(:empty),
   .qq-skin-home .group\/home-suggestions button
 ) {
-  background: #fff !important;
+  background: var(--ds-panel) !important;
   border-color: var(--ds-line) !important;
-  border-radius: 12px !important;
+  border-radius: var(--qq-radius-card) !important;
   box-shadow: none !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) :is(
   #codex-qq-skin-profile-dialog, #codex-qq-skin-library-menu,
   [role="menu"], [role="listbox"], [role="dialog"]
 ) {
-  background: #fff !important;
+  background: var(--ds-panel) !important;
   color: var(--ds-text) !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] #codex-qq-skin-profile-dialog::backdrop {
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) #codex-qq-skin-profile-dialog::backdrop {
   background: rgb(24 25 28 / .28);
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] #codex-qq-skin-profile-dialog :is(input, textarea, select) {
-  color-scheme: light;
-  background: #fff !important;
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) #codex-qq-skin-profile-dialog :is(input, textarea, select) {
+  background: var(--ds-panel) !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) :is(
   .qq-skin-usage-footer, #codex-qq-skin-profile-dialog footer, #codex-qq-skin-retro-profile
 ) {
-  background: #fff !important;
+  background: var(--ds-panel) !important;
   border-color: var(--ds-line) !important;
   box-shadow: none !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] #codex-qq-skin-usage-panel :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) #codex-qq-skin-usage-panel :is(
   .qq-skin-usage-metrics > div, .qq-skin-usage-chart, .qq-skin-usage-message
 ) {
-  background: #f6f7f8 !important;
+  background: var(--ds-panel-2) !important;
   border-color: transparent !important;
-  border-radius: 8px !important;
+  border-radius: var(--qq-radius-control) !important;
   box-shadow: none !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-usage-metrics b {
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) .qq-skin-usage-metrics b {
   color: var(--ds-text) !important;
   font-variant-numeric: tabular-nums;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-usage-metrics > div:first-child b {
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) .qq-skin-usage-metrics > div:first-child b {
   color: var(--qq-text-accent) !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-usage-chart > i > span {
-  background: #f4b7cc !important;
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) .qq-skin-usage-chart > i > span {
+  background: color-mix(in srgb, var(--ds-lime) 70%, var(--ds-panel)) !important;
   border-radius: 4px 4px 0 0;
   border-color: transparent;
   box-shadow: none;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-usage-chart > i:last-child > span {
-  background: #ff6699 !important;
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) .qq-skin-usage-chart > i:last-child > span {
+  background: var(--ds-green) !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] #root :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) #root :is(
   .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
 ) {
-  background: #f6f7f8 !important;
+  background: var(--ds-panel-2) !important;
   border-color: var(--ds-line) !important;
   color: var(--ds-muted) !important;
-  border-radius: 6px !important;
+  border-radius: var(--qq-radius-control) !important;
   box-shadow: none !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] #root :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) #root :is(
   .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
 ):is(:hover, :focus-visible) {
-  background: #ffecf1 !important;
+  background: var(--qq-surface-selected) !important;
   color: var(--qq-text-accent) !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) :is(
   #codex-qq-skin-toggle button[aria-pressed="true"],
   #codex-qq-skin-profile-dialog footer > button[type="submit"]
 ):hover {
-  background: #ff8cb0 !important;
+  background: color-mix(in srgb, var(--ds-green) 80%, var(--ds-panel)) !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] #root [data-user-message-bubble="true"] {
-  background: #ffecf1 !important;
-  border-color: #f8c6d7 !important;
-  border-radius: 12px 12px 4px 12px !important;
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) #root [data-user-message-bubble="true"] {
+  background: var(--qq-surface-selected) !important;
+  border-color: var(--ds-line) !important;
+  border-radius: var(--qq-radius-card) var(--qq-radius-card) 4px var(--qq-radius-card) !important;
   box-shadow: none !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] #root .qq-skin-home-stack > div:first-child > div:first-child {
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) #root .qq-skin-home-stack > div:first-child > div:first-child {
   background: var(--qq-brand-wash) !important;
   border-color: var(--ds-line) !important;
-  border-radius: 12px !important;
+  border-radius: var(--qq-radius-card) !important;
   box-shadow: none !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] [data-usage-status="error"] .qq-skin-usage-message {
-  color: #b42332 !important;
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) [data-usage-status="error"] .qq-skin-usage-message {
+  color: light-dark(#b42332, #ff8f9c) !important;
 }
-html.codex-qq-skin[data-qq-palette="bilibili"] ::selection {
-  background: #ffcfde;
-  color: #18191c;
+html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) ::selection {
+  background: color-mix(in srgb, var(--ds-green) 25%, var(--ds-panel));
+  color: var(--ds-text);
 }
 
 @layer qq-reference {
   /* Neutralize the classic light skin's blue paint without changing its geometry. */
-  html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) :is(
     aside.app-shell-left-panel,
     aside.app-shell-left-panel [data-sidebar-project-kind][role="listitem"],
     aside.app-shell-left-panel [data-app-action-sidebar-project-row],
@@ -1458,33 +1471,33 @@ html.codex-qq-skin[data-qq-palette="bilibili"] ::selection {
     [data-pip-obstacle="thread-summary-panel"] [class*="bg-token-main-surface"],
     section[role="dialog"][data-pip-obstacle="quick-chat"] > div[aria-hidden="false"]
   ) {
-    background: #fff !important;
-    border-color: #e3e5e7 !important;
+    background: var(--ds-panel) !important;
+    border-color: var(--ds-line) !important;
     box-shadow: none !important;
     color: var(--ds-text) !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
     background: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
     color: var(--ds-text) !important;
-    border-radius: 6px !important;
+    border-radius: var(--qq-radius-control) !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
-    background: #f6f7f8 !important;
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
+    background: var(--ds-panel-2) !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
-    background: #ffecf1 !important;
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
+    background: var(--qq-surface-selected) !important;
     color: var(--qq-text-accent) !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel :is(
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) aside.app-shell-left-panel :is(
     [data-app-action-sidebar-section-toggle], [data-app-action-sidebar-section-toggle] svg,
     [data-app-action-sidebar-project-row] [data-sidebar-project-kind]
   ) {
     color: var(--ds-muted) !important;
     text-shadow: none !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) :is(
     main.main-surface, main.main-surface [class*="text-token-"],
     main.main-surface [data-content-search-unit-key$=":assistant"],
     #codex-qq-skin-retro-profile .qq-skin-profile-signature
@@ -1492,66 +1505,83 @@ html.codex-qq-skin[data-qq-palette="bilibili"] ::selection {
     color: var(--ds-text) !important;
     border-color: var(--ds-line) !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] main.main-surface :is(
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) main.main-surface :is(
     pre, :not(pre) > code, [data-markdown-copy="inline-code"]
   ) {
-    background: #f6f7f8 !important;
-    border-color: #e3e5e7 !important;
+    background: var(--ds-panel-2) !important;
+    border-color: var(--ds-line) !important;
     color: var(--ds-text) !important;
     box-shadow: none !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] main.main-surface [data-user-message-bubble="true"] {
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) main.main-surface [data-user-message-bubble="true"] {
     color: var(--ds-text) !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] .dream-retro-body-frame {
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) .dream-retro-body-frame {
     border-image: none !important;
-    border-bottom-color: #f6f7f8 !important;
+    border-bottom-color: var(--ds-panel-2) !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] main.main-surface.qq-skin-home-shell {
-    background: #f6f7f8 !important;
-    border-color: #e3e5e7 !important;
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) main.main-surface.qq-skin-home-shell {
+    background: var(--ds-panel-2) !important;
+    border-color: var(--ds-line) !important;
     box-shadow: none !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-home :is(
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) .qq-skin-home :is(
     .qq-skin-home-utility,
     div:has(> .horizontal-scroll-fade-mask .group\/project-selector),
     .group\/home-suggestions button
   ) {
-    background: #fff !important;
-    border-color: #e3e5e7 !important;
+    background: var(--ds-panel) !important;
+    border-color: var(--ds-line) !important;
     color: var(--ds-text) !important;
     box-shadow: none !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-home :is(
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) .qq-skin-home :is(
     [data-feature="game-source"] button, .group\/project-selector > button,
     .group\/home-suggestions button > span:first-child > span:first-child
   ) {
-    background: #ffecf1 !important;
-    border-color: #f8c6d7 !important;
+    background: var(--qq-surface-selected) !important;
+    border-color: var(--ds-line) !important;
     color: var(--qq-text-accent) !important;
     box-shadow: none !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-home .group\/home-suggestions button svg {
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) .qq-skin-home .group\/home-suggestions button svg {
     color: var(--qq-text-accent) !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] main.qq-skin-thread-frame .thread-scroll-container {
-    background: #fff !important;
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) main.qq-skin-thread-frame .thread-scroll-container {
+    background: var(--ds-panel) !important;
     border-color: transparent;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) :is(
     .composer-surface-chrome, [class*="_ComposerLayoutRoot_"],
     [data-composer-utility-bar-variant="home"] [class*="_ComposerLayoutBody_"]
   ) {
-    background: #fff !important;
-    border-radius: 8px !important;
-    outline: 1px solid #e3e5e7;
+    background: var(--ds-panel) !important;
+    border-radius: var(--qq-platform-composer-radius, var(--qq-radius-control)) !important;
+    outline: 1px solid var(--ds-line);
     outline-offset: -1px;
     box-shadow: 0 2px 8px rgb(24 25 28 / .04) !important;
   }
-  html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+  html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) :is(
     .composer-surface-chrome, [class*="_ComposerLayoutRoot_"]
   ):focus-within {
-    outline-color: #ff6699;
-    box-shadow: 0 0 0 2px #ffecf1 !important;
+    outline-color: var(--ds-green);
+    box-shadow: 0 0 0 2px var(--qq-surface-selected) !important;
   }
+}
+
+/* Brand-specific light materials retain the desktop controls' identity. */
+html.codex-qq-skin[data-qq-palette="tencent"][data-dream-shell="light"] {
+  --qq-text-accent: var(--ds-cyan);
+  --qq-surface-selected: color-mix(in srgb, var(--ds-cyan) 8%, var(--ds-panel));
+  --qq-platform-edge: none;
+}
+html.codex-qq-skin[data-qq-palette="douyin"][data-dream-shell="light"] {
+  --qq-brand-wash: linear-gradient(115deg, #fff1f4, #fff 60%, #effbfc);
+  --qq-platform-edge: inset 2px 0 #25f4ee, inset -2px 0 #fe2c55;
+}
+html.codex-qq-skin[data-qq-palette="mango"][data-dream-shell="light"] {
+  --qq-brand-wash: linear-gradient(110deg, #fff3e7, #fffaf5);
+}
+html.codex-qq-skin[data-qq-palette="bilibili"][data-dream-shell="dark"] {
+  --qq-shadow-popup: 0 12px 36px rgb(0 0 0 / .45);
 }

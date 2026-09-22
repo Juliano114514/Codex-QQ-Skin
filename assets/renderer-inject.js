@@ -44,13 +44,32 @@
   const DEEP_THEME_ASSETS = deepThemeAssets && typeof deepThemeAssets === "object" ? deepThemeAssets : {};
   const CUSTOM_THEME_KINDS = new Set(["custom-native", "deep-custom"]);
   let skinMode = "qq";
-  let qqAppearance = "light";
-  const QQ_APPEARANCES = ["light", ...Object.keys(QQ_THEME.variants || {})];
-  const MEDIA_APPEARANCES = QQ_APPEARANCES.filter((key) => !["light", "dark"].includes(key));
-  const selectedQQTheme = () => QQ_THEME.variants?.[qqAppearance] || QQ_THEME;
+  // Persist brand identity only. Codex owns system/light/dark preference.
+  let qqAppearance = "classic";
+  const MEDIA_APPEARANCES = Object.keys(QQ_THEME.variants || {}).filter((key) => key !== "dark");
+  const QQ_APPEARANCES = ["classic", ...MEDIA_APPEARANCES];
+  const nativeAppearance = () => {
+    const root = document.documentElement;
+    const theme = root.getAttribute("data-theme") || root.getAttribute("data-appearance") || root.getAttribute("data-color-mode") || "";
+    if (/dark/i.test(theme)) return "dark";
+    if (/light/i.test(theme)) return "light";
+    if (root.classList.contains("electron-dark") || root.classList.contains("dark")) return "dark";
+    if (root.classList.contains("electron-light") || root.classList.contains("light")) return "light";
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  };
+  const selectedQQTheme = (brand = qqAppearance, shell = nativeAppearance()) => {
+    const base = brand === "classic"
+      ? (shell === "dark" ? QQ_THEME.variants?.dark || QQ_THEME : QQ_THEME)
+      : QQ_THEME.variants?.[brand] || QQ_THEME;
+    const colors = base.schemes?.[shell] || base.colors;
+    return { ...base, appearance: shell, colors };
+  };
   try {
     const savedAppearance = window.localStorage?.getItem(QQ_APPEARANCE_STORAGE_KEY);
     if (QQ_APPEARANCES.includes(savedAppearance)) qqAppearance = savedAppearance;
+    else if (["light", "dark"].includes(savedAppearance)) {
+      window.localStorage?.setItem(QQ_APPEARANCE_STORAGE_KEY, "classic");
+    }
     const savedMode = window.localStorage?.getItem(MODE_STORAGE_KEY);
     const legacyEnabled = window.localStorage?.getItem(ENABLED_STORAGE_KEY);
     if (["native", "qq", "custom"].includes(savedMode)) skinMode = savedMode;
@@ -261,47 +280,8 @@
     }
   };
 
-  /**
-   * QQ has independent light and dark palettes. Codex writes its active native
-   * palette as inline --color-* variables, so merely declaring color-scheme
-   * cannot prevent dark popovers and portals. Snapshot those native values,
-   * let Codex's matching native stylesheet take over while QQ is active,
-   * then restore the exact previous palette on exit.
-   */
-  const forceNativeAppearanceForQQ = () => {
-    const root = document.documentElement;
-    let snapshot = window[NATIVE_APPEARANCE_STATE_KEY];
-    if (!snapshot) {
-      snapshot = {
-        variant: root.classList.contains("electron-dark") ? "dark" : root.classList.contains("electron-light") ? "light" : null,
-        theme: root.getAttribute("data-theme"),
-        properties: Array.from(root.style || [])
-          .filter((name) => name.startsWith("--color-") || name.startsWith("--codex-base-"))
-          .map((name) => [name, root.style.getPropertyValue(name), root.style.getPropertyPriority(name)]),
-      };
-      window[NATIVE_APPEARANCE_STATE_KEY] = snapshot;
-    }
-    // Codex may finish loading its saved appearance after the early skin
-    // injection. Keep that native value instead of restoring a startup default.
-    // Disconnect around our own writes, including no-op host theme writes.
-    if (!snapshot.themeObserver && typeof MutationObserver === "function") {
-      snapshot.captureTheme = () => { snapshot.theme = root.getAttribute("data-theme"); };
-      snapshot.themeObserver = new MutationObserver(snapshot.captureTheme);
-    }
-    if (snapshot.themeObserver?.takeRecords().length) snapshot.captureTheme();
-    snapshot.themeObserver?.disconnect();
-    for (const name of Array.from(root.style || [])) {
-      if (name.startsWith("--color-") || name.startsWith("--codex-base-")) {
-        root.style.removeProperty(name);
-      }
-    }
-    const appearance = selectedQQTheme().appearance === "dark" ? "dark" : "light";
-    setAttribute(root, "data-theme", appearance);
-    root.classList.toggle("electron-dark", appearance === "dark");
-    root.classList.toggle("electron-light", appearance === "light");
-    snapshot.themeObserver?.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
-  };
-
+  // One-time migration for a hot injection over an older, forced appearance.
+  // New payloads never capture or overwrite Codex's native theme variables.
   const restoreNativeAppearance = () => {
     const root = document.documentElement;
     const snapshot = window[NATIVE_APPEARANCE_STATE_KEY];
@@ -2734,7 +2714,7 @@
       retroShellParts.penguin.src = qqAvatarUrl;
     }
     const themeTitle = MEDIA_APPEARANCES.includes(qqAppearance)
-      ? selectedQQTheme().name.split(" · ")[0] : qqAppearance === "dark" ? "2008" : "2007";
+      ? THEME.name.split(" · ")[0] : "QQ 经典";
     setTextContent(retroShellParts.title, `Codex ${themeTitle} - ${findRetroTitle()}`);
     return retroShell;
   };
@@ -2845,10 +2825,22 @@
 
   const applyRootState = (root) => {
     metrics.rootPasses += 1;
-    if (skinMode === "qq") forceNativeAppearanceForQQ();
-    else restoreNativeAppearance();
+    restoreNativeAppearance();
+    if (skinMode === "qq") {
+      THEME = selectedQQTheme();
+      ART = THEME.art || {};
+      LAYOUT = THEME.layout || {};
+      SOUND = THEME.sound || {};
+      const state = window[STATE_KEY];
+      if (state?.installToken === installToken) {
+        state.themeId = THEME.id;
+        state.appearance = THEME.appearance;
+      }
+    }
     ensureStyle(root);
     const shell = resolvedShell();
+    // Menu swatches are rendered once; discard them when Codex changes mode.
+    if (root.getAttribute(SHELL_ATTR) !== shell) closeLibraryMenu();
     setAttribute(root, SHELL_ATTR, shell);
     setAttribute(root, "data-qq-palette", skinMode === "qq" ? qqAppearance : "");
     setAttribute(root, "data-qq-palette-family", skinMode === "qq" && MEDIA_APPEARANCES.includes(qqAppearance) ? "media" : "");
@@ -3403,7 +3395,7 @@
     };
     heading("平台配色");
     for (const appearance of MEDIA_APPEARANCES) {
-      const item = QQ_THEME.variants[appearance];
+      const item = selectedQQTheme(appearance);
       addOption({ id: item.id, label: item.name, colors: item.colors,
         selected: skinMode === "qq" && qqAppearance === appearance,
         activate: () => selectSkinMode("qq", appearance) });
@@ -3454,9 +3446,9 @@
       return;
     }
     skinMode = mode;
+    if (mode === "qq" && ["light", "dark"].includes(appearance)) appearance = "classic";
     if (mode === "qq" && QQ_APPEARANCES.includes(appearance)) qqAppearance = appearance;
-    if (skinMode === "qq") forceNativeAppearanceForQQ();
-    else restoreNativeAppearance();
+    restoreNativeAppearance();
     THEME = skinMode === "qq" ? selectedQQTheme() : CUSTOM_THEME;
     ART = THEME.art && typeof THEME.art === "object" ? THEME.art : {};
     LAYOUT = THEME.layout && typeof THEME.layout === "object" ? THEME.layout : {};
@@ -3493,13 +3485,13 @@
 
     if (
       !control || control.parentElement !== document.body || control.tagName === "BUTTON"
-      || control.dataset.qqModes !== "more-v1"
+      || control.dataset.qqModes !== "brands-v2"
     ) {
       control?.remove();
       closeLibraryMenu();
       control = document.createElement("div");
       control.id = TOGGLE_ID;
-      control.dataset.qqModes = "more-v1";
+      control.dataset.qqModes = "brands-v2";
       control.setAttribute("role", "group");
       control.setAttribute("aria-label", "切换皮肤");
       control.style.cssText = [
@@ -3509,7 +3501,7 @@
         "background:rgba(248,248,249,.91)", "box-shadow:0 1px 2px rgba(0,0,0,.08),0 5px 14px rgba(0,0,0,.08)",
         "-webkit-app-region:no-drag",
       ].join(";");
-      for (const [mode, label, appearance] of [["native", "原生"], ["qq", "浅色", "light"], ["qq", "深色", "dark"], ["more", "更多"]]) {
+      for (const [mode, label, appearance] of [["native", "原生"], ["qq", "QQ 经典", "classic"], ["more", "更多"]]) {
         const button = document.createElement("button");
         button.type = "button";
         if (mode === "more") {

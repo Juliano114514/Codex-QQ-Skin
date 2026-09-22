@@ -1,5 +1,74 @@
 # 2026 平台配色设计语言
 
+## 品牌与明暗分离（2026-09-22，最新实现）
+
+本节替代下文历史记录中的“各品牌固定明暗”和四入口说明；历史采样保留供追溯。
+顶部为 **原生 / QQ 经典 / 更多**。QQ 经典与七个平台均有浅色、深色两套，
+明暗只跟随 Codex 外观设置，不再由皮肤反向强制修改原生主题。
+
+### 本轮证据补充
+
+桌面以 2026-09-22 实际网页为基准，用浏览器 `getComputedStyle` 读取可见控件；
+手机、平板按当天官方 App Store 页面版本与独立设备预览核对。商店截图可能早于
+当前版本，并非安装这些版本后的实机验证；网页也不是原生电脑客户端。
+
+| 平台 | 本轮电脑端 CSS 复核 | 官方手机 / 平板页面版本与观察 |
+| --- | --- | --- |
+| [爱奇艺](https://www.iqiyi.com/) | 页面 `#111214`；Harmony / PingFang；搜索输入左侧 8px、按钮右侧 7px | [手机](https://apps.apple.com/cn/app/id393765873?platform=iphone) 17.9.2：浅底绿色频道；[PAD](https://apps.apple.com/cn/app/id409563112?platform=ipad) 17.9.0：深色宽屏内容 |
+| [哔哩哔哩](https://www.bilibili.com/) | body `#F1F2F3`、正文 `#18191C`、次文字 `#61666D`；封面 6px；登录 `#00AEEC` | [手机](https://apps.apple.com/cn/app/id736536022?platform=iphone) / [iPad](https://apps.apple.com/cn/app/id736536022?platform=ipad) 9.12.0：白底粉色操作、平板多列内容 |
+| [抖音](https://www.douyin.com/jingxuan) | 选中导航约 10% 浅灰、12px；PingFang / DFPKingGothic，16px | [手机](https://apps.apple.com/cn/app/id1142110895?platform=iphone) / [iPad](https://apps.apple.com/cn/app/id1142110895?platform=ipad) 40.5.0：深色视频与浅色社交并存，平板预览有横屏视频及侧边操作 |
+| [快手](https://www.kuaishou.com/new-reco) | Microsoft YaHei，16px；搜索灰色透明底、100px；导航 8px；登录提示卡 10px | [手机](https://apps.apple.com/cn/app/id440948110?platform=iphone) / [iPad](https://apps.apple.com/cn/app/id440948110?platform=ipad) 14.8.30：视频覆盖控件、浅底双列发现；平板预览仍偏竖向，未推断横屏专用布局 |
+| [腾讯视频](https://v.qq.com/) | 页面 `#141414`；搜索 10% 白、36px；搜索文字 16px / 60% 白；导航 9px | [手机](https://apps.apple.com/cn/app/id458318329?platform=iphone) / [HD](https://apps.apple.com/cn/app/id407925512?platform=ipad) 9.04.55：手机浅色频道、HD 深色宽屏 |
+| [优酷](https://www.youku.com/ku/webhome) | 本轮遇到人机验证，未绕过；沿用本文件此前记录的同日网页采样：`#151618`、卡片 8px、搜索胶囊 | [手机](https://apps.apple.com/cn/app/id336141475?platform=iphone) / [HD](https://apps.apple.com/cn/app/id394075284?platform=ipad) 11.2.15：深色视频与内容预览；浅色版是本项目适配，不声称官方同款 |
+| [芒果 TV](https://www.mgtv.com/) | 页面 `#131619`；PingFangSC / Arial / Microsoft YaHei UI；搜索外壳 22px、文字 14px | [手机](https://apps.apple.com/cn/app/id629774477?platform=iphone) 9.4.3：视频下浅底详情；[HD](https://apps.apple.com/cn/app/id489782456?platform=ipad) 8.0.5：宽屏视频 |
+
+### 统一的双配色语言
+
+- **结构稳定**：同一套导航、任务、输入框、资料、浮层和交互。参考手机的信息权重、
+  平板的宽屏层级和电脑的控件材质，不复制视频产品的页面结构。
+- **明暗是表面关系，不是颜色反转**：浅色为白色主体、低饱和次级底、深色正文；
+  深色为分层暗底、亮正文。浅色强调文字单独加深，避免亮品牌色直接用于小字。
+- **品牌色分工**：爱奇艺绿；B 站樱粉与辅助蓝；抖音玫红与青边；快手橙与冷灰；
+  腾讯青色状态与橙色操作；优酷冷蓝细边；芒果暖橙与柔和胶囊。
+- **形状跨明暗保持**：保留各平台字体和圆角；例如抖音、快手输入框 12px，
+  腾讯 10px，B 站与优酷 8px，芒果 22px。这些是 Codex 组件适配值，不是官网设计令牌。
+- **状态完整**：选中用轻品牌底、文字用可读的深/浅强调色；悬停用次级表面；
+  焦点保留可见边线；错误仍用错误语义。明暗切换时关闭旧色块菜单，重新打开取新配色。
+- **兼容原生**：皮肤只读 Codex 已解析的明暗，包含“系统”模式；不另存一套明暗偏好。
+  原来的 `light` / `dark` 品牌选择迁移为 `classic`，七个平台的选择值保持不变。
+
+### 实现与核验边界
+
+基础品牌配置仍在原有 JSON；`assets/theme-appearances.json` 补充各品牌另一套配色。
+注入器合并并校验双配色，渲染器根据原生外观选取，CSS 共用组件和语义令牌。
+旧注入版本遗留的强制外观快照只恢复一次；新版本不再创建快照或覆盖原生明暗。
+
+本轮已在实际 Codex 任务页切换八组主题的两种外观，检查原生明暗与皮肤一致，
+未出现整页横向溢出。七个平台两套配色的正文 / 主表面、次文字 / 次级表面、
+强调文字 / 主表面、深色按钮字 / 品牌底的计算对比度均大于 4.5:1；
+这仅覆盖指定配色对，不代表完整无障碍审计。
+
+已核对 Codex“系统”选择在当前浅色 Windows 外观下解析一致；DevTools 媒体模拟
+不驱动 Electron 的原生外观设置，未将其视为 Windows 真实外观切换的验证。
+两项既有测试失败也在未修改的 HEAD 上复现，不记为本次通过，不删除或弱化断言。
+未新增测试代码、未重建 Release 安装器、未完整退出并重启 Codex。
+
+收尾检查：菜单的 Home / End / 方向键 / Enter 选择、恢复原生模式且原生颜色变量
+不变、资料弹窗深浅色、输入与原生下拉的 color-scheme、首页两种外观、
+1280×800 任务页输入框及无横向溢出均已实际检查。CSS 的 257 个块完整解析，
+检查的非自定义声明没有不支持值；JavaScript 语法、payload 与 diff 空白检查通过。
+运行资源已同步到安装引擎并热重注入，保留了主题选择；最终恢复原任务页与
+1922×1034 视口，选择 QQ 经典，Codex 外观为深色。
+
+`--verify` 返回界面 `pass: true`；首次命令退出出现本文件历史记录中的
+`UV_HANDLE_CLOSING` 断言，随后重跑退出码为 0。未修改的 HEAD 在同一环境运行
+`--verify` 也退出 0，因此记录为间歇性退出问题，不能据单次重跑声称它已修复。
+`renderer-inject.test.mjs` 和 `injector-bootstrap.test.mjs` 的原有断言仍失败，
+测试套件不记为全绿。
+
+安全自查：本次仅本地主题数据、CSS、主题状态读取与旧偏好迁移；无新增依赖、
+业务网络请求、动态执行入口或敏感数据采集。
+
 ## 哔哩哔哩白粉亮色与七平台统一规则（2026-09-22）
 
 本次在原有六套主题之外新增 **哔哩哔哩 · 白粉轻盈**，共七套平台主题。

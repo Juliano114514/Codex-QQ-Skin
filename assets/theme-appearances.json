@@ -1,0 +1,100 @@
+{
+  "iqiyi": {
+    "light": {
+      "background": "#f5f7f6",
+      "panel": "#ffffff",
+      "panelAlt": "#eef3f0",
+      "accent": "#00cc4c",
+      "accentAlt": "#007c36",
+      "secondary": "#007c9e",
+      "highlight": "#89601e",
+      "text": "#18231d",
+      "muted": "#59675f",
+      "line": "#dce5df"
+    }
+  },
+  "bilibili": {
+    "dark": {
+      "background": "#141518",
+      "panel": "#1c1d22",
+      "panelAlt": "#282a31",
+      "accent": "#ff6699",
+      "accentAlt": "#ff91b6",
+      "secondary": "#55c7f3",
+      "highlight": "#ff91b6",
+      "text": "#f1f2f3",
+      "muted": "#afb2bb",
+      "line": "#393c45"
+    }
+  },
+  "douyin": {
+    "light": {
+      "background": "#f6f6f8",
+      "panel": "#ffffff",
+      "panelAlt": "#eeeef3",
+      "accent": "#fe2c55",
+      "accentAlt": "#bd2143",
+      "secondary": "#007e83",
+      "highlight": "#007e83",
+      "text": "#20212b",
+      "muted": "#626471",
+      "line": "#dddfe6"
+    }
+  },
+  "kuaishou": {
+    "light": {
+      "background": "#f7f7fa",
+      "panel": "#ffffff",
+      "panelAlt": "#eeeef4",
+      "accent": "#ff5000",
+      "accentAlt": "#ad3800",
+      "secondary": "#b32250",
+      "highlight": "#b32250",
+      "text": "#21232b",
+      "muted": "#626574",
+      "line": "#dedfe7"
+    }
+  },
+  "tencent": {
+    "light": {
+      "background": "#f5f7f7",
+      "panel": "#ffffff",
+      "panelAlt": "#edf2f2",
+      "accent": "#ff650f",
+      "accentAlt": "#a34300",
+      "secondary": "#007579",
+      "highlight": "#007579",
+      "text": "#1c2425",
+      "muted": "#5c696b",
+      "line": "#dce4e4"
+    }
+  },
+  "youku": {
+    "light": {
+      "background": "#f4f7fa",
+      "panel": "#ffffff",
+      "panelAlt": "#eaf1f8",
+      "accent": "#24bfff",
+      "accentAlt": "#006fa4",
+      "secondary": "#a34b00",
+      "highlight": "#a34b00",
+      "text": "#192630",
+      "muted": "#596b78",
+      "line": "#d7e3ed"
+    }
+  },
+  "mango": {
+    "light": {
+      "background": "#faf7f3",
+      "panel": "#ffffff",
+      "panelAlt": "#f4eee7",
+      "accent": "#ff5f00",
+      "accentAlt": "#a43b00",
+      "secondary": "#8b5900",
+      "highlight": "#8b5900",
+      "text": "#2c241e",
+      "muted": "#726354",
+      "line": "#e7ddd2"
+    }
+  }
+}
