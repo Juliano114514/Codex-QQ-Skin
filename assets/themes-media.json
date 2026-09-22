@@ -1,4 +1,23 @@
 {
+  "bilibili": {
+    "id": "qq-bilibili",
+    "name": "哔哩哔哩 · 白粉轻盈",
+    "brandSubtitle": "BILIBILI · CODEX",
+    "tagline": "哔哩哔哩 · 白粉轻盈，让灵感干杯。",
+    "appearance": "light",
+    "colors": {
+      "background": "#f6f7f8",
+      "panel": "#ffffff",
+      "panelAlt": "#f1f2f3",
+      "accent": "#ff6699",
+      "accentAlt": "#b92b60",
+      "secondary": "#00699d",
+      "highlight": "#b92b60",
+      "text": "#18191c",
+      "muted": "#61666d",
+      "line": "#e3e5e7"
+    }
+  },
   "douyin": {
     "id": "qq-douyin",
     "name": "抖音 · 霓虹玫红",

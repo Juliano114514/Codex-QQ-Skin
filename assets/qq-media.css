@@ -1,4 +1,4 @@
-/* Media palettes share geometry with qq-dark.css and qq-ui.css.
+/* Media palettes preserve layout geometry from qq-skin.css, qq-dark.css and qq-ui.css.
    Colors come from theme-iqiyi.json / themes-media.json. See docs/media-palettes-2026.md. */
 html.codex-qq-skin[data-qq-palette-family="media"] {
   --qq-font-ui: "QQ Media PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -164,40 +164,158 @@ html.codex-qq-skin[data-qq-palette-family="media"] :focus-visible {
    Website observations and adapted values: docs/media-palettes-2026.md. */
 html.codex-qq-skin[data-qq-palette="iqiyi"] {
   --qq-font-ui: "HarmonyOS Sans SC", Harmony_Regular, PingFangSC-Regular, "Microsoft YaHei", sans-serif;
-  --qq-radius-card: 8px;
-  --qq-night-selected: linear-gradient(100deg, #00cc4c, #00da5a);
+  --qq-radius-control: 8px;
+  --qq-radius-card: 12px;
+  --qq-radius-action: 999px;
+  --qq-text-accent: #00e25e;
+  --qq-surface-selected: #163024;
+  --qq-surface-hover: #25282e;
+  --qq-night-selected: linear-gradient(100deg, #00cc4c, #00e25e);
+  --qq-night-bar: #14161a;
+  --qq-night-title: #111214;
+  --qq-night-glint: none;
+  --qq-brand-wash: linear-gradient(110deg, rgb(0 204 76 / .05), transparent 70%);
+  --qq-card-bar: var(--ds-panel);
+  --qq-card-border: rgb(255 255 255 / .06);
+  --qq-platform-sidebar: #101513;
+  --qq-platform-heading: #151d18;
+  --qq-platform-edge: inset 0 1px rgb(0 226 94 / .14);
 }
 html.codex-qq-skin[data-qq-palette="douyin"] {
   --qq-font-ui: "DFP King Gothic GB", "QQ Media PingFang SC", "Microsoft YaHei UI", sans-serif;
-  --qq-radius-control: 12px;
-  --qq-radius-card: 12px;
-  --qq-radius-action: 12px;
+  --qq-radius-control: 8px;
+  --qq-radius-card: 16px;
+  --qq-radius-action: 8px;
+  --qq-surface-selected: #30323e;
+  --qq-surface-hover: #252733;
   --qq-night-selected: #fe2c55;
-  --qq-brand-wash: linear-gradient(110deg, rgb(var(--ds-accent-rgb) / .12), rgb(var(--ds-secondary-rgb) / .04) 80%);
+  --qq-night-title: #101118;
+  --qq-night-bar: #161823;
+  --qq-night-glint: none;
+  --qq-brand-wash: linear-gradient(110deg, rgb(254 44 85 / .04), transparent 65%);
+  --qq-card-bar: var(--ds-panel);
+  --qq-card-border: rgb(255 255 255 / .07);
+  --qq-shadow-popup: 0 16px 48px rgb(0 0 0 / .45);
+  --qq-platform-sidebar: #101118;
+  --qq-platform-heading: linear-gradient(110deg, #29202d, #20222e 65%, #1e2d35);
+  --qq-platform-edge: inset 2px 0 #25f4ee, inset -2px 0 #fe2c55;
 }
 html.codex-qq-skin[data-qq-palette="kuaishou"] {
   --qq-font-ui: "QQ Media PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --qq-radius-control: 8px;
   --qq-radius-card: 8px;
-  --qq-night-selected: linear-gradient(100deg, #ff5000, #ff9b54);
+  --qq-radius-action: 999px;
+  --qq-text-accent: #ff995e;
+  --qq-surface-selected: #30313d;
+  --qq-surface-hover: #262733;
+  --qq-night-selected: #ff5000;
+  --qq-night-title: #171820;
+  --qq-night-bar: #1d1e28;
+  --qq-night-glint: none;
+  --qq-brand-wash: linear-gradient(110deg, rgb(255 80 0 / .07), transparent 70%);
+  --qq-card-bar: var(--ds-panel);
+  --qq-card-border: rgb(255 255 255 / .08);
+  --qq-shadow-popup: 0 16px 40px rgb(0 0 0 / .4);
+  --ds-on-accent: #171820;
+  --qq-platform-sidebar: linear-gradient(165deg, #202a3b, #171820 48%);
+  --qq-platform-heading: #292c38;
+  --qq-platform-edge: none;
 }
 html.codex-qq-skin[data-qq-palette="tencent"] {
   --qq-font-ui: "QQ Media PingFang SC", PingFangSC-Regular, Tahoma, "Microsoft YaHei", sans-serif;
+  --qq-radius-control: 4px;
   --qq-radius-card: 8px;
   --qq-radius-action: 999px;
-  --qq-night-selected: linear-gradient(100deg, #ff650f, #ffad4d);
-  --qq-brand-wash: linear-gradient(110deg, rgb(var(--ds-accent-rgb) / .06), transparent 65%);
+  --qq-text-accent: #00d1d1;
+  --qq-surface-selected: #162727;
+  --qq-surface-hover: #252525;
+  --qq-night-selected: #ff650f;
+  --qq-night-title: #0b0b0b;
+  --qq-night-bar: #111111;
+  --qq-night-glint: none;
+  --qq-brand-wash: linear-gradient(110deg, rgb(0 209 209 / .04), transparent 70%);
+  --qq-card-bar: #141414;
+  --qq-card-border: rgb(255 255 255 / .07);
+  --qq-platform-sidebar: #0c0c0c;
+  --qq-platform-heading: #141414;
+  --qq-platform-edge: none;
+  --qq-platform-card: #141414;
+  --qq-platform-shadow: none;
+  --qq-platform-nav-shadow: inset 0 -2px #00d1d1;
+  --qq-platform-composer: #1f1f1f;
+  --qq-platform-composer-radius: 10px;
+  --qq-platform-focus-shadow: inset 0 -2px #00d1d1;
+  --qq-platform-bubble: #252525;
+  --qq-platform-metric: transparent;
+  --qq-platform-chart: #101010;
+  --qq-platform-bar: #596365;
+  --qq-platform-bar-radius: 2px 2px 0 0;
+  --qq-platform-home: radial-gradient(ellipse at 75% 0, #243030, #141414 70%);
+  --qq-shadow-popup: 0 20px 56px rgb(0 0 0 / .6);
 }
 html.codex-qq-skin[data-qq-palette="youku"] {
   --qq-font-ui: "QQ Media PingFang SC", "Microsoft YaHei", Helvetica, Arial, Verdana, Tahoma, sans-serif;
-  --qq-radius-action: 999px;
+  --qq-radius-control: 6px;
+  --qq-radius-card: 8px;
+  --qq-radius-action: 8px;
+  --qq-text-accent: #70dcff;
+  --qq-surface-selected: #15334a;
+  --qq-surface-hover: #23303b;
   --qq-night-selected: linear-gradient(100deg, #24bfff, #70dcff);
+  --qq-night-title: #111b25;
+  --qq-night-bar: #19232f;
+  --qq-night-glint: none;
+  --qq-brand-wash: linear-gradient(120deg, rgb(36 191 255 / .10), transparent 75%);
+  --qq-card-bar: #1c2b38;
+  --qq-card-border: rgb(112 220 255 / .18);
+  --qq-platform-sidebar: linear-gradient(180deg, #15212d, #141517 70%);
+  --qq-platform-heading: linear-gradient(100deg, #20384c, #1b2732);
+  --qq-platform-edge: inset 0 1px rgb(112 220 255 / .22);
+  --qq-platform-card: linear-gradient(145deg, #1d2b38, #1d1e20 80%);
+  --qq-platform-shadow: inset 0 1px rgb(255 255 255 / .04);
+  --qq-platform-nav-shadow: inset 0 0 0 1px rgb(112 220 255 / .5);
+  --qq-platform-composer: linear-gradient(120deg, #202c38, #1d2229);
+  --qq-platform-composer-radius: 8px;
+  --qq-platform-focus-shadow: 0 0 0 2px rgb(36 191 255 / .18);
+  --qq-platform-bubble: linear-gradient(120deg, #19394c, #202c38);
+  --qq-platform-metric: #152330;
+  --qq-platform-chart: #15212c;
+  --qq-platform-bar: linear-gradient(0deg, #245376, #5795b5);
+  --qq-platform-bar-radius: 3px 3px 0 0;
+  --qq-platform-home: linear-gradient(120deg, #20394c, #151f2a 65%, #302b25);
+  --qq-shadow-popup: 0 16px 40px rgb(0 0 0 / .45), inset 0 1px rgb(112 220 255 / .12);
 }
 html.codex-qq-skin[data-qq-palette="mango"] {
   --qq-font-ui: "QQ Media PingFang SC", PingFangSC-Regular, Arial, "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
-  --qq-radius-card: 12px;
-  --qq-radius-action: 22px;
+  --qq-radius-control: 14px;
+  --qq-radius-card: 18px;
+  --qq-radius-action: 999px;
+  --qq-text-accent: #ffbc7d;
+  --qq-surface-selected: #493126;
+  --qq-surface-hover: #34302c;
   --qq-night-selected: linear-gradient(90deg, #ff5f00, #ffa552);
-  --qq-brand-wash: linear-gradient(110deg, rgb(var(--ds-accent-rgb) / .10), rgb(var(--ds-highlight-rgb) / .03));
+  --qq-night-title: #201a17;
+  --qq-night-bar: linear-gradient(100deg, #35251e, #222427);
+  --qq-night-glint: none;
+  --qq-brand-wash: linear-gradient(110deg, rgb(255 95 0 / .12), rgb(255 197 110 / .04));
+  --qq-card-bar: #342921;
+  --qq-card-border: rgb(255 197 110 / .13);
+  --qq-platform-sidebar: linear-gradient(170deg, #2d241e, #191c20 55%);
+  --qq-platform-heading: linear-gradient(110deg, #453024, #2a2825);
+  --qq-platform-edge: inset 0 1px rgb(255 208 153 / .14);
+  --qq-platform-card: linear-gradient(145deg, #302923, #1e2429 75%);
+  --qq-platform-shadow: 0 5px 14px rgb(0 0 0 / .16), inset 0 1px rgb(255 215 168 / .06);
+  --qq-platform-nav-shadow: inset 0 1px rgb(255 197 110 / .16);
+  --qq-platform-composer: linear-gradient(125deg, #37302b, #282e34);
+  --qq-platform-composer-radius: 22px;
+  --qq-platform-focus-shadow: 0 0 0 3px rgb(255 133 51 / .14);
+  --qq-platform-bubble: linear-gradient(120deg, #483127, #33302c);
+  --qq-platform-metric: #342c26;
+  --qq-platform-chart: #27282a;
+  --qq-platform-bar: linear-gradient(0deg, #765244, #c2875e);
+  --qq-platform-bar-radius: 999px 999px 4px 4px;
+  --qq-platform-home: radial-gradient(ellipse at 15% 0, #62412a, #302824 48%, #1b2228);
+  --qq-shadow-popup: 0 18px 48px rgb(0 0 0 / .42), inset 0 1px rgb(255 197 110 / .12);
 }
 
 /* Three surface levels: canvas, content card, elevated controls/popovers.
@@ -361,4 +479,1079 @@ html.codex-qq-skin:is([data-qq-palette="iqiyi"], [data-qq-palette="youku"]) #cod
 @font-face { font-family: "QQ Media PingFang SC"; src: url("__QQ_FONT_PingFangSC_Semibold__") format("opentype"); font-weight: 600 900; font-display: swap; }
 html.codex-qq-skin[data-qq-palette="douyin"] :is(strong, b, h1, h2, h3, .qq-skin-usage-title, .qq-skin-details-title) {
   font-family: "DFP King Gothic GB Medium", var(--qq-font-ui);
+}
+
+/* Douyin: immersive dark canvas, white navigation, selective rose actions.
+   PC live styles + official iPhone/iPad previews: docs/media-palettes-2026.md.
+   All rules repaint existing components; geometry and native behavior stay owned upstream. */
+html.codex-qq-skin[data-qq-palette="douyin"] :is(
+  #codex-qq-skin-retro-shell, .dream-retro-titlebar, .dream-retro-toolbar,
+  #codex-qq-skin-retro-profile, .dream-retro-body-frame
+) {
+  border-color: var(--qq-card-border);
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] :is(
+  aside.app-shell-left-panel, #codex-qq-skin-retro-profile
+) {
+  background: #101118 !important;
+  border-color: var(--qq-card-border) !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] :is(
+  .dream-retro-toolbar button, .dream-retro-native-controls .dream-retro-cloned-control
+) {
+  border-radius: 8px;
+  font-weight: 500;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #root :is(
+  .qq-skin-section-bar, [class~="group/nav-section-title"]
+) {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--ds-muted) !important;
+  box-shadow: none !important;
+  border-radius: 8px;
+  font-weight: 400;
+  transition: none;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #root .qq-skin-section-bar:is(:hover, :focus-within) {
+  background: var(--qq-surface-hover) !important;
+  color: var(--ds-text) !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #root .qq-skin-section-bar button {
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: none;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] aside.app-shell-left-panel [data-app-action-sidebar-project-row] {
+  border-color: transparent;
+  font-weight: 600;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
+  border-radius: 8px;
+  font-weight: 400;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
+  background: var(--qq-surface-hover) !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] :is(
+  aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"],
+  #codex-qq-skin-profile-dialog nav > button[aria-current="page"],
+  #codex-qq-skin-library-menu button[aria-checked="true"]
+) {
+  background: var(--qq-surface-selected) !important;
+  color: var(--ds-text) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  font-weight: 600;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] aside.app-shell-left-panel [aria-current="page"] svg {
+  color: var(--ds-text) !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] :is(#root, #codex-qq-skin-profile-dialog) :is(
+  .qq-skin-details-title, .qq-skin-usage-title, .qq-skin-profile-dialog-title
+) {
+  background: var(--ds-panel) !important;
+  border-color: var(--qq-card-border) !important;
+  border-radius: 16px 16px 0 0;
+  color: var(--ds-text) !important;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] :is(
+  #codex-qq-skin-usage-panel, #codex-qq-skin-right-tray, .qq-skin-reference-card
+) {
+  border-color: var(--qq-card-border) !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #codex-qq-skin-usage-panel .qq-skin-usage-metrics > div {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 0;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] .qq-skin-usage-metrics b {
+  color: var(--ds-text) !important;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] .qq-skin-usage-metrics > div:first-child b {
+  color: var(--qq-text-accent) !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #codex-qq-skin-usage-panel .qq-skin-usage-chart {
+  background: #191b26 !important;
+  border-color: transparent !important;
+  border-radius: 8px !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] .qq-skin-usage-chart > i > span {
+  background: #995b70 !important;
+  border-color: transparent;
+  box-shadow: none;
+  border-radius: 4px 4px 0 0;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] .qq-skin-usage-chart > i:last-child > span {
+  background: #fe2c55 !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] :is(.qq-skin-usage-footer, #codex-qq-skin-profile-dialog footer) {
+  background: var(--ds-panel) !important;
+  border-color: var(--qq-card-border) !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #root :is(
+  .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
+) {
+  background: var(--qq-surface-hover) !important;
+  border-color: transparent !important;
+  border-radius: 999px !important;
+  color: var(--ds-muted) !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #root :is(
+  .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
+):is(:hover, :focus-visible) {
+  background: var(--qq-surface-selected) !important;
+  color: var(--ds-text) !important;
+}
+/* The native composer and reading surface use important layered rules. */
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="douyin"] main.qq-skin-thread-frame .thread-scroll-container {
+    background: var(--ds-bg) !important;
+    border-color: transparent;
+  }
+  html.codex-qq-skin[data-qq-palette="douyin"] :is(
+    .composer-surface-chrome, [class*="_ComposerLayoutRoot_"],
+    [data-composer-utility-bar-variant="home"] [class*="_ComposerLayoutBody_"]
+  ) {
+    background: var(--ds-panel-2) !important;
+    border-radius: 12px !important;
+    outline: 1px solid rgb(255 255 255 / .12);
+    outline-offset: -1px;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="douyin"] :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]):focus-within {
+    outline-color: rgb(255 255 255 / .4);
+    box-shadow: -2px 0 0 rgb(37 244 238 / .65), 2px 0 0 rgb(254 44 85 / .75) !important;
+  }
+}
+html.codex-qq-skin[data-qq-palette="douyin"] main.main-surface:not(.qq-skin-home-shell) article {
+  background: transparent;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #root [data-user-message-bubble="true"] {
+  background: #292b38 !important;
+  border-color: rgb(255 255 255 / .08) !important;
+  border-radius: 16px 16px 4px 16px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #codex-qq-skin-toggle {
+  border-radius: 10px !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #codex-qq-skin-toggle button {
+  border-radius: 8px !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #codex-qq-skin-profile-dialog footer > button {
+  box-sizing: border-box;
+  min-width: 72px;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 8px !important;
+  font: 600 var(--qq-text-control)/var(--qq-line-control) var(--qq-font-ui);
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #root .qq-skin-home-stack > div:first-child > div:first-child {
+  background: linear-gradient(115deg, #25202c, #161823 60%, #192a31) !important;
+  border-color: var(--qq-card-border) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] .qq-skin-home-stack > div:first-child > div:first-child::before {
+  background: radial-gradient(ellipse at 90% 10%, rgb(37 244 238 / .06), transparent 55%) !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #root .qq-skin-home .group\/home-suggestions button {
+  background: var(--ds-panel) !important;
+  border-color: transparent !important;
+  border-radius: 12px !important;
+}
+html.codex-qq-skin[data-qq-palette="douyin"] #root .qq-skin-home .group\/home-suggestions button:hover {
+  background: var(--qq-surface-selected) !important;
+  border-color: rgb(255 255 255 / .16) !important;
+  color: var(--ds-text) !important;
+}
+
+/* iQIYI: PC cinema surfaces + phone capsule controls. Existing components only.
+   Evidence and adapted values: docs/media-palettes-2026.md, 2026-09-22. */
+html.codex-qq-skin[data-qq-palette="iqiyi"] :is(
+  #codex-qq-skin-retro-shell, .dream-retro-titlebar, .dream-retro-toolbar,
+  #codex-qq-skin-retro-profile, .dream-retro-body-frame
+) {
+  border-color: rgb(255 255 255 / .06);
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] .dream-retro-toolbar button {
+  border-radius: 999px;
+  font-weight: 500;
+  text-shadow: none;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] .dream-retro-toolbar button:is(:hover, :focus-visible) {
+  background: var(--qq-surface-selected) !important;
+  color: var(--qq-text-accent) !important;
+  border-color: transparent !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #root :is(
+  .qq-skin-section-bar, [class~="group/nav-section-title"]
+) {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--ds-muted) !important;
+  box-shadow: none !important;
+  font-weight: 400;
+  border-radius: 8px;
+  transition: none;
+}
+/* Paint hover on the complete heading row, including its reserved actions.
+   Nested toggle/icon hover paints otherwise produce short, shifting patches. */
+html.codex-qq-skin[data-qq-palette="iqiyi"] #root .qq-skin-section-bar:is(:hover, :focus-within) {
+  background: var(--qq-surface-hover) !important;
+  color: var(--ds-text) !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #root .qq-skin-section-bar button {
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: none;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] aside.app-shell-left-panel [data-app-action-sidebar-project-row] {
+  border-color: transparent;
+  font-weight: 600;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
+  border-radius: 8px;
+  font-weight: 400;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
+  background: var(--qq-surface-hover) !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
+  background: var(--qq-surface-selected) !important;
+  border-color: transparent !important;
+  color: var(--qq-text-accent) !important;
+  box-shadow: inset 3px 0 #00cc4c !important;
+  font-weight: 600;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] :is(#root, #codex-qq-skin-profile-dialog) :is(
+  .qq-skin-details-title, .qq-skin-usage-title, .qq-skin-profile-dialog-title
+) {
+  background: var(--ds-panel) !important;
+  border-color: rgb(255 255 255 / .06) !important;
+  border-radius: 12px 12px 0 0;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] :is(
+  #codex-qq-skin-usage-panel, .qq-skin-reference-card,
+  #codex-qq-skin-right-tray, .qq-skin-usage-chart
+) {
+  border-color: rgb(255 255 255 / .06) !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"][data-dream-three-pane="true"] [data-pip-obstacle="thread-summary-panel"]:not(:empty) {
+  border-color: rgb(255 255 255 / .06) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #codex-qq-skin-usage-panel .qq-skin-usage-metrics > div {
+  background: var(--ds-panel-2) !important;
+  border-color: transparent !important;
+  border-radius: 8px;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] .qq-skin-usage-metrics b {
+  color: var(--ds-text) !important;
+  font-size: 20px;
+  line-height: 1.2;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] .qq-skin-usage-metrics > div:first-child b {
+  color: var(--qq-text-accent) !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #codex-qq-skin-usage-panel :is(.qq-skin-level-progress, .qq-skin-level-progress > i) {
+  border-radius: 999px;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #root :is(
+  .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
+) {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 999px !important;
+  color: var(--ds-muted) !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #root :is(
+  .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
+):is(:hover, :focus-visible) {
+  background: var(--qq-surface-hover) !important;
+  color: var(--ds-text) !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] :is(.qq-skin-usage-footer, #codex-qq-skin-retro-profile) {
+  background: var(--ds-panel) !important;
+  color: var(--ds-muted) !important;
+}
+/* Match the existing native-composer layer: important layered declarations
+   outrank unlayered rules. Use an outline to preserve the input's geometry. */
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="iqiyi"] :is(
+    .composer-surface-chrome, [class*="_ComposerLayoutRoot_"],
+    [data-composer-utility-bar-variant="home"] [class*="_ComposerLayoutBody_"]
+  ) {
+    background: var(--ds-panel-2) !important;
+    border-radius: 16px !important;
+    outline: 1px solid rgb(255 255 255 / .12);
+    outline-offset: -1px;
+    box-shadow: 0 6px 24px rgb(0 0 0 / .16) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="iqiyi"] :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]):focus-within {
+    outline-color: #00cc4c;
+    box-shadow: 0 0 0 2px rgb(0 204 76 / .10) !important;
+  }
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #root [data-user-message-bubble="true"] {
+  background: #1e2923 !important;
+  border-color: rgb(0 204 76 / .12) !important;
+  border-radius: 16px 16px 4px 16px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #codex-qq-skin-toggle {
+  border-radius: 999px !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #codex-qq-skin-toggle button {
+  border-radius: 999px !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #codex-qq-skin-library-menu button[aria-checked="true"] {
+  color: var(--qq-text-accent) !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #codex-qq-skin-profile-dialog footer > button {
+  box-sizing: border-box;
+  min-width: 72px;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: var(--qq-radius-action) !important;
+  font: 600 var(--qq-text-control)/var(--qq-line-control) var(--qq-font-ui);
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #root .qq-skin-home-stack > div:first-child > div:first-child {
+  background: linear-gradient(125deg, #16271e, #14161a 65%) !important;
+  border-color: rgb(0 204 76 / .12) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #root .qq-skin-home .group\/home-suggestions button {
+  background: var(--ds-panel-2) !important;
+  border-color: transparent !important;
+}
+html.codex-qq-skin[data-qq-palette="iqiyi"] #root .qq-skin-home .group\/home-suggestions button:hover {
+  background: var(--qq-surface-selected) !important;
+  border-color: rgb(0 204 76 / .24) !important;
+}
+
+/* Kuaishou: cool content surfaces, orange identity, growth and theme controls.
+   Current web + official iPhone/iPad previews: docs/media-palettes-2026.md.
+   Only repaint existing components; retain layout, controls and event ownership. */
+html.codex-qq-skin[data-qq-palette="kuaishou"] :is(
+  #codex-qq-skin-retro-shell, .dream-retro-titlebar, .dream-retro-toolbar,
+  #codex-qq-skin-retro-profile, .dream-retro-body-frame
+) {
+  border-color: var(--qq-card-border);
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] aside.app-shell-left-panel {
+  background: linear-gradient(165deg, #202638, #171820 38%) !important;
+  border-color: var(--qq-card-border) !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] .dream-retro-toolbar button {
+  border-radius: 8px;
+  font-weight: 500;
+  text-shadow: none;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #root :is(
+  .qq-skin-section-bar, [class~="group/nav-section-title"]
+) {
+  background: transparent !important;
+  color: var(--ds-muted) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  border-radius: 8px;
+  font-weight: 400;
+  transition: none;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #root .qq-skin-section-bar:is(:hover, :focus-within) {
+  background: var(--qq-surface-hover) !important;
+  color: var(--ds-text) !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #root .qq-skin-section-bar button {
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: none;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] aside.app-shell-left-panel [data-app-action-sidebar-project-row] {
+  border-color: transparent;
+  font-weight: 600;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
+  border-radius: 8px;
+  font-weight: 400;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
+  background: var(--qq-surface-hover) !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] :is(
+  aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"],
+  #codex-qq-skin-library-menu button[aria-checked="true"],
+  #codex-qq-skin-profile-dialog nav > button[aria-current="page"]
+) {
+  background: var(--qq-surface-selected) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  font-weight: 600;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] aside.app-shell-left-panel [aria-current="page"] svg {
+  color: #fff !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-profile-dialog nav > button[aria-current="page"] {
+  box-shadow: inset 0 -2px #ff5000 !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] :is(
+  #codex-qq-skin-usage-panel, #codex-qq-skin-right-tray, .qq-skin-reference-card
+) {
+  border-color: var(--qq-card-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] :is(#root, #codex-qq-skin-profile-dialog) :is(
+  .qq-skin-details-title, .qq-skin-usage-title, .qq-skin-profile-dialog-title
+) {
+  background: var(--ds-panel) !important;
+  color: var(--ds-text) !important;
+  border-color: var(--qq-card-border) !important;
+  border-radius: 8px 8px 0 0;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-usage-panel .qq-skin-usage-title {
+  background: linear-gradient(110deg, #392920, #20212b 85%) !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-usage-panel .qq-skin-usage-metrics > div {
+  background: #262731 !important;
+  border-color: transparent !important;
+  border-radius: 8px;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] .qq-skin-usage-metrics b {
+  color: var(--ds-text) !important;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-usage-panel .qq-skin-usage-metrics > div:first-child {
+  background: #38291f !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] .qq-skin-usage-metrics > div:first-child b {
+  color: var(--qq-text-accent) !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-usage-panel .qq-skin-usage-chart {
+  background: #191a23 !important;
+  border-color: transparent !important;
+  border-radius: 8px !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] .qq-skin-usage-chart > i > span {
+  background: #9e694d !important;
+  border-color: transparent;
+  border-radius: 3px 3px 0 0;
+  box-shadow: none;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] .qq-skin-usage-chart > i:last-child > span {
+  background: #ff995e !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] .qq-skin-level-progress > i {
+  background: linear-gradient(90deg, #ff5000, #ff995e);
+  border-radius: inherit;
+  box-shadow: none;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] :is(.qq-skin-usage-footer, #codex-qq-skin-profile-dialog footer) {
+  background: var(--ds-panel) !important;
+  border-color: var(--qq-card-border) !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] :is(#root, #codex-qq-skin-usage-panel) :is(
+  .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
+) {
+  background: var(--qq-surface-hover) !important;
+  border-color: transparent !important;
+  border-radius: 999px !important;
+  color: var(--ds-muted) !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] :is(#root, #codex-qq-skin-usage-panel) :is(
+  .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
+):is(:hover, :focus-visible) {
+  background: var(--qq-surface-selected) !important;
+  color: var(--ds-text) !important;
+}
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="kuaishou"] main.qq-skin-thread-frame .thread-scroll-container {
+    background: var(--ds-bg) !important;
+    border-color: transparent;
+  }
+  html.codex-qq-skin[data-qq-palette="kuaishou"] :is(
+    .composer-surface-chrome, [class*="_ComposerLayoutRoot_"],
+    [data-composer-utility-bar-variant="home"] [class*="_ComposerLayoutBody_"]
+  ) {
+    background: #292a34 !important;
+    border-radius: 24px !important;
+    outline: 1px solid rgb(255 255 255 / .16);
+    outline-offset: -1px;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="kuaishou"] :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]):focus-within {
+    outline-color: #ff995e;
+    box-shadow: 0 0 0 2px rgb(255 80 0 / .12) !important;
+  }
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] main.main-surface:not(.qq-skin-home-shell) article {
+  background: transparent;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #root [data-user-message-bubble="true"] {
+  background: #30313d !important;
+  border-color: rgb(255 255 255 / .08) !important;
+  border-radius: 16px 4px 16px 16px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-toggle,
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-toggle button {
+  border-radius: 999px !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] :is(
+  #codex-qq-skin-toggle button[aria-pressed="true"],
+  #codex-qq-skin-profile-dialog footer > button[type="submit"]
+):hover:not(:disabled) {
+  background: #ff7838 !important;
+  color: var(--ds-on-accent) !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-profile-dialog footer > button {
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-usage-panel .qq-skin-usage-title .qq-skin-profile-settings {
+  background: #38291f !important;
+  color: #ff995e !important;
+  border-color: rgb(255 153 94 / .28) !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-usage-panel .qq-skin-usage-title .qq-skin-profile-settings:is(:hover, :focus-visible) {
+  background: #ff5000 !important;
+  color: var(--ds-on-accent) !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-profile-dialog .qq-skin-avatar-grid > button[aria-pressed="true"] {
+  background: #38291f;
+  border-color: #ff995e;
+  box-shadow: inset 0 0 0 1px #ff995e;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-profile-dialog .qq-skin-avatar-grid > button:hover {
+  border-color: #ff995e;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #codex-qq-skin-profile-dialog button:focus-visible {
+  outline-color: #ff995e;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #root .qq-skin-home-stack > div:first-child > div:first-child {
+  background: linear-gradient(120deg, #3a2a22, #20212b 62%, #242b3d) !important;
+  border-color: var(--qq-card-border) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #root .qq-skin-home .group\/home-suggestions button {
+  background: var(--ds-panel) !important;
+  border-color: var(--qq-card-border) !important;
+  border-radius: 8px !important;
+}
+html.codex-qq-skin[data-qq-palette="kuaishou"] #root .qq-skin-home .group\/home-suggestions button:hover {
+  background: var(--qq-surface-selected) !important;
+  color: var(--ds-text) !important;
+  border-color: rgb(255 255 255 / .2) !important;
+}
+
+/* Platform materials, sampled 2026-09-22. Paint only: no new nodes, geometry,
+   filters or animation. Classic light/dark never match these selectors. */
+html.codex-qq-skin[data-qq-palette-family="media"][data-qq-palette] aside.app-shell-left-panel {
+  background: var(--qq-platform-sidebar) !important;
+}
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette-family="media"][data-qq-palette] :is(#root, #codex-qq-skin-profile-dialog) :is(
+    .qq-skin-details-title, .qq-skin-usage-title, .qq-skin-profile-dialog-title
+  ) {
+    background: var(--qq-platform-heading) !important;
+    border-color: var(--qq-card-border) !important;
+    box-shadow: var(--qq-platform-edge) !important;
+    border-radius: var(--qq-radius-card) var(--qq-radius-card) 0 0;
+    text-shadow: none !important;
+  }
+}
+html.codex-qq-skin[data-qq-palette-family="media"] [data-app-shell-tab-controller] [role="tab"][aria-selected="true"] {
+  color: var(--qq-text-accent) !important;
+  box-shadow: inset 0 -2px var(--qq-text-accent);
+}
+
+/* Long-form video: Tencent's flat cinema, Youku's cool edged panels, Mango's
+   soft warm volumes. The same existing controls consume different materials. */
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) :is(
+  .dream-retro-titlebar, .dream-retro-toolbar, #codex-qq-skin-retro-profile
+) {
+  border-color: var(--qq-card-border) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #root :is(
+  .qq-skin-section-bar, [class~="group/nav-section-title"]
+) {
+  background: transparent !important;
+  color: var(--ds-muted) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border-radius: var(--qq-radius-control);
+  font-weight: 400;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #root .qq-skin-section-bar:is(:hover, :focus-within) {
+  background: var(--qq-surface-hover) !important;
+  color: var(--ds-text) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #root .qq-skin-section-bar button {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) aside.app-shell-left-panel [data-app-action-sidebar-project-row] {
+  border-color: transparent;
+  font-weight: 600;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
+  border-radius: var(--qq-radius-control);
+  text-shadow: none !important;
+  font-weight: 400;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
+  background: var(--qq-surface-hover) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) :is(
+  aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"],
+  #codex-qq-skin-profile-dialog nav > button[aria-current="page"],
+  #codex-qq-skin-library-menu button[aria-checked="true"]
+) {
+  background: var(--qq-surface-selected) !important;
+  color: var(--qq-text-accent) !important;
+  border-color: transparent !important;
+  box-shadow: var(--qq-platform-nav-shadow) !important;
+  border-radius: var(--qq-radius-control);
+  font-weight: 600;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) aside.app-shell-left-panel [aria-current="page"] svg {
+  color: var(--qq-text-accent) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #root :is(
+  #codex-qq-skin-usage-panel, #codex-qq-skin-right-tray, .qq-skin-reference-card,
+  [data-pip-obstacle="thread-summary-panel"]:not(:empty),
+  .qq-skin-home .group\/home-suggestions button
+) {
+  background: var(--qq-platform-card) !important;
+  border-color: var(--qq-card-border) !important;
+  border-radius: var(--qq-radius-card) !important;
+  box-shadow: var(--qq-platform-shadow) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) :is(
+  #codex-qq-skin-profile-dialog, #codex-qq-skin-library-menu
+) {
+  background: var(--qq-platform-card) !important;
+  border-color: var(--qq-card-border) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #codex-qq-skin-usage-panel .qq-skin-usage-metrics > div {
+  background: var(--qq-platform-metric) !important;
+  border-color: transparent !important;
+  border-radius: var(--qq-radius-control);
+  box-shadow: var(--qq-platform-shadow) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) .qq-skin-usage-metrics b {
+  color: var(--ds-text) !important;
+  font-variant-numeric: tabular-nums;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) .qq-skin-usage-metrics > div:first-child b {
+  color: var(--qq-text-accent) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #codex-qq-skin-usage-panel .qq-skin-usage-chart {
+  background: var(--qq-platform-chart) !important;
+  border-color: transparent !important;
+  border-radius: var(--qq-radius-control) !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) .qq-skin-usage-chart > i > span {
+  background: var(--qq-platform-bar) !important;
+  border-color: transparent;
+  border-radius: var(--qq-platform-bar-radius);
+  box-shadow: none;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) .qq-skin-usage-chart > i:last-child > span {
+  background: var(--qq-text-accent) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) :is(
+  .qq-skin-usage-footer, #codex-qq-skin-profile-dialog footer, #codex-qq-skin-retro-profile
+) {
+  background: var(--ds-panel) !important;
+  border-color: var(--qq-card-border) !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #root :is(
+  .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
+) {
+  background: var(--qq-surface-hover) !important;
+  border-color: var(--qq-card-border) !important;
+  border-radius: var(--qq-radius-control) !important;
+  color: var(--ds-muted) !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #root :is(
+  .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
+):is(:hover, :focus-visible) {
+  background: var(--qq-surface-selected) !important;
+  color: var(--qq-text-accent) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #codex-qq-skin-toggle,
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #codex-qq-skin-toggle button {
+  border-radius: var(--qq-radius-action) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #codex-qq-skin-profile-dialog footer > button {
+  border-radius: var(--qq-radius-action) !important;
+}
+/* Follow the native composer's existing cascade layer, including the home input. */
+@layer qq-reference {
+  html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) main.qq-skin-thread-frame .thread-scroll-container {
+    background: var(--ds-bg) !important;
+    border-color: transparent;
+  }
+  html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) :is(
+    .composer-surface-chrome, [class*="_ComposerLayoutRoot_"],
+    [data-composer-utility-bar-variant="home"] [class*="_ComposerLayoutBody_"]
+  ) {
+    background: var(--qq-platform-composer) !important;
+    border-radius: var(--qq-platform-composer-radius) !important;
+    outline: 1px solid var(--qq-card-border);
+    outline-offset: -1px;
+    box-shadow: var(--qq-platform-shadow) !important;
+  }
+  html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) :is(
+    .composer-surface-chrome, [class*="_ComposerLayoutRoot_"]
+  ):focus-within {
+    outline-color: var(--qq-text-accent);
+    box-shadow: var(--qq-platform-focus-shadow) !important;
+  }
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) main.main-surface:not(.qq-skin-home-shell) article {
+  background: transparent;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #root [data-user-message-bubble="true"] {
+  background: var(--qq-platform-bubble) !important;
+  border-color: var(--qq-card-border) !important;
+  border-radius: var(--qq-radius-card) !important;
+  box-shadow: var(--qq-platform-shadow) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #root .qq-skin-home-stack > div:first-child > div:first-child {
+  background: var(--qq-platform-home) !important;
+  border-color: var(--qq-card-border) !important;
+  border-radius: var(--qq-radius-card) !important;
+  box-shadow: var(--qq-platform-shadow) !important;
+}
+html.codex-qq-skin:is([data-qq-palette="tencent"], [data-qq-palette="youku"], [data-qq-palette="mango"]) #root .qq-skin-home .group\/home-suggestions button:hover {
+  background: var(--qq-surface-selected) !important;
+  color: var(--ds-text) !important;
+  border-color: var(--qq-text-accent) !important;
+}
+
+/* Bilibili: white content, fine neutral outlines, selective pink interaction.
+   Current website tokens and official phone/tablet previews: docs/media-palettes-2026.md.
+   This light palette uses native light syntax/editor colors; existing palettes stay intact. */
+html.codex-qq-skin[data-qq-palette="bilibili"] {
+  color-scheme: light !important;
+  --qq-font-ui: "QQ Media PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Microsoft YaHei", sans-serif;
+  --qq-radius-control: 6px;
+  --qq-radius-card: 12px;
+  --qq-radius-action: 8px;
+  --qq-shadow-popup: 0 8px 30px rgb(24 25 28 / .12);
+  --qq-text-accent: #b92b60;
+  --qq-surface-selected: #ffecf1;
+  --qq-surface-hover: #f6f7f8;
+  --qq-night-title: #fff;
+  --qq-night-bar: #fff;
+  --qq-night-selected: #ff6699;
+  --qq-night-border: #e3e5e7;
+  --qq-night-glint: none;
+  --qq-brand-wash: linear-gradient(110deg, #fff3f7, #fff 75%);
+  --qq-card-bar: #fff;
+  --qq-card-border: #e3e5e7;
+  --qq-platform-sidebar: #fff;
+  --qq-platform-heading: #fff;
+  --qq-platform-edge: inset 0 -1px #ffecf1;
+  --ds-on-accent: #18191c;
+  --dream-classic-panel: #fff;
+  --dream-classic-panel-alt: #f6f7f8;
+  --dream-classic-line: #e3e5e7;
+  --dream-classic-line-soft: #e3e5e7;
+  --dream-classic-selected: #ffecf1;
+  --color-token-text-primary: var(--ds-text);
+  --color-token-text-secondary: var(--ds-muted);
+  --color-token-foreground: var(--ds-text);
+  --color-token-main-surface-primary: #fff;
+  --color-token-main-surface-secondary: #f6f7f8;
+  --color-token-sidebar-surface-primary: #fff;
+  --color-text-emphasis: var(--ds-text) !important;
+  --color-text-primary-ghost-hover: var(--ds-text) !important;
+  --color-surface-elevated: #fff !important;
+  --color-surface-elevated-secondary: #f6f7f8 !important;
+  --color-token-dropdown-background: #fff;
+}
+
+html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+  #codex-qq-skin-retro-shell, .dream-retro-titlebar, .dream-retro-toolbar,
+  #codex-qq-skin-retro-profile, .dream-retro-body-frame
+) {
+  border-color: var(--ds-line) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] :is(.dream-retro-titlebar, .dream-retro-toolbar) {
+  background: #fff !important;
+  color: var(--ds-text) !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] #root :is(
+  .qq-skin-section-bar, [class~="group/nav-section-title"]
+) {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--ds-muted) !important;
+  text-shadow: none !important;
+  font-weight: 400;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel :is(
+  [data-app-action-sidebar-project-row], [data-app-action-sidebar-thread-row]
+) {
+  border-radius: 6px;
+  border-color: transparent;
+  text-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
+  background: var(--qq-surface-hover) !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+  aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"],
+  #codex-qq-skin-profile-dialog nav > button[aria-current="page"],
+  #codex-qq-skin-library-menu button[aria-checked="true"]
+) {
+  background: #ffecf1 !important;
+  color: var(--qq-text-accent) !important;
+  box-shadow: none !important;
+  font-weight: 600;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] #root :is(
+  #codex-qq-skin-usage-panel, #codex-qq-skin-right-tray, .qq-skin-reference-card,
+  [data-pip-obstacle="thread-summary-panel"]:not(:empty),
+  .qq-skin-home .group\/home-suggestions button
+) {
+  background: #fff !important;
+  border-color: var(--ds-line) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+  #codex-qq-skin-profile-dialog, #codex-qq-skin-library-menu,
+  [role="menu"], [role="listbox"], [role="dialog"]
+) {
+  background: #fff !important;
+  color: var(--ds-text) !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] #codex-qq-skin-profile-dialog::backdrop {
+  background: rgb(24 25 28 / .28);
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] #codex-qq-skin-profile-dialog :is(input, textarea, select) {
+  color-scheme: light;
+  background: #fff !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+  .qq-skin-usage-footer, #codex-qq-skin-profile-dialog footer, #codex-qq-skin-retro-profile
+) {
+  background: #fff !important;
+  border-color: var(--ds-line) !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] #codex-qq-skin-usage-panel :is(
+  .qq-skin-usage-metrics > div, .qq-skin-usage-chart, .qq-skin-usage-message
+) {
+  background: #f6f7f8 !important;
+  border-color: transparent !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-usage-metrics b {
+  color: var(--ds-text) !important;
+  font-variant-numeric: tabular-nums;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-usage-metrics > div:first-child b {
+  color: var(--qq-text-accent) !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-usage-chart > i > span {
+  background: #f4b7cc !important;
+  border-radius: 4px 4px 0 0;
+  border-color: transparent;
+  box-shadow: none;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-usage-chart > i:last-child > span {
+  background: #ff6699 !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] #root :is(
+  .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
+) {
+  background: #f6f7f8 !important;
+  border-color: var(--ds-line) !important;
+  color: var(--ds-muted) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] #root :is(
+  .qq-skin-window-toggle, .qq-skin-profile-settings, .qq-skin-usage-footer button
+):is(:hover, :focus-visible) {
+  background: #ffecf1 !important;
+  color: var(--qq-text-accent) !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+  #codex-qq-skin-toggle button[aria-pressed="true"],
+  #codex-qq-skin-profile-dialog footer > button[type="submit"]
+):hover {
+  background: #ff8cb0 !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] #root [data-user-message-bubble="true"] {
+  background: #ffecf1 !important;
+  border-color: #f8c6d7 !important;
+  border-radius: 12px 12px 4px 12px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] #root .qq-skin-home-stack > div:first-child > div:first-child {
+  background: var(--qq-brand-wash) !important;
+  border-color: var(--ds-line) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] [data-usage-status="error"] .qq-skin-usage-message {
+  color: #b42332 !important;
+}
+html.codex-qq-skin[data-qq-palette="bilibili"] ::selection {
+  background: #ffcfde;
+  color: #18191c;
+}
+
+@layer qq-reference {
+  /* Neutralize the classic light skin's blue paint without changing its geometry. */
+  html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+    aside.app-shell-left-panel,
+    aside.app-shell-left-panel [data-sidebar-project-kind][role="listitem"],
+    aside.app-shell-left-panel [data-app-action-sidebar-project-row],
+    aside.app-shell-left-panel .h-toolbar:has(button[aria-haspopup="menu"] img),
+    [data-pip-obstacle="thread-summary-panel"]:not(:empty) > div:first-child,
+    [data-pip-obstacle="thread-summary-panel"] [class*="bg-token-main-surface"],
+    section[role="dialog"][data-pip-obstacle="quick-chat"] > div[aria-hidden="false"]
+  ) {
+    background: #fff !important;
+    border-color: #e3e5e7 !important;
+    box-shadow: none !important;
+    color: var(--ds-text) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    color: var(--ds-text) !important;
+    border-radius: 6px !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
+    background: #f6f7f8 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
+    background: #ffecf1 !important;
+    color: var(--qq-text-accent) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] aside.app-shell-left-panel :is(
+    [data-app-action-sidebar-section-toggle], [data-app-action-sidebar-section-toggle] svg,
+    [data-app-action-sidebar-project-row] [data-sidebar-project-kind]
+  ) {
+    color: var(--ds-muted) !important;
+    text-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+    main.main-surface, main.main-surface [class*="text-token-"],
+    main.main-surface [data-content-search-unit-key$=":assistant"],
+    #codex-qq-skin-retro-profile .qq-skin-profile-signature
+  ) {
+    color: var(--ds-text) !important;
+    border-color: var(--ds-line) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] main.main-surface :is(
+    pre, :not(pre) > code, [data-markdown-copy="inline-code"]
+  ) {
+    background: #f6f7f8 !important;
+    border-color: #e3e5e7 !important;
+    color: var(--ds-text) !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] main.main-surface [data-user-message-bubble="true"] {
+    color: var(--ds-text) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] .dream-retro-body-frame {
+    border-image: none !important;
+    border-bottom-color: #f6f7f8 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] main.main-surface.qq-skin-home-shell {
+    background: #f6f7f8 !important;
+    border-color: #e3e5e7 !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-home :is(
+    .qq-skin-home-utility,
+    div:has(> .horizontal-scroll-fade-mask .group\/project-selector),
+    .group\/home-suggestions button
+  ) {
+    background: #fff !important;
+    border-color: #e3e5e7 !important;
+    color: var(--ds-text) !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-home :is(
+    [data-feature="game-source"] button, .group\/project-selector > button,
+    .group\/home-suggestions button > span:first-child > span:first-child
+  ) {
+    background: #ffecf1 !important;
+    border-color: #f8c6d7 !important;
+    color: var(--qq-text-accent) !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] .qq-skin-home .group\/home-suggestions button svg {
+    color: var(--qq-text-accent) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] main.qq-skin-thread-frame .thread-scroll-container {
+    background: #fff !important;
+    border-color: transparent;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+    .composer-surface-chrome, [class*="_ComposerLayoutRoot_"],
+    [data-composer-utility-bar-variant="home"] [class*="_ComposerLayoutBody_"]
+  ) {
+    background: #fff !important;
+    border-radius: 8px !important;
+    outline: 1px solid #e3e5e7;
+    outline-offset: -1px;
+    box-shadow: 0 2px 8px rgb(24 25 28 / .04) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="bilibili"] :is(
+    .composer-surface-chrome, [class*="_ComposerLayoutRoot_"]
+  ):focus-within {
+    outline-color: #ff6699;
+    box-shadow: 0 0 0 2px #ffecf1 !important;
+  }
 }

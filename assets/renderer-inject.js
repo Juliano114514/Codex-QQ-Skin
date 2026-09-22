@@ -281,6 +281,15 @@
       };
       window[NATIVE_APPEARANCE_STATE_KEY] = snapshot;
     }
+    // Codex may finish loading its saved appearance after the early skin
+    // injection. Keep that native value instead of restoring a startup default.
+    // Disconnect around our own writes, including no-op host theme writes.
+    if (!snapshot.themeObserver && typeof MutationObserver === "function") {
+      snapshot.captureTheme = () => { snapshot.theme = root.getAttribute("data-theme"); };
+      snapshot.themeObserver = new MutationObserver(snapshot.captureTheme);
+    }
+    if (snapshot.themeObserver?.takeRecords().length) snapshot.captureTheme();
+    snapshot.themeObserver?.disconnect();
     for (const name of Array.from(root.style || [])) {
       if (name.startsWith("--color-") || name.startsWith("--codex-base-")) {
         root.style.removeProperty(name);
@@ -290,12 +299,15 @@
     setAttribute(root, "data-theme", appearance);
     root.classList.toggle("electron-dark", appearance === "dark");
     root.classList.toggle("electron-light", appearance === "light");
+    snapshot.themeObserver?.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
   };
 
   const restoreNativeAppearance = () => {
     const root = document.documentElement;
     const snapshot = window[NATIVE_APPEARANCE_STATE_KEY];
     if (!snapshot) return;
+    if (snapshot.themeObserver?.takeRecords().length) snapshot.captureTheme();
+    snapshot.themeObserver?.disconnect();
     for (const name of Array.from(root.style || [])) {
       if (name.startsWith("--color-") || name.startsWith("--codex-base-")) {
         root.style.removeProperty(name);
@@ -3389,7 +3401,7 @@
       });
       menu.appendChild(option);
     };
-    heading("平台深色配色");
+    heading("平台配色");
     for (const appearance of MEDIA_APPEARANCES) {
       const item = QQ_THEME.variants[appearance];
       addOption({ id: item.id, label: item.name, colors: item.colors,
@@ -3699,6 +3711,12 @@
     detectShellMode,
     selectSkinMode,
   };
+  // A hot reinjection can enter native mode without selectSkinMode(). Run the
+  // same restoration before ensure(), which intentionally skips native mode.
+  if (skinMode === "native") {
+    restoreNativeAppearance();
+    removeSkinVisuals();
+  }
   ensureToggleButton();
   const firstEnsureStartedAt = now();
   ensure({ layout: !previous || !document.getElementById(CHROME_ID) });
