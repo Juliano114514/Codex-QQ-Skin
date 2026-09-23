@@ -2040,7 +2040,15 @@
           queue.push(fiber.child, fiber.sibling);
         }
       }
-      const rate = nativeUsageClient?.getQueryData(["rate-limit-status"])?.rate_limit;
+      // Codex uses a scoped key for SSE and the original key for polling.
+      // Ignore other rate-limit queries (such as image generation) and use
+      // the freshest account snapshot without reading or storing its identity.
+      const query = nativeUsageClient?.getQueryCache().findAll({ queryKey: ["rate-limit-status"] })
+        .filter(item => Array.isArray(item.queryKey) && (item.queryKey.length === 1 ||
+          (item.queryKey.length === 3 && item.isActive?.())))
+        .filter(item => item.state?.data?.rate_limit)
+        .sort((left, right) => (right.state.dataUpdatedAt || 0) - (left.state.dataUpdatedAt || 0))[0];
+      const rate = query?.state.data.rate_limit;
       const windows = [rate?.primary_window, rate?.secondary_window]
         .filter(value => Number.isFinite(value?.used_percent));
       return windows.reduce((current, value) => !current || value.used_percent > current.used_percent ||
