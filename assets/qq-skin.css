@@ -215,9 +215,10 @@ html.codex-qq-skin body > :has(> [data-browser-sidebar-webview]) {
   z-index: 3;
 }
 
-/* Codex prepends invisible portal nodes under #root. Select the real app host
-   by structure instead of :first-of-type, which targets the portal and leaves
-   the sidebar/composer shell at an unconstrained 100vh. */
+/* Codex prepends invisible portal nodes under #root. Match the real layout
+   with or without a mounted sidebar so its width and height stay inside the
+   root's reserved status-strip area. */
+html.codex-qq-skin body > #root > div[class*="_Layout_"]:has(> [class*="_ApplicationMenuTopBar_"]),
 html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
   width: 100% !important;
   height: 100% !important;
@@ -576,8 +577,9 @@ html.codex-qq-skin aside.app-shell-left-panel button[aria-label^="切换模式"]
   text-shadow: none !important;
 }
 
-html.codex-qq-skin aside.app-shell-left-panel button[aria-label^="切换模式"]::after {
-  content: " ·";
+html.codex-qq-skin aside.app-shell-left-panel button[aria-label^="切换模式"] > span > span:first-child::after {
+  content: "·";
+  margin-left: 4px;
   color: var(--ds-secondary);
 }
 
@@ -1709,6 +1711,22 @@ html.codex-qq-skin .qq-skin-home {
   min-height: 100% !important;
   padding-top: 15px !important;
   overflow: visible !important;
+}
+
+/* Current Codex places the home banner and greeting in separate stack rows.
+   Keep the native greeting and project picker interactive over the banner. */
+.qq-skin-home-stack:has(> :nth-child(2) [data-feature="game-source"]) {
+  position: relative;
+}
+.qq-skin-home-stack:has(> :nth-child(2) [data-feature="game-source"]) > :nth-child(2) {
+  position: absolute;
+  z-index: 2;
+  top: 112px;
+  left: 0;
+  width: calc(100% - 220px);
+  min-height: 0;
+  padding-bottom: 0;
+  align-items: center;
 }
 
 .qq-skin-home-stack > div:first-child {
