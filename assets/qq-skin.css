@@ -211,7 +211,8 @@ html.codex-qq-skin body > #root {
 /* Native browser webviews are portaled beside #root. Keep them on the same
    layer as the raised shell so its panel background cannot cover the page.
    Leave native visibility, clipping and pointer-event control untouched. */
-html.codex-qq-skin body > :has(> [data-browser-sidebar-webview]) {
+html.codex-qq-skin body > :has(> [data-browser-sidebar-webview]),
+html.codex-qq-skin body > :has(> div > [data-browser-sidebar-webview]) {
   z-index: 3;
 }
 
@@ -538,9 +539,12 @@ html.codex-qq-skin aside.app-shell-left-panel nav { background: transparent !imp
 html.codex-qq-skin aside.app-shell-left-panel button,
 html.codex-qq-skin aside.app-shell-left-panel a {
   color: var(--ds-text) !important;
-  transition: background-color .18s cubic-bezier(.22, 1, .36, 1),
-    border-color .18s cubic-bezier(.22, 1, .36, 1),
-    color .18s cubic-bezier(.22, 1, .36, 1) !important;
+}
+
+/* Scrolling changes the hovered row continuously; avoid queuing color
+   transitions across the virtualized sidebar. Keep native activity animations. */
+html.codex-qq-skin aside.app-shell-left-panel :is(button, a, [role="button"]) {
+  transition: none !important;
 }
 
 html.codex-qq-skin aside.app-shell-left-panel [class*="text-token-foreground"] {
@@ -577,8 +581,15 @@ html.codex-qq-skin aside.app-shell-left-panel button[aria-label^="切换模式"]
   text-shadow: none !important;
 }
 
+html.codex-qq-skin aside.app-shell-left-panel button[aria-label^="切换模式"] > span > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
 html.codex-qq-skin aside.app-shell-left-panel button[aria-label^="切换模式"] > span > span:first-child::after {
   content: "·";
+  flex: none;
   margin-left: 4px;
   color: var(--ds-secondary);
 }
@@ -2602,7 +2613,7 @@ html.codex-qq-skin[data-dream-shell="light"]
   html.codex-qq-skin *::before,
   html.codex-qq-skin *::after {
     scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
+    transition: none !important;
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
   }
@@ -2673,7 +2684,7 @@ html[data-reduced-motion="true"]:is(.codex-qq-skin, .codex-dream-skin) *,
 html[data-reduced-motion="true"]:is(.codex-qq-skin, .codex-dream-skin) *::before,
 html[data-reduced-motion="true"]:is(.codex-qq-skin, .codex-dream-skin) *::after {
   scroll-behavior: auto !important;
-  transition-duration: .01ms !important;
+  transition: none !important;
   animation-duration: .01ms !important;
   animation-iteration-count: 1 !important;
 }
@@ -2692,7 +2703,11 @@ html.codex-qq-skin[data-dream-platform="windows"] .dream-retro-titlebar strong {
   right: 530px;
 }
 @media (max-width: 760px) {
-  html.codex-qq-skin #codex-qq-skin-toggle { right: 16px !important; }
+  html.codex-qq-skin[data-dream-platform="windows"] #codex-qq-skin-toggle { right: 140px !important; }
+  html.codex-qq-skin[data-dream-platform="windows"][data-dream-shell] #codex-qq-skin-toggle button {
+    padding-inline: 4px !important;
+    font-size: 10px !important;
+  }
   html.codex-qq-skin .dream-retro-titlebar strong { display: none; }
 }
 
@@ -2752,7 +2767,7 @@ html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summ
 /* Preserve React-owned native headers, including route-specific actions and tooltips. */
 html.codex-qq-skin .dream-retro-titlebar { display: none; }
 html.codex-qq-skin .dream-retro-toolbar {
-  top: 36px;
+  top: var(--qq-toolbar-top, 36px);
   height: 34px;
   gap: 14px;
   overflow-x: auto;
@@ -2763,7 +2778,7 @@ html.codex-qq-skin .dream-retro-native-controls { display: none; }
 html.codex-qq-skin :is([class*="_ApplicationMenuTopBar_"], body > #root > div > .app-header-tint) {
   background: var(--ds-panel) !important;
   color: var(--ds-text) !important;
-  padding-right: 350px;
+  padding-right: var(--spacing-token-safe-header-right, 140px);
 }
 html.codex-qq-skin main.main-surface > header.app-header-tint {
   top: 70px !important;
@@ -2792,6 +2807,46 @@ html.codex-qq-skin :is(main.main-surface > header.app-header-tint, [class*="_App
 html.codex-qq-skin main.main-surface > header.app-header-tint {
   left: var(--qq-native-header-left) !important;
   right: var(--qq-native-header-right) !important;
+}
+
+/* The page header now lives beside main, and its fixed coordinates are in
+   Codex's zoomed coordinate space. Keep it aligned with the inset skin frame. */
+html.codex-qq-skin [data-app-shell-application-menu-bar][data-pip-obstacle="app-shell-header"] {
+  top: calc(var(--qq-content-top) / var(--codex-window-zoom, 1)) !important;
+  left: calc(var(--qq-native-header-left) / var(--codex-window-zoom, 1)) !important;
+  right: auto !important;
+  width: calc(var(--qq-native-header-width) / var(--codex-window-zoom, 1)) !important;
+  background: var(--ds-panel) !important;
+  color: var(--ds-text) !important;
+  border-bottom: 1px solid var(--ds-line) !important;
+}
+
+html.codex-qq-skin[data-codex-window-chrome="application-menu"] aside.app-shell-left-panel,
+html.codex-qq-skin[data-codex-window-chrome="application-menu"] main.main-surface {
+  padding-top: max(0px, calc((var(--qq-content-top) - var(--qq-native-shell-top, 0px)) / var(--codex-window-zoom, 1))) !important;
+}
+
+/* Let the adaptive home composer reserve its own space, including banners,
+   attachment previews and the expanded editor. Use scrolling on short windows. */
+html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home {
+  overflow: auto !important;
+}
+html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home [data-feature="game-source"] {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home [class~="group/home-composer-layout"] > .contents > div:has([data-feature="game-source"]) {
+  padding-bottom: 56px !important;
+}
+@container home-main-content (max-width: 480px) {
+  html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home [data-feature="game-source"]::after {
+    display: none !important;
+  }
+}
+@container home-main-content (max-height: 360px) {
+  html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home [class~="group/home-composer-layout"] > .contents > div:has([data-feature="game-source"]) {
+    display: none !important;
+  }
 }
 
 /* QQ2007 reference: a separate status strip, outside the native account row.
@@ -2931,6 +2986,108 @@ html.codex-qq-skin #codex-qq-skin-usage-panel.qq-skin-growth-docked.qq-skin-wind
 }
 html.codex-qq-skin .qq-skin-growth-docked .qq-skin-window-title { cursor: default; }
 html.codex-qq-skin .qq-skin-growth-docked .qq-skin-window-toggle { display: inline-flex; }
+/* A real profile column keeps the native scroll area and its absolute composer
+   in the same narrower containing block. Closing it returns that width. */
+html.codex-qq-skin .qq-skin-profile-host {
+  display: flex;
+  position: relative;
+  min-width: 0;
+}
+html.codex-qq-skin .qq-skin-profile-thread { min-width: 0; }
+html.codex-qq-skin .qq-skin-profile-thread [style*="--thread-wide-block-inline-shift"] {
+  --thread-wide-block-inline-shift: 0px !important;
+  transform: none !important;
+}
+html.codex-qq-skin .qq-skin-profile-summary {
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 276px !important;
+  max-height: 100% !important;
+  overflow: auto !important;
+  padding: 6px;
+  pointer-events: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+html.codex-qq-skin .qq-skin-profile-host[data-qq-dock-open="false"] > .qq-skin-profile-summary { display: none !important; }
+html.codex-qq-skin .qq-skin-profile-summary > div,
+html.codex-qq-skin .qq-skin-profile-summary > div > div,
+html.codex-qq-skin .qq-skin-profile-summary > div > div > div {
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  padding: 0 !important;
+}
+html.codex-qq-skin .qq-skin-profile-summary > div > div:empty { display: none; }
+html.codex-qq-skin .qq-skin-profile-summary > div > div:not(:empty) {
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}
+html.codex-qq-skin .qq-skin-dock-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100% !important;
+  max-height: none !important;
+  pointer-events: auto !important;
+}
+html.codex-qq-skin .qq-skin-dock-card,
+html.codex-qq-skin .qq-skin-dock-card > div:not(.qq-skin-details-title) {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+}
+html.codex-qq-skin .qq-skin-dock-card {
+  border: 1px solid var(--qq-card-border);
+  border-radius: 2px !important;
+  background: var(--ds-panel) !important;
+  box-shadow: none !important;
+}
+html.codex-qq-skin .qq-skin-dock-card header { position: relative !important; top: auto !important; }
+html.codex-qq-skin .qq-skin-dock-card header::before { content: none !important; }
+#codex-qq-skin-profile-dock {
+  display: flex;
+  flex: 0 0 304px;
+  width: 304px;
+  min-width: 0;
+  height: 100%;
+  z-index: 1;
+  border-left: 1px solid var(--ds-line);
+  background: var(--ds-panel-2);
+  color: var(--ds-text);
+}
+#codex-qq-skin-profile-dock[data-open="false"] { flex-basis: 28px; width: 28px; }
+.qq-skin-profile-dock-tab {
+  flex: 0 0 28px;
+  width: 28px;
+  align-self: flex-start;
+  padding: 12px 5px;
+  border: 0;
+  border-radius: 0 0 4px 4px;
+  background: var(--qq-card-bar);
+  color: var(--ds-text);
+  font: 600 13px/18px var(--qq-font-ui);
+  writing-mode: vertical-rl;
+  letter-spacing: 2px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.qq-skin-profile-dock-tab:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: -2px; }
+.qq-skin-profile-dock-tab:disabled { opacity: .55; cursor: default; }
+.qq-skin-profile-dock-content {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 6px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.qq-skin-profile-dock-content[hidden] { display: none; }
 html.codex-qq-skin .qq-skin-details-title {
   display: flex;
   align-items: center;

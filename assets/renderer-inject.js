@@ -2,6 +2,7 @@
   const STATE_KEY = "__CODEX_QQ_SKIN_STATE__";
   const DISABLED_KEY = "__CODEX_QQ_SKIN_DISABLED__";
   const STYLE_ID = "codex-qq-skin-style";
+  const MEDIA_STYLE_ID = "codex-qq-skin-media-style";
   const CHROME_ID = "codex-qq-skin-chrome";
   const COMPANION_ID = "codex-qq-skin-companion";
   const USAGE_PANEL_ID = "codex-qq-skin-usage-panel";
@@ -22,6 +23,8 @@
   const USAGE_REFRESH_KEY = "codex-qq-skin-usage-refresh";
   const PROFILE_STORAGE_KEY = "codex-qq-skin-profile-v1";
   const PROFILE_DIALOG_ID = "codex-qq-skin-profile-dialog";
+  const PROFILE_DOCK_ID = "codex-qq-skin-profile-dock";
+  const PROFILE_DOCK_STORAGE_KEY = "codex-qq-skin-profile-dock-open";
   const NATIVE_APPEARANCE_STATE_KEY = "__CODEX_QQ_SKIN_NATIVE_APPEARANCE__";
   const NEON_STORM_THEME_IDS = new Set(["preset-neon-storm", "custom-neon-storm"]);
   const LIBRARY_THEMES = Array.isArray(libraryThemes)
@@ -39,6 +42,14 @@
   ];
   const VERSION = __QQ_SKIN_VERSION_JSON__;
   const STYLE_REVISION = __QQ_SKIN_STYLE_REVISION_JSON__;
+  // Platform palettes include large fonts and hundreds of selectors. Keep
+  // inactive palettes out of the classic skin's style recalculation path.
+  const mediaStart = cssText.indexOf("/* qq-media-start */");
+  const mediaEnd = cssText.indexOf("/* qq-media-end */");
+  const mediaCssText = mediaStart >= 0 && mediaEnd > mediaStart
+    ? cssText.slice(mediaStart + "/* qq-media-start */".length, mediaEnd) : "";
+  const baseCssText = mediaCssText
+    ? cssText.slice(0, mediaStart) + cssText.slice(mediaEnd + "/* qq-media-end */".length) : cssText;
   const CUSTOM_THEME = themeConfig && typeof themeConfig === "object" ? themeConfig : {};
   const QQ_THEME = qqThemeConfig && typeof qqThemeConfig === "object" ? qqThemeConfig : {};
   const DEEP_THEME_ASSETS = deepThemeAssets && typeof deepThemeAssets === "object" ? deepThemeAssets : {};
@@ -79,6 +90,7 @@
   // Newer Codex home pages insert a .home-banners row above the real stack.
   // Detect that from the live DOM only — version strings are unnecessary.
   const detectHomeLayoutKind = (home) => {
+    if (home?.querySelector?.('[class~="group/home-composer-layout"]')) return "adaptive";
     if (home?.querySelector?.(":scope .home-banners")) return "banners";
     if (home?.children?.length >= 2) {
       const hasContentChild = [...home.children].some((child) =>
@@ -92,6 +104,9 @@
   };
   const resolveHomeStack = (home) => {
     if (!home) return null;
+    // The adaptive composer owns its banners, greeting and expanding editor.
+    // Legacy first-child sizing would turn its empty banner into a tall card.
+    if (detectHomeLayoutKind(home) === "adaptive") return null;
     if (detectHomeLayoutKind(home) === "banners") {
       return [...home.children].find((child) =>
         child.querySelector?.('[data-feature="game-source"], .composer-surface-chrome')) || null;
@@ -105,7 +120,7 @@
     const stackClass = skinMode === "qq" ? "qq-skin-home-stack" : "dream-skin-home-stack";
     const otherStackClass = skinMode === "qq" ? "dream-skin-home-stack" : "qq-skin-home-stack";
     for (const node of document.querySelectorAll(".qq-skin-home-stack, .dream-skin-home-stack")) {
-      if (!home || !home.contains(node)) {
+      if (!home || layout === "adaptive" || !home.contains(node)) {
         node.classList.remove("qq-skin-home-stack", "dream-skin-home-stack");
       }
     }
@@ -145,6 +160,8 @@
     "--dream-deep-sidebar-size", "--dream-deep-sidebar-y", "--dream-deep-sidebar-opacity",
     "--dream-deep-watermark-width", "--dream-deep-watermark-x", "--dream-deep-watermark-y",
     "--dream-deep-watermark-opacity", "--dream-deep-brand-title", "--dream-deep-brand-subtitle",
+    "--qq-content-top", "--qq-toolbar-top", "--qq-native-shell-top",
+    "--qq-native-header-left", "--qq-native-header-right", "--qq-native-header-width",
   ];
   const installToken = {};
   const autoOpenedSummaryToggles = new WeakSet();
@@ -217,6 +234,7 @@
   previous?.soundMonitor?.cleanup?.();
   previous?.weatherMonitor?.destroy?.();
   previous?.profileCleanup?.();
+  previous?.clearProfileDock?.();
   previous?.closeLibraryMenu?.();
   // This title lives inside React's summary card, outside the owned panels
   // removed below. Its click closure must not retain an old payload generation.
@@ -770,6 +788,12 @@
   let resizeObserver = null;
 
   const pinnedSummaryLabel = /(toggle pinned summary|pinned summary|toggle summary|切换摘要|置顶摘要|固定摘要|釘選概要|釘選摘要|概要.*釘選|摘要.*固定)/i;
+  const isVisibleElement = (node) => {
+    if (!node || node.closest?.("[inert]")) return false;
+    const box = node.getBoundingClientRect();
+    return box.width > 0 && box.height > 0;
+  };
+  const findVisibleElement = (selector) => [...document.querySelectorAll(selector)].find(isVisibleElement) || null;
   const showSidebarLabel = /^(show sidebar|显示边栏|显示侧边栏|顯示邊欄|顯示側邊欄|サイドバーを表示|사이드바 표시)$/i;
   const hideSidebarLabel = /^(hide sidebar|隐藏边栏|隐藏侧边栏|隱藏邊欄|隱藏側邊欄|サイドバーを非表示|사이드바 숨기기)$/i;
 
@@ -1900,7 +1924,7 @@
 
   const findPinnedSummaryToggle = () => {
     for (const button of document.querySelectorAll('button[aria-label]')) {
-      if (pinnedSummaryLabel.test(button.getAttribute("aria-label") || "")) return button;
+      if (pinnedSummaryLabel.test(button.getAttribute("aria-label") || "") && isVisibleElement(button)) return button;
     }
     // The workspace side panel is not the pinned environment summary.
     return null;
@@ -2563,8 +2587,171 @@
     syncPersonalProfile();
   };
 
-  const referenceClasses = ["qq-skin-reference-host", "qq-skin-reference-summary", "qq-skin-reference-card", "qq-skin-growth-docked"];
+  let profileDockOpen = true;
+  let dockSummaryToggle = null;
+  let dockedNativeSummary = null;
+  let dockSummaryObserver = null;
+  try { profileDockOpen = window.localStorage?.getItem(PROFILE_DOCK_STORAGE_KEY) !== "false"; } catch {}
+  const setProfileDockOpen = (open) => {
+    profileDockOpen = open;
+    try { window.localStorage?.setItem(PROFILE_DOCK_STORAGE_KEY, String(open)); } catch {}
+    scheduleEnsure({ route: true, layout: true });
+  };
+  const onSummaryToggle = (event) => {
+    const dock = document.getElementById(PROFILE_DOCK_ID);
+    if (!dock || dock.firstElementChild.disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setProfileDockOpen(!profileDockOpen);
+  };
+  const syncDockAccessibility = () => {
+    const dock = document.getElementById(PROFILE_DOCK_ID);
+    if (!dockedNativeSummary || !dock) return;
+    const open = dock.dataset.open === "true";
+    dockedNativeSummary.toggleAttribute("inert", !open);
+    setAttribute(dockedNativeSummary, "aria-hidden", String(!open));
+  };
+  const releaseNativeSummary = () => {
+    dockSummaryObserver?.disconnect();
+    dockSummaryObserver = null;
+    if (dockedNativeSummary) {
+      // Restore the native accessibility state when the skin/route changes.
+      const nativeOpen = Boolean(dockedNativeSummary.querySelector("[data-pip-obstacle='thread-summary-panel']"));
+      dockedNativeSummary.toggleAttribute("inert", !nativeOpen);
+      setAttribute(dockedNativeSummary, "aria-hidden", String(!nativeOpen));
+      dockedNativeSummary.classList.remove("qq-skin-profile-summary");
+    }
+    dockedNativeSummary = null;
+  };
+  const clearProfileDock = () => {
+    releaseNativeSummary();
+    dockSummaryToggle?.removeEventListener("click", onSummaryToggle, true);
+    dockSummaryToggle = null;
+    const dock = document.getElementById(PROFILE_DOCK_ID);
+    const panel = document.getElementById(USAGE_PANEL_ID);
+    if (dock && panel) {
+      panel.classList.remove("qq-skin-growth-docked");
+      document.body.appendChild(panel);
+    }
+    dock?.remove();
+    for (const name of ["qq-skin-profile-host", "qq-skin-profile-thread", "qq-skin-dock-stack", "qq-skin-dock-card"]) {
+      document.querySelectorAll(`.${name}`).forEach(node => node.classList.remove(name));
+    }
+    document.querySelectorAll("[data-qq-dock-open]").forEach(node => node.removeAttribute("data-qq-dock-open"));
+    document.querySelectorAll(".qq-skin-details-title").forEach(node => node.remove());
+    document.querySelectorAll(".qq-skin-details-collapsed").forEach(node => node.classList.remove("qq-skin-details-collapsed"));
+  };
+  const syncProfileDock = (panel, settingsRoute) => {
+    // Current Codex keeps an inline summary mounted even at popover widths.
+    // Reuse that card and its handlers, without moving React-owned content.
+    const modernShell = Boolean(document.querySelector('[data-app-shell-application-menu-bar]'));
+    const footer = !settingsRoute && modernShell && skinMode === "qq"
+      ? findVisibleElement('main.qq-skin-thread-frame [data-pip-obstacle="thread-footer"]') : null;
+    const thread = footer?.closest('[class~="group/thread-scroll-layout"]');
+    const host = thread?.parentElement;
+    if (!host || document.querySelector('section[data-pip-obstacle="quick-chat"][data-state="open"]')) {
+      clearProfileDock();
+      return false;
+    }
+    let dock = document.getElementById(PROFILE_DOCK_ID);
+    if (!dock || dock.parentElement !== host) {
+      clearReferenceLayout();
+      clearProfileDock();
+      dock = document.createElement("aside");
+      dock.id = PROFILE_DOCK_ID;
+      dock.setAttribute("aria-label", "摘要与个人资料侧栏");
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "qq-skin-profile-dock-tab";
+      toggle.textContent = "详细信息";
+      toggle.setAttribute("aria-controls", `${PROFILE_DOCK_ID}-content`);
+      toggle.addEventListener("click", () => setProfileDockOpen(!profileDockOpen));
+      const content = document.createElement("div");
+      content.id = `${PROFILE_DOCK_ID}-content`;
+      content.className = "qq-skin-profile-dock-content";
+      content.appendChild(panel);
+      dock.append(toggle, content);
+      host.appendChild(dock);
+    }
+    host.classList.add("qq-skin-profile-host");
+    thread.classList.add("qq-skin-profile-thread");
+    panel.classList.add("qq-skin-growth-docked");
+    const canFit = host.clientWidth >= 760;
+    const open = profileDockOpen && canFit;
+    setAttribute(host, "data-qq-dock-open", String(open));
+    setAttribute(dock, "data-open", String(open));
+    const content = dock.lastElementChild;
+    content.hidden = !open;
+    const nativeToggle = findPinnedSummaryToggle();
+    if (dockSummaryToggle !== nativeToggle) {
+      dockSummaryToggle?.removeEventListener("click", onSummaryToggle, true);
+      dockSummaryToggle = nativeToggle;
+      nativeToggle?.addEventListener("click", onSummaryToggle, true);
+    }
+    // Keyboard shortcuts and a resize from compact mode can leave a native
+    // popover open. The inline card already supplies its contents in our dock.
+    if (canFit && nativeToggle && document.querySelector('[data-pip-obstacle="thread-summary-panel-popover"]')) {
+      nativeToggle.removeEventListener("click", onSummaryToggle, true);
+      nativeToggle.click();
+      nativeToggle.addEventListener("click", onSummaryToggle, true);
+    }
+    const card = [...host.children].filter(node => node !== thread && node !== dock)
+      .map(node => node.querySelector('[data-summary-panel-variant="summary"]')).find(Boolean);
+    let summary = card;
+    while (summary && summary.parentElement !== host) summary = summary.parentElement;
+    if (dockedNativeSummary !== summary) {
+      releaseNativeSummary();
+      dockedNativeSummary = summary || null;
+      if (summary) {
+        summary.classList.add("qq-skin-profile-summary");
+        dockSummaryObserver = new MutationObserver(syncDockAccessibility);
+        dockSummaryObserver.observe(summary, { attributes: true, attributeFilter: ["inert", "aria-hidden"] });
+      }
+    }
+    syncDockAccessibility();
+    if (card && open) {
+      card.classList.add("qq-skin-dock-card");
+      const list = card.parentElement;
+      list.classList.add("qq-skin-dock-stack");
+      ensureSummaryTitle(card);
+      if (panel.parentElement !== list) list.appendChild(panel);
+    } else if (panel.parentElement !== content) content.appendChild(panel);
+    const toggle = dock.firstElementChild;
+    toggle.disabled = !canFit;
+    setAttribute(toggle, "aria-expanded", String(open));
+    setAttribute(toggle, "aria-label", `${open ? "收起" : "展开"}详细信息侧栏`);
+    setAttribute(toggle, "title", canFit ? `${open ? "收起" : "展开"}摘要与个人资料`
+      : "加宽窗口或收起左侧栏后可展开详细信息");
+    return true;
+  };
+
+  const referenceClasses = ["qq-skin-reference-host", "qq-skin-reference-summary", "qq-skin-reference-card", "qq-skin-growth-docked", "qq-skin-summary-popover"];
   let detailsCollapsed = false;
+  const ensureSummaryTitle = (card) => {
+    if (card.querySelector(":scope > .qq-skin-details-title")) return;
+    const title = document.createElement("div");
+    title.id = "codex-qq-skin-details-title";
+    title.className = "qq-skin-details-title qq-skin-window-title";
+    const label = document.createElement("span");
+    label.textContent = "摘要信息";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "qq-skin-window-toggle";
+    const sync = () => {
+      card.classList.toggle("qq-skin-details-collapsed", detailsCollapsed);
+      toggle.textContent = detailsCollapsed ? "＋" : "−";
+      toggle.setAttribute("aria-expanded", String(!detailsCollapsed));
+      toggle.setAttribute("aria-label", `${detailsCollapsed ? "展开" : "收起"}摘要信息`);
+    };
+    toggle.addEventListener("click", event => {
+      event.stopPropagation();
+      detailsCollapsed = !detailsCollapsed;
+      sync();
+    });
+    title.append(label, toggle);
+    card.prepend(title);
+    sync();
+  };
   const clearReferenceLayout = () => {
     setAttribute(document.documentElement, "data-qq-reference-layout", "false");
     const growth = document.getElementById(USAGE_PANEL_ID);
@@ -2579,6 +2766,7 @@
     }
   };
   const syncReferenceLayout = (panel, settingsRoute) => {
+    if (syncProfileDock(panel, settingsRoute)) return;
     // Use the marker itself; the legacy payload adapter rewrites double-quoted
     // summary selectors to the animated sibling that owns the old floating UI.
     const marker = document.querySelector("[data-pip-obstacle='thread-summary-panel']");
@@ -2609,31 +2797,7 @@
       if (!target.classList.contains(name)) target.classList.add(name);
     }
     // Only skin-owned nodes are inserted; native sections keep their React parents.
-    let title = card.querySelector(":scope > .qq-skin-details-title");
-    if (!title) {
-      title = document.createElement("div");
-      title.id = "codex-qq-skin-details-title";
-      title.className = "qq-skin-details-title qq-skin-window-title";
-      const label = document.createElement("span");
-      label.textContent = "会话详情";
-      const toggle = document.createElement("button");
-      toggle.type = "button";
-      toggle.className = "qq-skin-window-toggle";
-      const sync = () => {
-        card.classList.toggle("qq-skin-details-collapsed", detailsCollapsed);
-        toggle.textContent = detailsCollapsed ? "＋" : "−";
-        toggle.setAttribute("aria-expanded", String(!detailsCollapsed));
-        toggle.setAttribute("aria-label", `${detailsCollapsed ? "展开" : "收起"}会话详情`);
-      };
-      toggle.addEventListener("click", event => {
-        event.stopPropagation();
-        detailsCollapsed = !detailsCollapsed;
-        sync();
-      });
-      title.append(label, toggle);
-      card.prepend(title);
-      sync();
-    }
+    ensureSummaryTitle(card);
     const list = overlay.firstElementChild;
     if (panel.parentElement !== list) list.appendChild(panel);
 
@@ -2646,6 +2810,7 @@
     // the real thread via its semantic footer; do not move React-owned nodes.
     const threadMains = new Set(enabled
       ? [...document.querySelectorAll('[data-pip-obstacle="thread-footer"]')]
+        .filter(isVisibleElement)
         .map((footer) => footer.closest("main")).filter(Boolean)
       : []);
     for (const main of document.querySelectorAll("main.qq-skin-thread-frame")) {
@@ -2814,9 +2979,9 @@
     // QQ mode prevents leftover/ungated wallpaper rules from painting the upload.
     const modeRevision = `${STYLE_REVISION}:${skinMode}`;
     const nextText = skinMode === "custom"
-      ? `${cssText}\n${customCssText}`
+      ? `${baseCssText}\n${customCssText}`
       : skinMode === "qq"
-        ? cssText
+        ? baseCssText
         : "";
     if (!style) {
       style = document.createElement("style");
@@ -2828,6 +2993,20 @@
     }
     style.dataset.dreamSkinVersion = VERSION;
     style.dataset.dreamSkinStyleRevision = modeRevision;
+    const mediaEnabled = skinMode === "qq" && MEDIA_APPEARANCES.includes(qqAppearance);
+    let mediaStyle = document.getElementById(MEDIA_STYLE_ID);
+    if (mediaEnabled && mediaCssText && !mediaStyle) {
+      mediaStyle = document.createElement("style");
+      mediaStyle.id = MEDIA_STYLE_ID;
+      style.after(mediaStyle);
+    }
+    if (mediaStyle) {
+      if (mediaStyle.dataset.dreamSkinStyleRevision !== STYLE_REVISION) {
+        mediaStyle.textContent = mediaCssText;
+        mediaStyle.dataset.dreamSkinStyleRevision = STYLE_REVISION;
+      }
+      setAttribute(mediaStyle, "media", mediaEnabled ? "all" : "not all");
+    }
     return style;
   };
 
@@ -2928,6 +3107,7 @@
 
   const removeQQDecorations = () => {
     profileCleanup();
+    clearProfileDock();
     clearReferenceLayout();
     document.querySelectorAll(".qq-skin-thread-frame").forEach((node) => node.classList.remove("qq-skin-thread-frame"));
     document.getElementById(CHROME_ID)?.remove();
@@ -2953,11 +3133,14 @@
     const root = document.documentElement;
     if (!root) return;
     shell ||= root.getAttribute(SHELL_ATTR) || resolvedShell();
-    const shellMain = document.querySelector('[data-pip-obstacle="app-shell-header"]')?.closest("main") ||
-      document.querySelector("main.main-surface") || document.querySelector("main");
-    const homeIndicator = document.querySelector('[data-testid="home-icon"]');
+    // React can retain previous workspaces with display:none. A hidden first
+    // match must not receive the dock or supply the current header geometry.
+    const shellMain = findVisibleElement('[data-pip-obstacle="app-shell-header"]')?.closest("main") ||
+      findVisibleElement("main.main-surface") || findVisibleElement("main");
+    const homeIndicator = findVisibleElement('[data-testid="home-icon"]');
     const home = homeIndicator?.closest('[role="main"]') ||
       [...document.querySelectorAll('[role="main"]')].find((candidate) =>
+        isVisibleElement(candidate) &&
         candidate.querySelector('[data-feature="game-source"]') &&
         candidate.querySelector('.group\\/home-suggestions')) || null;
     // Root :has() selectors invalidated thousands of descendants during native
@@ -3062,9 +3245,14 @@
     // Native desktop chrome already offsets the shell. Only reserve the remainder.
     const sidebarTop = document.querySelector("aside.app-shell-left-panel")?.getBoundingClientRect().top || 0;
     setStyleProperty(root, "--qq-native-shell-top", `${Math.max(0, sidebarTop)}px`);
+    const topBar = document.querySelector('[class*="_ApplicationMenuTopBar_"]');
+    const contentTop = Math.max(70, (topBar?.getBoundingClientRect().bottom || 36) + 34);
+    setStyleProperty(root, "--qq-content-top", `${contentTop}px`);
+    setStyleProperty(root, "--qq-toolbar-top", `${contentTop - 34}px`);
     const nativeHeaderBox = shellMain.getBoundingClientRect();
     setStyleProperty(root, "--qq-native-header-left", `${nativeHeaderBox.left}px`);
     setStyleProperty(root, "--qq-native-header-right", `${Math.max(0, window.innerWidth - nativeHeaderBox.right)}px`);
+    setStyleProperty(root, "--qq-native-header-width", `${nativeHeaderBox.width}px`);
     ensureRetroShell();
     syncRetroToolbarActions();
     ensureToggleButton();
@@ -3241,7 +3429,9 @@
 
   const removeSkinVisuals = () => {
     profileCleanup();
+    clearProfileDock();
     clearReferenceLayout();
+    document.getElementById(MEDIA_STYLE_ID)?.remove();
     document.querySelectorAll(".qq-skin-thread-frame").forEach((node) => node.classList.remove("qq-skin-thread-frame"));
     weatherMonitor.destroy();
     const root = document.documentElement;
@@ -3447,6 +3637,7 @@
 
   const selectSkinMode = (mode, appearance) => {
     if (!["native", "qq", "custom"].includes(mode)) return;
+    const paletteOnly = skinMode === "qq" && mode === "qq";
     closeLibraryMenu();
     if (mode === "custom" && !CUSTOM_THEME_KINDS.has(CUSTOM_THEME.kind)) {
       const anchor = document.getElementById(TOGGLE_ID);
@@ -3476,7 +3667,9 @@
       state.skinMode = skinMode;
       state.themeId = THEME.id || (skinMode === "qq" ? "qq-stable" : "custom");
     }
-    removeSkinVisuals();
+    // QQ palettes share one stylesheet and assets. Rebuilding them here parses
+    // the embedded artwork again and stalls every brand switch for seconds.
+    if (!paletteOnly) removeSkinVisuals();
     syncRuntime();
     if (skinMode !== "native") ensure({ root: true, route: true, layout: true });
     // Always re-assert the toggle above retro chrome so Electron drag regions
@@ -3625,6 +3818,7 @@
   const shellMountSelector = 'main, aside.app-shell-left-panel, [role="main"], [role="dialog"], [role="menu"], [role="listbox"], [data-pip-obstacle], [data-app-shell-tab-row], [data-app-action-sidebar-section-toggle], .home-banners';
   const hasMatchingNode = (nodes, selector) => nodes.some((node) => node.nodeType === 1 &&
     (node.matches(selector) || node.querySelector(selector)));
+  const hiddenRouteSelector = '[inert], [hidden], [style*="display: none"]';
   const observer = new MutationObserver((records) => {
     if (window[DISABLED_KEY]) return;
     let route = false;
@@ -3632,6 +3826,7 @@
     for (const record of records) {
       if (isSkinNode(record.target)) continue;
       const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+      if (target?.closest('[role="tooltip"]')) continue;
       if (record.type === "attributes") {
         // Quick Chat can open through a keyboard shortcut without remounting.
         if (target?.matches('section[data-pip-obstacle="quick-chat"]')) route = true;
@@ -3640,9 +3835,16 @@
       if (target?.closest('[data-codex-composer="true"], [contenteditable="true"], textarea, input')) continue;
       const changed = [...record.addedNodes, ...record.removedNodes];
       if (changed.length && changed.every(isSkinNode)) continue;
+      if (changed.length && changed.every(node => node.nodeType === 1 &&
+          (node.matches('[role="tooltip"]') ||
+            (node.matches('[data-radix-popper-content-wrapper]') && node.querySelector('[role="tooltip"]'))))) continue;
       if (target?.closest('button, [role="button"]') ||
           hasMatchingNode(changed, 'button, [role="button"]')) sound = true;
-      if (hasMatchingNode(changed, shellMountSelector)) route = true;
+      // History hover preloads hidden React workspaces. Those mounts must not
+      // remeasure the visible chat; navigation/resize already refreshes it.
+      if (!target?.closest(hiddenRouteSelector) && hasMatchingNode(
+        changed.filter(node => node.nodeType !== 1 || !node.closest(hiddenRouteSelector)), shellMountSelector,
+      )) route = true;
     }
     if (sound || route) scheduleEnsure({ route });
   });
@@ -3688,6 +3890,7 @@
     soundMonitor,
     weatherMonitor,
     profileCleanup,
+    clearProfileDock,
     closeLibraryMenu,
     mediaQuery,
     mediaHandler,

@@ -597,7 +597,7 @@ async function loadStaticPayloadAssets() {
     theme.schemes = { [theme.appearance]: theme.colors, ...schemes };
     if (!theme.schemes.light || !theme.schemes.dark) throw new Error(`Missing light/dark palette: ${brand}`);
   }
-  const css = `${baseCss}\n${darkCss}\n${uiCss}\n${mediaCss}\n${levelIconCss.join("\n")}`;
+  const css = `${baseCss}\n${darkCss}\n${uiCss}\n/* qq-media-start */\n${mediaCss}\n/* qq-media-end */\n${levelIconCss.join("\n")}`;
   return { css, customCss, template, qqArt, qqTheme, pet, retroFrame, qqAvatar, coughAudio, cacheHit };
 }
 
@@ -1056,11 +1056,12 @@ async function verifySession(session) {
         visible: r.width > 0 && r.height > 0 && style.display !== 'none' && style.visibility !== 'hidden',
       };
     };
-    const homeIndicator = document.querySelector('[data-testid="home-icon"]');
-    const homeSignal = homeIndicator ?? document.querySelector('[data-feature="game-source"]') ??
-      document.querySelector('.group\\\\/home-suggestions');
+    const visible = (selector) => [...document.querySelectorAll(selector)].find(node => box(node)?.visible && !node.closest('[inert]'));
+    const homeIndicator = visible('[data-testid="home-icon"]');
+    const homeSignal = homeIndicator ?? visible('[data-feature="game-source"]') ??
+      visible('.group\\\\/home-suggestions');
     const homeRoute = homeSignal?.closest('[role="main"]') ?? null;
-    const home = document.querySelector('[role="main"].qq-skin-home, [role="main"].dream-skin-home');
+    const home = visible('[role="main"].qq-skin-home, [role="main"].dream-skin-home');
     const suggestions = home?.querySelector('.group\\\\/home-suggestions') ?? null;
     const cardBoxes = suggestions ? [...suggestions.querySelectorAll('button')].map(box) : [];
     const visibleCards = cardBoxes.filter((item) => item?.visible);
@@ -1070,9 +1071,9 @@ async function verifySession(session) {
       home?.firstElementChild || null;
     const hero = box(stack?.querySelector(':scope > div:first-child > div:first-child'));
     const projectButton = box(home?.querySelector('.group\\\\/project-selector > button'));
-    const shell = box(document.querySelector('${SHELL_SELECTOR}'));
-    const composer = box(document.querySelector('${COMPOSER_SELECTOR}'));
-    const sidebar = box(document.querySelector('aside.app-shell-left-panel'));
+    const shell = box(visible('${SHELL_SELECTOR}'));
+    const composer = box(visible('${COMPOSER_SELECTOR}'));
+    const sidebar = box(visible('aside.app-shell-left-panel'));
     const chrome = document.getElementById('codex-qq-skin-chrome');
     const usagePanelNode = document.getElementById('codex-qq-skin-usage-panel');
     const usageSnapshot = window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__;
@@ -1234,9 +1235,11 @@ export function earlyPayloadFor(payload, revision) {
       return true;
     };
     if (install()) return;
-    if (typeof MutationObserver === "function" && document.documentElement) {
+    if (typeof MutationObserver === "function") {
       observer = new MutationObserver(install);
-      observer.observe(document.documentElement, { childList: true, subtree: true });
+      // New-document scripts can run before <html> exists. Observe the
+      // document in that case so a reload still sees the shell mount.
+      observer.observe(document.documentElement || document, { childList: true, subtree: true });
     }
     timeout = setTimeout(stop, 10000);
   })()`;
@@ -1578,10 +1581,8 @@ if (path.resolve(process.argv[1] || "") === path.resolve(scriptPath)) {
     } else if (options.mode === "watch") await runWatch(options);
     else {
       await runOneShot(options);
-      // Verification/removal/screenshot commands are one-shot helpers. Force
-      // the CLI to release any idle CDP/fetch handles so the launcher cannot
-      // leave a second injector process sitting beside the real watcher.
-      process.exit(process.exitCode ?? 0);
+      // Let the closed CDP sockets drain before Node exits. A forced exit here
+      // can race libuv's async-handle cleanup on Windows (UV_HANDLE_CLOSING).
     }
   } catch (error) {
     console.error(`[qq-skin] ${error.stack || error.message}`);
