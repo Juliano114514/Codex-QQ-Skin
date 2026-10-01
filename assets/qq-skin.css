@@ -1326,7 +1326,7 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 }
 
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
-  aside.app-shell-left-panel nav,
+  aside.app-shell-left-panel nav:not([data-app-navigation-rail]),
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [role="list"],
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
@@ -2824,6 +2824,71 @@ html.codex-qq-skin [data-app-shell-application-menu-bar][data-pip-obstacle="app-
 html.codex-qq-skin[data-codex-window-chrome="application-menu"] aside.app-shell-left-panel,
 html.codex-qq-skin[data-codex-window-chrome="application-menu"] main.main-surface {
   padding-top: max(0px, calc((var(--qq-content-top) - var(--qq-native-shell-top, 0px)) / var(--codex-window-zoom, 1))) !important;
+}
+
+/* The navigation rail and sidebar now share an absolute wrapper. Its top
+   inset must reserve the skin toolbar; padding on aside cannot move it. */
+html.codex-qq-skin[data-codex-window-chrome="application-menu"]
+  aside.app-shell-left-panel > .absolute.inset-y-0 {
+  top: max(0px, calc((var(--qq-content-top) - var(--qq-native-shell-top, 0px)) / var(--codex-window-zoom, 1))) !important;
+}
+
+html.codex-qq-skin[data-codex-window-chrome="application-menu"] .dream-retro-body-frame,
+html.codex-qq-skin[data-codex-window-chrome="application-menu"] #codex-qq-skin-retro-shell::before,
+html.codex-qq-skin[data-codex-window-chrome="application-menu"] #codex-qq-skin-retro-shell::after {
+  top: var(--qq-content-top, 70px);
+}
+
+@media (min-width: 701px) and (max-width: 1100px) {
+  html.codex-qq-skin:has([data-app-shell-active-page="true"] [data-app-shell-tab-controller="right"])
+    aside.app-shell-left-panel[data-app-shell-left-panel-appearance] {
+    max-width: 240px !important;
+  }
+  html.codex-qq-skin:has([data-app-shell-active-page="true"] [data-app-shell-tab-controller="right"])
+    aside.app-shell-left-panel > .absolute.inset-y-0 > div:first-child {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+}
+@media (max-width: 700px) {
+  /* Keep a usable composer when the native sidebar's saved width is large. */
+  html.codex-qq-skin aside.app-shell-left-panel[data-app-shell-left-panel-appearance] {
+    max-width: max(52px, calc((100vw - 320px) / var(--codex-window-zoom, 1))) !important;
+  }
+  html.codex-qq-skin aside.app-shell-left-panel > .absolute.inset-y-0 > div:first-child {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+}
+@media (max-width: 560px) {
+  html.codex-qq-skin aside.app-shell-left-panel[data-app-shell-left-panel-appearance] {
+    width: 52px !important;
+    max-width: 52px !important;
+  }
+  html.codex-qq-skin aside.app-shell-left-panel #app-shell-sidebar .sidebar-navigation {
+    display: none !important;
+  }
+  html.codex-qq-skin[data-dream-platform="windows"] #codex-qq-skin-toggle {
+    top: var(--qq-toolbar-top, 36px) !important;
+    right: 12px !important;
+  }
+  html.codex-qq-skin .dream-retro-toolbar {
+    right: auto;
+    width: calc(100% - 132px);
+  }
+}
+
+/* The new attached project rail has its own opaque row. Align its controls
+   with the editor padding and paint one surface across the joined composer. */
+html.codex-qq-skin .qq-skin-home-utility[data-composer-rail] {
+  padding-inline: 8px !important;
+  border-radius: var(--qq-radius-card, 6px) var(--qq-radius-card, 6px) 0 0 !important;
+  background: var(--ds-panel) !important;
+  backdrop-filter: none !important;
+}
+html.codex-qq-skin .qq-skin-home-utility[data-composer-rail]
+  > .bg-background-composer-action-bar {
+  background: transparent !important;
 }
 
 /* Let the adaptive home composer reserve its own space, including banners,

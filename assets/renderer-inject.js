@@ -3160,7 +3160,7 @@
     }
     syncHomeLayoutMarks(home);
     const homeUtilityBars = new Set(home
-      ? home.querySelectorAll('[class*="_homeUtilityBar_"]')
+      ? home.querySelectorAll('[class*="_homeUtilityBar_"], [data-composer-rail][data-composer-rail-placement="above"]')
       : []);
     for (const candidate of document.querySelectorAll(".qq-skin-home-utility")) {
       if (!homeUtilityBars.has(candidate)) candidate.classList.remove("qq-skin-home-utility");
@@ -3830,6 +3830,9 @@
       if (record.type === "attributes") {
         // Quick Chat can open through a keyboard shortcut without remounting.
         if (target?.matches('section[data-pip-obstacle="quick-chat"]')) route = true;
+        // Cached workspaces now switch visibility without mounting new nodes.
+        // Refresh after that switch, rather than before navigation has settled.
+        if (target?.matches('[data-app-shell-active-page]')) route = true;
         continue;
       }
       if (target?.closest('[data-codex-composer="true"], [contenteditable="true"], textarea, input')) continue;
@@ -3968,7 +3971,7 @@
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-state"],
+      attributeFilter: ["data-state", "data-app-shell-active-page"],
     });
     rootObserver.observe(document.documentElement, {
       attributes: true,
