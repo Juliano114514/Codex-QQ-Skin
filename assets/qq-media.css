@@ -54,7 +54,7 @@ html.codex-qq-skin[data-qq-palette-family="media"] .dream-retro-toolbar i {
   background: var(--ds-line);
   box-shadow: none;
 }
-html.codex-qq-skin[data-qq-palette-family="media"] aside.app-shell-left-panel .h-toolbar:has(button[aria-haspopup="menu"] img) {
+html.codex-qq-skin[data-qq-palette-family="media"] aside.app-shell-left-panel .h-toolbar[data-qq-sidebar-part~="account"] {
   border-color: var(--ds-line);
 }
 
@@ -1466,7 +1466,7 @@ html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"]
     aside.app-shell-left-panel,
     aside.app-shell-left-panel [data-sidebar-project-kind][role="listitem"],
     aside.app-shell-left-panel [data-app-action-sidebar-project-row],
-    aside.app-shell-left-panel .h-toolbar:has(button[aria-haspopup="menu"] img),
+    aside.app-shell-left-panel .h-toolbar[data-qq-sidebar-part~="account"],
     [data-pip-obstacle="thread-summary-panel"]:not(:empty) > div:first-child,
     [data-pip-obstacle="thread-summary-panel"] [class*="bg-token-main-surface"],
     section[role="dialog"][data-pip-obstacle="quick-chat"] > div[aria-hidden="false"]
@@ -1527,7 +1527,7 @@ html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"]
   }
   html.codex-qq-skin:is([data-qq-palette-family="media"][data-dream-shell="light"], [data-qq-palette="bilibili"]) .qq-skin-home :is(
     .qq-skin-home-utility,
-    div:has(> .horizontal-scroll-fade-mask .group\/project-selector),
+    [data-qq-home-part~="project-row"],
     .group\/home-suggestions button
   ) {
     background: var(--ds-panel) !important;

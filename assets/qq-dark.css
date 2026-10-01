@@ -102,7 +102,7 @@ html.codex-qq-skin[data-dream-shell="dark"] main.main-surface [role="main"] {
   text-shadow: none !important;
 }
 
-html.codex-qq-skin[data-dream-shell="dark"] aside.app-shell-left-panel .h-toolbar:has(button[aria-haspopup="menu"] img) {
+html.codex-qq-skin[data-dream-shell="dark"] aside.app-shell-left-panel .h-toolbar[data-qq-sidebar-part~="account"] {
   background: var(--qq-night-bar);
   border-color: #46728a;
   box-shadow: var(--qq-night-glint);

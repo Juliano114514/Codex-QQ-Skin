@@ -37,7 +37,7 @@
     "data-dream-art-ready", "data-dream-art-fit", "data-dream-three-pane", "data-dream-summary-state", "data-dream-left-sidebar",
     "data-qq-usage-mode", "data-qq-usage-state", "data-qq-weather", "data-qq-settings",
     "data-qq-weather-audio", "data-qq-palette", "data-qq-palette-family",
-    "data-qq-home-route", "data-qq-native-shell", "data-qq-profile-visible",
+    "data-qq-home-route", "data-qq-native-shell", "data-qq-profile-visible", "data-qq-right-dock",
     "data-qq-reference-layout", "data-qq-quick-chat", "data-dream-task-route", "data-dream-side-task",
   ];
   const VERSION = __QQ_SKIN_VERSION_JSON__;
@@ -117,6 +117,35 @@
     const layout = detectHomeLayoutKind(home);
     const root = document.documentElement;
     if (root) setAttribute(root, "data-qq-home-layout", layout);
+    // Keep structural :has() queries off Chromium's style invalidation path.
+    // Virtualized chat rows and slider labels otherwise invalidate the shell
+    // even when these home-only rules cannot match the current page.
+    const marks = new Map();
+    const mark = (node, value) => {
+      if (node) marks.set(node, [...(marks.get(node) || []), value]);
+    };
+    if (home && skinMode !== "native") {
+      const stack = resolveHomeStack(home);
+      if (stack?.children[1]?.querySelector('[data-feature="game-source"]')) {
+        mark(stack, "composer-second");
+        mark(stack.children[1], "second-composer");
+      }
+      for (const banner of home.querySelectorAll('.home-banners')) mark(banner.parentElement, "banner-row");
+      for (const project of home.querySelectorAll('[class~="group/project-selector"]')) {
+        const row = project.closest('.horizontal-scroll-fade-mask')?.parentElement;
+        if (row?.matches('div') && home.contains(row)) mark(row, "project-row");
+      }
+      for (const greeting of home.querySelectorAll('[class~="group/home-composer-layout"] > .contents > div')) {
+        if (greeting.querySelector('[data-feature="game-source"]')) mark(greeting, "greeting-row");
+      }
+      if (home.querySelector('[class*="_homeUtilityBar_"], [data-composer-rail][data-composer-rail-placement="above"]')) {
+        mark(home, "utility");
+      }
+    }
+    for (const node of document.querySelectorAll('[data-qq-home-part]')) {
+      if (!marks.has(node)) node.removeAttribute('data-qq-home-part');
+    }
+    for (const [node, values] of marks) setAttribute(node, 'data-qq-home-part', values.join(' '));
     const stackClass = skinMode === "qq" ? "qq-skin-home-stack" : "dream-skin-home-stack";
     const otherStackClass = skinMode === "qq" ? "dream-skin-home-stack" : "qq-skin-home-stack";
     for (const node of document.querySelectorAll(".qq-skin-home-stack, .dream-skin-home-stack")) {
@@ -789,7 +818,7 @@
 
   const pinnedSummaryLabel = /(toggle pinned summary|pinned summary|toggle summary|切换摘要|置顶摘要|固定摘要|釘選概要|釘選摘要|概要.*釘選|摘要.*固定)/i;
   const isVisibleElement = (node) => {
-    if (!node || node.closest?.("[inert]")) return false;
+    if (!node || node.closest?.('[inert], [hidden], [data-app-shell-active-page="false"]')) return false;
     const box = node.getBoundingClientRect();
     return box.width > 0 && box.height > 0;
   };
@@ -856,7 +885,8 @@
 
     const visibleButtons = () => [...document.querySelectorAll('button, [role="button"]')]
       .filter((button) => !button.disabled && button.getAttribute?.("aria-disabled") !== "true" &&
-        button.getAttribute?.("aria-hidden") !== "true");
+        button.getAttribute?.("aria-hidden") !== "true" &&
+        !button.closest?.('[inert], [hidden], [data-app-shell-active-page="false"]'));
     const isStopButton = (button) => stopPattern.test(buttonLabel(button));
     const findRunning = (buttons = visibleButtons()) => buttons.some(isStopButton);
     const findApproval = (buttons = visibleButtons()) => {
@@ -2531,10 +2561,20 @@
   const ensureSidebarSectionBars = () => {
     const aside = document.querySelector("aside.app-shell-left-panel");
     const live = new Set();
+    const parts = new Map();
+    const mark = (node, part) => {
+      if (node) parts.set(node, [...(parts.get(node) || []), part]);
+    };
     if (!aside) {
       document.querySelectorAll(".qq-skin-section-bar").forEach((node) =>
         node.classList.remove("qq-skin-section-bar"));
       return;
+    }
+    for (const toolbar of aside.querySelectorAll('.h-toolbar')) {
+      if (toolbar.querySelector('button[aria-haspopup="menu"] img')) mark(toolbar, 'account');
+      for (const button of toolbar.querySelectorAll('button[aria-haspopup="menu"]')) {
+        if ([...button.children].some((child) => child.matches('img'))) mark(button, 'avatar');
+      }
     }
     const asideWidth = typeof aside.getBoundingClientRect === "function"
       ? aside.getBoundingClientRect().width : 0;
@@ -2565,7 +2605,15 @@
       if (!best || best === aside) continue;
       best.classList.add("qq-skin-section-bar");
       live.add(best);
+      mark(toggle.parentElement, 'toggle');
+      for (const button of best.querySelectorAll('button:not([data-app-action-sidebar-section-toggle])')) {
+        if (button.parentElement !== best) mark(button.parentElement, 'actions');
+      }
     }
+    for (const node of aside.querySelectorAll('[data-qq-sidebar-part]')) {
+      if (!parts.has(node)) node.removeAttribute('data-qq-sidebar-part');
+    }
+    for (const [node, values] of parts) setAttribute(node, 'data-qq-sidebar-part', [...new Set(values)].join(' '));
     for (const node of aside.querySelectorAll(".qq-skin-section-bar")) {
       if (!live.has(node)) node.classList.remove("qq-skin-section-bar");
     }
@@ -3010,6 +3058,86 @@
     return style;
   };
 
+  // A native popup can invalidate the entire shell through its own :has()
+  // rules. Keep other appearances out of that recalculation, including the
+  // platform palettes. Restore their rules only when the theme changes.
+  // Hot reinjection reuses stylesheet nodes. Keep their removed rules with
+  // those nodes so subsequent theme switches can restore the full stylesheet.
+  const styleVariants = previous?.styleVariants || new WeakMap();
+  const variantAttributes = new Set([
+    SHELL_ATTR, "data-qq-palette", "data-qq-palette-family", "data-dream-platform",
+    "data-dream-art-wide", "data-dream-art-safe", "data-dream-art-safe-area",
+    "data-dream-task-mode", "data-dream-art-task-mode", "data-dream-art-aspect",
+    "data-dream-art-fit", "data-dream-deep-theme",
+  ]);
+  const selectorParts = (selector, compound = false) => {
+    const parts = [];
+    let start = 0, depth = 0, quote = "", escaped = false;
+    for (let index = 0; index < selector.length; index += 1) {
+      const char = selector[index];
+      if (escaped) { escaped = false; continue; }
+      if (char === "\\") { escaped = true; continue; }
+      if (quote) { if (char === quote) quote = ""; continue; }
+      if (char === '"' || char === "'") { quote = char; continue; }
+      if (char === "(" || char === "[") depth += 1;
+      if (char === ")" || char === "]") depth -= 1;
+      if (depth) continue;
+      if (compound && /[\s>+~]/.test(char)) return selector.slice(0, index);
+      if (!compound && char === ",") {
+        parts.push(selector.slice(start, index).trim());
+        start = index + 1;
+      }
+    }
+    return compound ? selector : [...parts, selector.slice(start).trim()];
+  };
+  const syncStyleVariants = (root) => {
+    if (typeof root.matches !== "function") return;
+    const key = [skinMode, ...[...variantAttributes].map(name => root.getAttribute(name))].join("|");
+    const inactive = (selector) => selectorParts(selector).every((part) => {
+      const head = selectorParts(part, true);
+      if (!head.startsWith("html.")) return false;
+      // An appearance gate before any pseudo-class is mandatory even when
+      // later route conditions are dynamic. Remove those inactive rules too.
+      const prefix = /^html\.[\w-]+(?:\[[^\]]+\])*/.exec(head)?.[0] || "";
+      for (const gate of prefix.matchAll(/\[([a-z-]+)="[^"\\]*"\]/g)) {
+        if (variantAttributes.has(gate[1]) && !root.matches(gate[0])) return true;
+      }
+      if (/:(?:has|not)\(/.test(head)) return false;
+      // Route, dock, focus and weather conditions stay live. Only attributes
+      // owned by applyRootState may remove a rule from the theme stylesheet.
+      const attributes = [...head.matchAll(/\[([a-z-]+)/g)].map(match => match[1]);
+      if (attributes.some(name => !variantAttributes.has(name))) return false;
+      try { return !root.matches(head); } catch { return false; }
+    });
+    for (const id of [STYLE_ID, MEDIA_STYLE_ID]) {
+      const style = document.getElementById(id);
+      if (!style?.sheet?.cssRules) continue;
+      const revision = style.dataset.dreamSkinStyleRevision;
+      let variant = styleVariants.get(style);
+      if (!variant || variant.revision !== revision) {
+        variant = { revision, key: null, removed: [] };
+        styleVariants.set(style, variant);
+      }
+      if (variant.key === key) continue;
+      for (const rule of [...variant.removed].reverse()) rule.group.insertRule(rule.text, rule.index);
+      variant.removed = [];
+      const prune = (group) => {
+        for (let index = group.cssRules.length - 1; index >= 0; index -= 1) {
+          const rule = group.cssRules[index];
+          if (rule.selectorText) {
+            if (!inactive(rule.selectorText)) continue;
+            variant.removed.push({ group, index, text: rule.cssText });
+            group.deleteRule(index);
+          } else if (rule.cssRules && rule.type !== 7) prune(rule);
+        }
+      };
+      // Font faces stay in place: rewriting the embedded font stylesheet on
+      // each brand switch would itself block input for seconds.
+      prune(style.sheet);
+      variant.key = key;
+    }
+  };
+
   const applyRootState = (root) => {
     metrics.rootPasses += 1;
     restoreNativeAppearance();
@@ -3099,6 +3227,7 @@
     // Belt-and-suspenders: never allow both product skins on the same document.
     if (skinMode === "qq") root.classList.remove("codex-dream-skin");
     if (skinMode === "custom") root.classList.remove("codex-qq-skin");
+    syncStyleVariants(root);
     // These synchronous class/theme writes belong to us. Feeding them back
     // through rootObserver used to repaint the entire skin on every frame.
     rootObserver?.takeRecords();
@@ -3137,15 +3266,43 @@
     // match must not receive the dock or supply the current header geometry.
     const shellMain = findVisibleElement('[data-pip-obstacle="app-shell-header"]')?.closest("main") ||
       findVisibleElement("main.main-surface") || findVisibleElement("main");
+    // The outer layout and portaled webviews have stable ownership. Mark their
+    // hosts on shell mounts instead of matching through body with :has().
+    const appRoot = document.getElementById('root');
+    const layoutHost = shellMain && appRoot && [...appRoot.children].find((node) =>
+      node.contains(shellMain) && (node.matches('[class*="_Layout_"]') ||
+        [...node.children].some((child) => child.querySelector('aside.app-shell-left-panel'))));
+    const browserHosts = new Set([...document.querySelectorAll('[data-browser-sidebar-webview]')].map((webview) => {
+      const parent = webview.parentElement;
+      if (parent?.parentElement === document.body) return parent;
+      if (parent?.matches('div') && parent.parentElement?.parentElement === document.body) return parent.parentElement;
+      return null;
+    }).filter(Boolean));
+    for (const node of document.querySelectorAll('[data-qq-shell-layout]')) {
+      if (node !== layoutHost) node.removeAttribute('data-qq-shell-layout');
+    }
+    if (layoutHost) setAttribute(layoutHost, 'data-qq-shell-layout', 'true');
+    for (const node of document.querySelectorAll('[data-qq-browser-layer]')) {
+      if (!browserHosts.has(node)) node.removeAttribute('data-qq-browser-layer');
+    }
+    for (const node of browserHosts) setAttribute(node, 'data-qq-browser-layer', 'true');
+    setAttribute(root, 'data-qq-right-dock', Boolean(document.querySelector(
+      '[data-app-shell-active-page="true"] [data-app-shell-tab-controller="right"]')));
     const homeIndicator = findVisibleElement('[data-testid="home-icon"]');
     const home = homeIndicator?.closest('[role="main"]') ||
       [...document.querySelectorAll('[role="main"]')].find((candidate) =>
         isVisibleElement(candidate) &&
         candidate.querySelector('[data-feature="game-source"]') &&
-        candidate.querySelector('.group\\/home-suggestions')) || null;
+        candidate.querySelector('[data-testid="home-icon"], [class~="group/home-suggestions"], [class~="group/home-composer-layout"]')) || null;
     // Root :has() selectors invalidated thousands of descendants during native
     // scroll updates. Route markers change only when the matching UI changes.
     setAttribute(root, "data-qq-home-route", home ? "true" : "false");
+    const legacyLayers = !home && shellMain && !shellMain.hasAttribute('data-app-shell-main-surface')
+      ? [...shellMain.children].filter((node) => !node.matches('header.app-header-tint, header.draggable')) : [];
+    for (const node of document.querySelectorAll('[data-qq-main-layer]')) {
+      if (!legacyLayers.includes(node)) node.removeAttribute('data-qq-main-layer');
+    }
+    for (const node of legacyLayers) setAttribute(node, 'data-qq-main-layer', 'true');
     setAttribute(root, "data-qq-native-shell", shellMain?.matches('[class*="_MainContentSurface_"]') ? "true" : "false");
     setAttribute(root, "data-qq-quick-chat", document.querySelector('section[data-pip-obstacle="quick-chat"][data-state="open"]') ? "true" : "false");
     for (const candidate of document.querySelectorAll('[role="main"].qq-skin-home')) {
@@ -3432,6 +3589,9 @@
     clearProfileDock();
     clearReferenceLayout();
     document.getElementById(MEDIA_STYLE_ID)?.remove();
+    for (const name of ['data-qq-home-part', 'data-qq-shell-layout', 'data-qq-browser-layer', 'data-qq-sidebar-part', 'data-qq-main-layer']) {
+      document.querySelectorAll(`[${name}]`).forEach((node) => node.removeAttribute(name));
+    }
     document.querySelectorAll(".qq-skin-thread-frame").forEach((node) => node.classList.remove("qq-skin-thread-frame"));
     weatherMonitor.destroy();
     const root = document.documentElement;
@@ -3815,10 +3975,10 @@
   // Text, syntax highlighting and virtualized rows are content updates, not
   // navigation. Only native shell mounts need a geometry/profile pass. Keep
   // footer mounts here, but let their stop/approval buttons use the status path.
-  const shellMountSelector = 'main, aside.app-shell-left-panel, [role="main"], [role="dialog"], [role="menu"], [role="listbox"], [data-pip-obstacle], [data-app-shell-tab-row], [data-app-action-sidebar-section-toggle], .home-banners';
+  const shellMountSelector = 'main, aside.app-shell-left-panel, [role="main"], [role="dialog"], [role="menu"], [role="listbox"], [data-pip-obstacle], [data-app-shell-tab-row], [data-browser-sidebar-webview], [data-app-action-sidebar-section-toggle], [data-feature="game-source"], [class~="group/home-composer-layout"], .home-banners';
   const hasMatchingNode = (nodes, selector) => nodes.some((node) => node.nodeType === 1 &&
     (node.matches(selector) || node.querySelector(selector)));
-  const hiddenRouteSelector = '[inert], [hidden], [style*="display: none"]';
+  const hiddenRouteSelector = '[inert], [hidden], [data-app-shell-active-page="false"], [style*="display: none"]';
   const observer = new MutationObserver((records) => {
     if (window[DISABLED_KEY]) return;
     let route = false;
@@ -3826,13 +3986,13 @@
     for (const record of records) {
       if (isSkinNode(record.target)) continue;
       const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
-      if (target?.closest('[role="tooltip"]')) continue;
+      if (target?.closest('[role="tooltip"], [data-app-shell-active-page="false"]')) continue;
       if (record.type === "attributes") {
         // Quick Chat can open through a keyboard shortcut without remounting.
         if (target?.matches('section[data-pip-obstacle="quick-chat"]')) route = true;
         // Cached workspaces now switch visibility without mounting new nodes.
         // Refresh after that switch, rather than before navigation has settled.
-        if (target?.matches('[data-app-shell-active-page]')) route = true;
+        if (target?.matches('[data-app-shell-active-page="true"]')) route = true;
         continue;
       }
       if (target?.closest('[data-codex-composer="true"], [contenteditable="true"], textarea, input')) continue;
@@ -3879,6 +4039,7 @@
 
   window[STATE_KEY] = {
     ensure,
+    styleVariants,
     cleanup,
     ensureToggleButton,
     setUsageSnapshot,

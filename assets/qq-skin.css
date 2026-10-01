@@ -193,6 +193,14 @@ html.codex-qq-skin body {
   overflow: hidden !important;
 }
 
+/* Native cached pages use display:contents with hidden children. Collapse the
+   inactive wrapper as well so popup invalidation skips its entire subtree. */
+@layer qq-reference {
+  html.codex-qq-skin [data-app-shell-active-page="false"] {
+    display: none !important;
+  }
+}
+
 html.codex-qq-skin body::before {
   content: none;
 }
@@ -211,16 +219,14 @@ html.codex-qq-skin body > #root {
 /* Native browser webviews are portaled beside #root. Keep them on the same
    layer as the raised shell so its panel background cannot cover the page.
    Leave native visibility, clipping and pointer-event control untouched. */
-html.codex-qq-skin body > :has(> [data-browser-sidebar-webview]),
-html.codex-qq-skin body > :has(> div > [data-browser-sidebar-webview]) {
+html.codex-qq-skin body > [data-qq-browser-layer="true"] {
   z-index: 3;
 }
 
 /* Codex prepends invisible portal nodes under #root. Match the real layout
    with or without a mounted sidebar so its width and height stay inside the
    root's reserved status-strip area. */
-html.codex-qq-skin body > #root > div[class*="_Layout_"]:has(> [class*="_ApplicationMenuTopBar_"]),
-html.codex-qq-skin body > #root > div:has(> div > .app-shell-left-panel) {
+html.codex-qq-skin body > #root > [data-qq-shell-layout="true"] {
   width: 100% !important;
   height: 100% !important;
   min-width: 0 !important;
@@ -448,7 +454,7 @@ html.codex-qq-skin[data-dream-platform="windows"]
 
 /* Style the native account toolbar without replacing its React-owned children.
    Avatar/name keep the account action; voice and help retain their own buttons. */
-html.codex-qq-skin aside.app-shell-left-panel .h-toolbar:has(button[aria-haspopup="menu"] img) {
+html.codex-qq-skin aside.app-shell-left-panel .h-toolbar[data-qq-sidebar-part~="account"] {
   flex-shrink: 0;
   gap: 8px;
   border-top: 1px solid rgb(69 126 183 / .35);
@@ -467,7 +473,7 @@ html.codex-qq-skin aside.app-shell-left-panel .h-toolbar button:focus-visible {
   outline: 2px solid #438bcc;
   outline-offset: -2px;
 }
-html.codex-qq-skin aside.app-shell-left-panel .h-toolbar button[aria-haspopup="menu"]:has(> img) {
+html.codex-qq-skin aside.app-shell-left-panel .h-toolbar button[data-qq-sidebar-part~="avatar"] {
   min-width: 0;
   gap: 8px;
 }
@@ -744,7 +750,7 @@ html.codex-qq-skin:is([data-dream-task-mode="off"], [data-dream-art-task-mode="o
   content: none;
 }
 
-html.codex-qq-skin main.main-surface:not([data-app-shell-main-surface]):not(.qq-skin-home-shell) > :not(header.app-header-tint) {
+html.codex-qq-skin main.main-surface > [data-qq-main-layer="true"] {
   position: relative;
   z-index: 1;
 }
@@ -1368,10 +1374,10 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 /* Inner flex-1 wrappers around the toggle must not keep their own inset bar. */
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [class~="group/nav-section-title"]
-  *:has(> [data-app-action-sidebar-section-toggle]),
+  [data-qq-sidebar-part~="toggle"],
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel .qq-skin-section-bar
-  *:has(> [data-app-action-sidebar-section-toggle]),
+  [data-qq-sidebar-part~="toggle"],
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel [class~="group/nav-section-title"]
   > *:not(button),
@@ -1413,7 +1419,7 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
   aside.app-shell-left-panel .qq-skin-section-bar > button:not([data-app-action-sidebar-section-toggle]),
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
-  aside.app-shell-left-panel *:has(> [data-app-action-sidebar-section-toggle])
+  aside.app-shell-left-panel [data-qq-sidebar-part~="toggle"]
   > button:not([data-app-action-sidebar-section-toggle]) {
   flex: 0 0 auto !important;
   color: #3f74ab !important;
@@ -1424,10 +1430,10 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
    the native hover pill painting a second bar behind the ellipsis and plus. */
 html.codex-qq-skin[data-dream-shell="light"]
   aside.app-shell-left-panel .qq-skin-section-bar
-  *:has(> button:not([data-app-action-sidebar-section-toggle])):not(.qq-skin-section-bar),
+  [data-qq-sidebar-part~="actions"],
 html.codex-qq-skin[data-dream-shell="light"]
   aside.app-shell-left-panel .qq-skin-section-bar
-  *:has(> button:not([data-app-action-sidebar-section-toggle])):not(.qq-skin-section-bar):hover,
+  [data-qq-sidebar-part~="actions"]:hover,
 html.codex-qq-skin[data-dream-shell="light"]
   aside.app-shell-left-panel .qq-skin-section-bar
   button:not([data-app-action-sidebar-section-toggle]),
@@ -1726,10 +1732,10 @@ html.codex-qq-skin .qq-skin-home {
 
 /* Current Codex places the home banner and greeting in separate stack rows.
    Keep the native greeting and project picker interactive over the banner. */
-.qq-skin-home-stack:has(> :nth-child(2) [data-feature="game-source"]) {
+.qq-skin-home-stack[data-qq-home-part~="composer-second"] {
   position: relative;
 }
-.qq-skin-home-stack:has(> :nth-child(2) [data-feature="game-source"]) > :nth-child(2) {
+.qq-skin-home-stack > [data-qq-home-part~="second-composer"] {
   position: absolute;
   z-index: 2;
   top: 112px;
@@ -1758,7 +1764,7 @@ html[data-qq-home-layout="banners"] .qq-skin-home {
 }
 
 html[data-qq-home-layout="banners"] .qq-skin-home > .home-banners,
-html[data-qq-home-layout="banners"] .qq-skin-home > :has(> .home-banners) {
+html[data-qq-home-layout="banners"] .qq-skin-home > [data-qq-home-part~="banner-row"] {
   flex: 0 0 auto !important;
   min-height: 0 !important;
 }
@@ -2127,7 +2133,7 @@ html.codex-qq-skin .qq-skin-home-utility {
   backdrop-filter: blur(16px) saturate(108%) !important;
 }
 
-html.codex-qq-skin .qq-skin-home:has(.qq-skin-home-utility)
+html.codex-qq-skin .qq-skin-home[data-qq-home-part~="utility"]
   .composer-surface-chrome {
   border: 0 !important;
   border-radius: 0 0 22px 22px !important;
@@ -2148,7 +2154,7 @@ html.codex-qq-skin[data-dream-art-wide="true"] .qq-skin-home-utility {
 }
 
 html.codex-qq-skin[data-dream-art-wide="true"]
-  .qq-skin-home:has(.qq-skin-home-utility) .composer-surface-chrome {
+  .qq-skin-home[data-qq-home-part~="utility"] .composer-surface-chrome {
   box-shadow:
     0 10px 30px rgb(var(--ds-bg-rgb) / .20),
     inset 1px 0 var(--ds-immersive-line),
@@ -2175,8 +2181,8 @@ html.codex-qq-skin .composer-surface-chrome button svg {
   color: currentColor !important;
 }
 
-html.codex-qq-skin .qq-skin-home-utility button *,
-html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]) * {
+html.codex-qq-skin .qq-skin-home-utility button :is(span, svg),
+html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]) :is(span, svg) {
   color: currentColor !important;
 }
 
@@ -2240,7 +2246,7 @@ html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface
   background: transparent !important;
 }
 
-.qq-skin-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector) {
+.qq-skin-home [data-qq-home-part~="project-row"] {
   position: relative;
   padding-top: 28px !important;
   border: 1px solid rgb(var(--ds-muted-rgb) / .16);
@@ -2248,7 +2254,7 @@ html.codex-qq-skin[data-dream-art-wide="true"] main.main-surface
   background: rgb(var(--ds-panel-rgb) / .92) !important;
 }
 
-.qq-skin-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector)::before {
+.qq-skin-home [data-qq-home-part~="project-row"]::before {
   content: var(--qq-skin-project-label, "选择项目");
   position: absolute;
   left: 13px;
@@ -2552,7 +2558,7 @@ html.codex-qq-skin[data-dream-shell="light"] .qq-skin-home-utility {
 }
 
 html.codex-qq-skin[data-dream-shell="light"]
-  .qq-skin-home:has(.qq-skin-home-utility) .composer-surface-chrome {
+  .qq-skin-home[data-qq-home-part~="utility"] .composer-surface-chrome {
   border: 0 !important;
   border-radius: 0 0 10px 10px !important;
   background: linear-gradient(180deg, #ffffff, #f2f8fd) !important;
@@ -2565,7 +2571,7 @@ html.codex-qq-skin[data-dream-shell="light"]
 }
 
 html.codex-qq-skin[data-dream-shell="light"]
-  .qq-skin-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector) {
+  .qq-skin-home [data-qq-home-part~="project-row"] {
   border: 1px solid #8bb8e0;
   border-bottom: 0;
   background: linear-gradient(180deg, #f8fcff, #e9f3fc) !important;
@@ -2840,11 +2846,11 @@ html.codex-qq-skin[data-codex-window-chrome="application-menu"] #codex-qq-skin-r
 }
 
 @media (min-width: 701px) and (max-width: 1100px) {
-  html.codex-qq-skin:has([data-app-shell-active-page="true"] [data-app-shell-tab-controller="right"])
+  html.codex-qq-skin[data-qq-right-dock="true"]
     aside.app-shell-left-panel[data-app-shell-left-panel-appearance] {
     max-width: 240px !important;
   }
-  html.codex-qq-skin:has([data-app-shell-active-page="true"] [data-app-shell-tab-controller="right"])
+  html.codex-qq-skin[data-qq-right-dock="true"]
     aside.app-shell-left-panel > .absolute.inset-y-0 > div:first-child {
     min-width: 0 !important;
     width: 100% !important;
@@ -2900,7 +2906,7 @@ html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home [data-feature="
   white-space: normal !important;
   overflow-wrap: anywhere;
 }
-html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home [class~="group/home-composer-layout"] > .contents > div:has([data-feature="game-source"]) {
+html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home [data-qq-home-part~="greeting-row"] {
   padding-bottom: 56px !important;
 }
 @container home-main-content (max-width: 480px) {
@@ -2909,7 +2915,7 @@ html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home [class~="group/
   }
 }
 @container home-main-content (max-height: 360px) {
-  html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home [class~="group/home-composer-layout"] > .contents > div:has([data-feature="game-source"]) {
+  html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home [data-qq-home-part~="greeting-row"] {
     display: none !important;
   }
 }
