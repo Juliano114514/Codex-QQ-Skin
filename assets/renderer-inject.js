@@ -845,9 +845,12 @@
     let audioContext = null;
     let initialized = false;
     let previousRunning = false;
-    let activeApproval = null;
     let routeKey = "";
-    let cancelledUntil = 0;
+    let activePage = null;
+    let activeComposer = null;
+    let pendingCompletion = false;
+    let cancelledRun = false;
+    let seenApprovals = new WeakSet();
     let completionTimer = null;
     let statusTimer = null;
     let statusListener = null;
@@ -886,7 +889,8 @@
     const visibleButtons = () => [...document.querySelectorAll('button, [role="button"]')]
       .filter((button) => !button.disabled && button.getAttribute?.("aria-disabled") !== "true" &&
         button.getAttribute?.("aria-hidden") !== "true" &&
-        !button.closest?.('[inert], [hidden], [data-app-shell-active-page="false"]'));
+        !button.closest?.('[inert], [hidden], [data-app-shell-active-page="false"], [id^="codex-qq-skin-"]') &&
+        (!button.getClientRects || button.getClientRects().length > 0));
     const isStopButton = (button) => stopPattern.test(buttonLabel(button));
     const findRunning = (buttons = visibleButtons()) => buttons.some(isStopButton);
     const findApproval = (buttons = visibleButtons()) => {
@@ -899,10 +903,7 @@
         return approvalContextPattern.test(normalize(turn.textContent));
       });
       if (!action) return null;
-      const host = action.closest?.('[data-turn-key], [data-testid*="approval" i]') || action.parentElement;
-      const hostText = normalize(host?.textContent).slice(0, 320);
-      const turnKey = host?.getAttribute?.("data-turn-key") || "";
-      return `${turnKey}|${buttonLabel(action)}|${hostText}`;
+      return action;
     };
 
     const ensureAudioContext = () => {
@@ -1075,32 +1076,46 @@
       updateButton();
     };
 
-    const scan = () => {
-      const nextRoute = `${window.location?.pathname || ""}${window.location?.search || ""}`;
+    const scan = ({ settling = false } = {}) => {
+      const nextRoute = `${window.location?.pathname || ""}${window.location?.search || ""}${window.location?.hash || ""}`;
       const buttons = visibleButtons();
       const running = findRunning(buttons);
       const approval = findApproval(buttons);
-      if (!initialized || nextRoute !== routeKey) {
+      const nextPage = document.querySelector('[data-app-shell-active-page="true"]');
+      const nextComposer = [...document.querySelectorAll('.composer-surface-chrome')]
+        .find(node => !node.getClientRects || node.getClientRects().length > 0) || null;
+      if (!initialized || nextRoute !== routeKey || nextPage !== activePage || nextComposer !== activeComposer) {
         initialized = true;
         routeKey = nextRoute;
+        activePage = nextPage;
+        activeComposer = nextComposer;
         previousRunning = running;
-        activeApproval = approval;
+        pendingCompletion = running;
+        cancelledRun = false;
+        seenApprovals = new WeakSet();
+        if (approval) seenApprovals.add(approval);
         if (completionTimer) clearTimeout(completionTimer);
         completionTimer = null;
         setStatus(window.navigator?.onLine === false ? "offline" : approval ? "approval" : running ? "running" : "idle");
         return;
       }
-      if (approval && approval !== activeApproval) play("approval");
-      activeApproval = approval;
-      if (running && completionTimer) {
+      if (approval && !seenApprovals.has(approval)) {
+        seenApprovals.add(approval);
+        play("approval");
+      }
+      if (running && !previousRunning && !cancelledRun) pendingCompletion = true;
+      if (!running && !approval) cancelledRun = false;
+      if ((running || approval || window.navigator?.onLine === false) && completionTimer) {
         clearTimeout(completionTimer);
         completionTimer = null;
       }
-      if (previousRunning && !running && !approval && Date.now() >= cancelledUntil) {
-        if (completionTimer) clearTimeout(completionTimer);
+      if (pendingCompletion && !running && !approval && window.navigator?.onLine !== false && !completionTimer && !settling) {
         completionTimer = setTimeout(() => {
           completionTimer = null;
-          if (!findRunning() && !findApproval() && Date.now() >= cancelledUntil) {
+          // Rescan navigation and native state before a delayed completion cue.
+          scan({ settling: true });
+          if (pendingCompletion && !findRunning() && !findApproval() && window.navigator?.onLine !== false) {
+            pendingCompletion = false;
             play("completed");
             setStatus("completed", { transient: true });
           }
@@ -1133,7 +1148,12 @@
     const handleOffline = () => setStatus("offline");
     const clickGuard = (event) => {
       const button = event.target?.closest?.('button, [role="button"]');
-      if (button && isStopButton(button)) cancelledUntil = Date.now() + 3000;
+      if (button && isStopButton(button)) {
+        pendingCompletion = false;
+        cancelledRun = true;
+        if (completionTimer) clearTimeout(completionTimer);
+        completionTimer = null;
+      }
       unlock();
     };
     const resume = () => {
@@ -3988,6 +4008,7 @@
       const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
       if (target?.closest('[role="tooltip"], [data-app-shell-active-page="false"]')) continue;
       if (record.type === "attributes") {
+        if (target?.matches('button, [role="button"]')) sound = true;
         // Quick Chat can open through a keyboard shortcut without remounting.
         if (target?.matches('section[data-pip-obstacle="quick-chat"]')) route = true;
         // Cached workspaces now switch visibility without mounting new nodes.
@@ -3995,14 +4016,14 @@
         if (target?.matches('[data-app-shell-active-page="true"]')) route = true;
         continue;
       }
-      if (target?.closest('[data-codex-composer="true"], [contenteditable="true"], textarea, input')) continue;
       const changed = [...record.addedNodes, ...record.removedNodes];
+      if (target?.closest('button, [role="button"]') ||
+          hasMatchingNode(changed, 'button, [role="button"]')) sound = true;
+      if (target?.closest('[data-codex-composer="true"], [contenteditable="true"], textarea, input')) continue;
       if (changed.length && changed.every(isSkinNode)) continue;
       if (changed.length && changed.every(node => node.nodeType === 1 &&
           (node.matches('[role="tooltip"]') ||
             (node.matches('[data-radix-popper-content-wrapper]') && node.querySelector('[role="tooltip"]'))))) continue;
-      if (target?.closest('button, [role="button"]') ||
-          hasMatchingNode(changed, 'button, [role="button"]')) sound = true;
       // History hover preloads hidden React workspaces. Those mounts must not
       // remeasure the visible chat; navigation/resize already refreshes it.
       if (!target?.closest(hiddenRouteSelector) && hasMatchingNode(
@@ -4132,7 +4153,7 @@
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-state", "data-app-shell-active-page"],
+      attributeFilter: ["data-state", "data-app-shell-active-page", "aria-label", "title", "disabled", "aria-disabled"],
     });
     rootObserver.observe(document.documentElement, {
       attributes: true,
