@@ -162,19 +162,17 @@ html.codex-qq-skin #codex-qq-skin-profile-dialog :is(input, select, footer > but
   min-height: var(--qq-control-height);
   border-radius: var(--qq-radius-control);
 }
-html.codex-qq-skin :is(button, a, input, textarea, select, [tabindex="0"]):focus-visible {
+/* Rich-text editors already have native composer focus styling. Their tabindex
+   must not opt them into the generic control outline inside the scrollport. */
+html.codex-qq-skin :is(button, a, input, textarea, select, [tabindex="0"]):not([contenteditable="true"]):focus-visible {
   outline: 2px solid var(--ds-accent);
   outline-offset: 2px;
 }
 
-/* The editor scrollport clips its own outline. Paint focus inside the complete
-   composer surface so all four edges remain visible at every editor height. */
+/* Keep the focus indicator on the full composer, outside the editor scrollport. */
 html.codex-qq-skin .composer-surface-chrome:has(.ProseMirror:focus-visible) {
   outline: 2px solid var(--ds-accent) !important;
   outline-offset: -2px !important;
-}
-html.codex-qq-skin .composer-surface-chrome .ProseMirror:focus-visible {
-  outline: none !important;
 }
 
 /* Opaque reading surfaces avoid repeated backdrop sampling on every scroll.
