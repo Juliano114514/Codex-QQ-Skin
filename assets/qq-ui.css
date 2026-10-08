@@ -167,6 +167,16 @@ html.codex-qq-skin :is(button, a, input, textarea, select, [tabindex="0"]):focus
   outline-offset: 2px;
 }
 
+/* The editor scrollport clips its own outline. Paint focus inside the complete
+   composer surface so all four edges remain visible at every editor height. */
+html.codex-qq-skin .composer-surface-chrome:has(.ProseMirror:focus-visible) {
+  outline: 2px solid var(--ds-accent) !important;
+  outline-offset: -2px !important;
+}
+html.codex-qq-skin .composer-surface-chrome .ProseMirror:focus-visible {
+  outline: none !important;
+}
+
 /* Opaque reading surfaces avoid repeated backdrop sampling on every scroll.
    Retain native progress animations; only skin decoration is motionless. */
 html.codex-qq-skin main.main-surface:not(.qq-skin-home-shell) article {
