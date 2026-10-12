@@ -5,6 +5,7 @@ $script:SkinVersion = '2.6.3'
 $script:ScriptRoot = Split-Path -Parent $PSCommandPath
 $script:ProjectRoot = (Resolve-Path (Join-Path $script:ScriptRoot '..\..')).Path
 $script:InjectorPath = Join-Path $script:ProjectRoot 'scripts\injector.mjs'
+$script:SupervisorExe = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $script:InstallRoot = Join-Path $env:LOCALAPPDATA 'CodexQQSkin\engine'
 $script:StateRoot = Join-Path $env:APPDATA 'CodexQQSkin'
 $script:StatePath = Join-Path $script:StateRoot 'state.json'
@@ -105,22 +106,26 @@ function Get-CodexCandidates {
       }
     }
   } catch {}
-  try {
-    foreach ($package in Get-AppxPackage -Name '*OpenAI*' -ErrorAction SilentlyContinue) {
+  foreach ($package in Get-AppxPackage -Name '*OpenAI*' -ErrorAction SilentlyContinue) {
+    try {
       $manifest = Get-AppxPackageManifest $package
-      foreach ($application in @($manifest.Package.Applications.Application)) {
-        if ($application.Executable) {
-          $packagedExe = Join-Path $package.InstallLocation ([string]$application.Executable)
-          $values.Add($packagedExe)
-          $script:CodexAppIds[$packagedExe.ToLowerInvariant()] = "$($package.PackageFamilyName)!$($application.Id)"
-        }
+      # Framework/runtime packages have no Applications node. Query XML safely
+      # and isolate each package so one unreadable manifest cannot hide the app.
+      $applications = $manifest.SelectNodes('/*[local-name()="Package"]/*[local-name()="Applications"]/*[local-name()="Application"]')
+      foreach ($application in $applications) {
+        $executable = $application.GetAttribute('Executable').Replace('/', '\')
+        if ([IO.Path]::GetFileName($executable) -notin @('Codex.exe', 'ChatGPT.exe')) { continue }
+        $packagedExe = Join-Path $package.InstallLocation $executable
+        $values.Add($packagedExe)
+        $script:CodexAppIds[$packagedExe.ToLowerInvariant()] = "$($package.PackageFamilyName)!$($application.GetAttribute('Id'))"
       }
-    }
-  } catch {}
+    } catch { continue }
+  }
   return $values | Where-Object { $_ } | Select-Object -Unique
 }
 
 function Resolve-CodexApp {
+  $script:CodexAppUserModelId = $null
   foreach ($candidate in Get-CodexCandidates) {
     if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { continue }
     $resolved = (Resolve-Path -LiteralPath $candidate).Path
@@ -132,7 +137,7 @@ function Resolve-CodexApp {
     if ($script:CodexAppIds.ContainsKey($key)) { $script:CodexAppUserModelId = $script:CodexAppIds[$key] }
     return $resolved
   }
-  Stop-WithError 'Could not find ChatGPT.exe. Install and launch the official ChatGPT app once, or set CODEX_EXE to its full path.'
+  Stop-WithError 'Could not find the Codex/ChatGPT desktop app. Install and launch the official app once, or set CODEX_EXE to its full path.'
 }
 
 function Get-CodexProcesses {
@@ -205,10 +210,13 @@ function Read-State {
 }
 
 function Write-State {
-  param([int]$Port, [int]$InjectorPid, [string]$InjectorStartedAt, [int]$CodexPid)
+  param([int]$Port, [int]$InjectorPid, [string]$InjectorStartedAt, [int]$CodexPid,
+    [int]$SupervisorPid = 0, [string]$SupervisorStartedAt = '', [string]$SupervisorOwner = '')
   Initialize-StateRoot
   $state = [ordered]@{
-    schemaVersion = 4; platform = "win32-$env:PROCESSOR_ARCHITECTURE"; skinVersion = $script:SkinVersion
+    schemaVersion = 5; platform = "win32-$env:PROCESSOR_ARCHITECTURE"; skinVersion = $script:SkinVersion
+    supervisorPid = $SupervisorPid; supervisorStartedAt = $SupervisorStartedAt; supervisorOwner = $SupervisorOwner
+    supervisorPath = (Join-Path $script:ScriptRoot 'supervise-qq-skin-windows.ps1')
     injectorProtocol = 2; port = $Port; injectorPid = $InjectorPid; injectorStartedAt = $InjectorStartedAt
     injectorPath = $script:InjectorPath; nodePath = $script:NodePath; nodeVersion = (& $script:NodePath --version)
     codexExe = $script:CodexExe; codexVersion = $script:CodexVersion; codexPid = $CodexPid
@@ -219,18 +227,58 @@ function Write-State {
   Move-Item -LiteralPath $temporary -Destination $script:StatePath -Force
 }
 
+function Enter-SkinLifecycle {
+  $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+  $mutex = [Threading.Mutex]::new($false, "Local\CodexQQSkinLifecycle-$sid")
+  try {
+    try { $acquired = $mutex.WaitOne(90000) } catch [Threading.AbandonedMutexException] { $acquired = $true }
+    if (-not $acquired) { throw 'The skin lifecycle is busy; retry later.' }
+    return $mutex
+  } catch { $mutex.Dispose(); throw }
+}
+
 function Stop-RecordedInjector {
+  $lifecycle = Enter-SkinLifecycle
+  try {
   $state = Read-State
+  if ($state -and $state.PSObject.Properties['supervisorPid'] -and [int]$state.supervisorPid -gt 0) {
+    $supervisor = Get-CimInstance Win32_Process -Filter "ProcessId=$([int]$state.supervisorPid)" -ErrorAction SilentlyContinue
+    if ($supervisor) {
+      $validSupervisor = $supervisor.CommandLine -and $supervisor.ExecutablePath -and
+        $supervisor.ExecutablePath.Equals($script:SupervisorExe, [StringComparison]::OrdinalIgnoreCase) -and
+        $supervisor.CommandLine.Contains([string]$state.supervisorPath) -and
+        $supervisor.CommandLine.Contains([string]$state.supervisorOwner) -and
+        ([DateTime]$supervisor.CreationDate).ToUniversalTime() -eq ([DateTime]$state.supervisorStartedAt).ToUniversalTime()
+      if ($validSupervisor) {
+        Stop-Process -Id $supervisor.ProcessId -ErrorAction Stop
+        Wait-Process -Id $supervisor.ProcessId -Timeout 8 -ErrorAction SilentlyContinue
+      } else {
+        Stop-WithError 'The supervisor identity did not match; no process was stopped.'
+      }
+    }
+    # A final child state may have been published while the supervisor stopped.
+    $state = Read-State
+  }
   if (-not $state -or [int]$state.injectorPid -eq 0) { return }
   $process = Get-CimInstance Win32_Process -Filter "ProcessId=$([int]$state.injectorPid)" -ErrorAction SilentlyContinue
   if (-not $process) { return }
+  if (-not $process.ExecutablePath -or -not $process.CommandLine) {
+    Stop-WithError 'The recorded injector process identity could not be read; it was not stopped and state was preserved.'
+  }
   $valid = $process.ExecutablePath -and $process.CommandLine -and
     $process.ExecutablePath.Equals([string]$state.nodePath, [StringComparison]::OrdinalIgnoreCase) -and
     $process.CommandLine.IndexOf([string]$state.injectorPath, [StringComparison]::OrdinalIgnoreCase) -ge 0 -and
     $process.CommandLine.IndexOf("--port $([int]$state.port)", [StringComparison]::OrdinalIgnoreCase) -ge 0
-  if (-not $valid) { Stop-WithError 'The recorded injector PID belongs to another process; it was not stopped and state was preserved.' }
+  if ($valid -and $state.injectorStartedAt) {
+    $valid = ([DateTime]$process.CreationDate).ToUniversalTime() -eq ([DateTime]$state.injectorStartedAt).ToUniversalTime()
+  }
+  if (-not $valid) {
+    Write-Warning 'The saved injector PID is stale and belongs to another process; skipping it without stopping that process.'
+    return
+  }
   Stop-Process -Id ([int]$state.injectorPid) -ErrorAction Stop
   try { Wait-Process -Id ([int]$state.injectorPid) -Timeout 8 -ErrorAction SilentlyContinue } catch {}
+  } finally { $lifecycle.ReleaseMutex(); $lifecycle.Dispose() }
 }
 
 function Stop-CodexApp {

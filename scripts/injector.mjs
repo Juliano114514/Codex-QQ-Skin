@@ -673,7 +673,7 @@ export function sanitizeUsageSnapshot(value) {
       level,
       earned: Math.max(0, Number(value.growth.earned) || 0),
       span: Math.max(1, Number(value.growth.span) || ((Number(value.growth.ceiling) || 0) - (Number(value.growth.floor) || 0))),
-      todayBonus: Math.max(0, Math.min(2, Number(value.growth.todayBonus) || 0)),
+      todayBonus: Math.max(0, Math.min(4, Number(value.growth.todayBonus) || 0)),
       dailyTokenTarget: finiteCount(value.growth.dailyTokenTarget) || 10_000,
       remaining: Math.max(0, Math.min(1_000_000_000, Number(value.growth.remaining) || 0)),
       percent: finiteCount(value.growth.percent, 100),
@@ -688,6 +688,16 @@ export function sanitizeUsageSnapshot(value) {
     totalTokens: finiteCount(item?.totalTokens),
   })) : [];
   return snapshot;
+}
+
+async function readUsageSnapshot(themeDir) {
+  try {
+    const snapshotPath = path.join(resolveStateRoot(themeDir), "usage", "snapshot-v1.json");
+    if ((await fs.stat(snapshotPath)).size > MAX_USAGE_SNAPSHOT_BYTES) return null;
+    const value = JSON.parse(await fs.readFile(snapshotPath, "utf8"));
+    if (value?.schemaVersion !== 1 || !value.totals || !Number.isFinite(Date.parse(value.generatedAt))) return null;
+    return sanitizeUsageSnapshot({ ...value, stale: true });
+  } catch { return null; }
 }
 
 function runUsageWorker(themeDir) {
@@ -1179,6 +1189,8 @@ async function runOneShot(options) {
       if (options.mode === "remove") await removeFromSession(session);
       else if (options.mode === "once") {
         await applyToSession(session, payload, { enableSkin: options.enableSkin, skinMode: options.skinMode });
+        const cachedUsage = await readUsageSnapshot(options.themeDir);
+        if (cachedUsage) await pushUsageSnapshot(session, cachedUsage);
       }
 
       if (options.reload) {
@@ -1283,7 +1295,8 @@ async function runWatch(options) {
   let current = await loadPayload(options.themeDir);
   const sessions = new Map();
   const rejected = new Map();
-  let usageSnapshot = sanitizeUsageSnapshot({ status: "loading", generatedAt: new Date().toISOString() });
+  let usageSnapshot = await readUsageSnapshot(options.themeDir)
+    || sanitizeUsageSnapshot({ status: "loading", generatedAt: new Date().toISOString() });
   let usageRefreshPromise = null;
   let nextUsageRefreshAt = 0;
   let stopping = false;

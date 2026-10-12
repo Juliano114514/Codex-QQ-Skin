@@ -2444,16 +2444,22 @@
       const total = Number(snapshot.indexing?.total) || 0;
       message = total ? `正在建立本地索引 ${completed}/${total}…` : "正在建立本地统计索引…";
     } else if (status === "empty") message = "完成一次 Codex 任务后，这里会出现 token 统计。";
-    else if (status === "error") message = snapshot.totals
+    else if (status === "error") message = snapshot.error === "usage-backend-unresponsive"
+      ? "统计后台未响应，请尝试刷新或通过 QQ 皮肤入口重新启动。"
+      : snapshot.totals
       ? "本次更新失败，正在显示上次的本地数据。"
       : "暂时无法读取本地统计，皮肤其他功能不受影响。";
     setTextContent(parts.message, message);
     parts.message?.classList?.toggle?.("is-visible", Boolean(message));
     const generated = snapshot.generatedAt ? new Date(snapshot.generatedAt) : null;
     const timeText = generated && !Number.isNaN(generated.getTime())
-      ? generated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      ? generated.toLocaleString([], { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
       : "--:--";
     setTextContent(parts.updated, `本机统计 · 更新于 ${timeText}`);
+    if (snapshot.stale && !message) {
+      setTextContent(parts.message, "正在显示上次的本地数据，等待后台更新。");
+      parts.message?.classList?.toggle?.("is-visible", true);
+    }
     if (parts.refreshButton) {
       const disabled = status === "loading" || status === "indexing";
       if (parts.refreshButton.disabled !== disabled) parts.refreshButton.disabled = disabled;
@@ -2472,6 +2478,13 @@
     renderUsageSnapshot();
     syncRetroProfileLevel();
     return true;
+  };
+
+  let usageLoadingSince = Date.now();
+  const checkUsageTimeout = () => {
+    if (usageSnapshot?.status !== "loading") { usageLoadingSince = Date.now(); return; }
+    if (Date.now() - usageLoadingSince < 30000) return;
+    setUsageSnapshot({ ...usageSnapshot, status: "error", error: "usage-backend-unresponsive" });
   };
 
   const ensureUsagePanel = () => {
@@ -4170,6 +4183,7 @@
     let lastRouteRefresh = Date.now();
     const timer = setInterval(() => {
       if (document.visibilityState === "hidden" || window[DISABLED_KEY]) return;
+      checkUsageTimeout();
       renderQuotaProgress();
       const route = Date.now() - lastRouteRefresh >= 30000;
       if (route) lastRouteRefresh = Date.now();

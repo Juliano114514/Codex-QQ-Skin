@@ -2,6 +2,8 @@ export const LEVEL_SCHEMA_VERSION = 1;
 
 export function tokenGrowthBonus(totalTokens) {
   const tokens = Math.max(0, Number(totalTokens) || 0);
+  if (tokens >= 200_000_000) return 4;
+  if (tokens >= 50_000_000) return 3;
   if (tokens >= 10_000_000) return 2;
   if (tokens >= 2_000_000) return 1;
   if (tokens >= 500_000) return 0.75;
@@ -12,10 +14,10 @@ export function tokenGrowthBonus(totalTokens) {
 
 export function nextTokenGrowthTarget(totalTokens) {
   const tokens = Math.max(0, Number(totalTokens) || 0);
-  for (const target of [10_000, 100_000, 500_000, 2_000_000, 10_000_000]) {
+  for (const target of [10_000, 100_000, 500_000, 2_000_000, 10_000_000, 50_000_000, 200_000_000]) {
     if (tokens < target) return target;
   }
-  return 10_000_000;
+  return 200_000_000;
 }
 
 export function dailyGrowth(totalTokens, active = true) {
