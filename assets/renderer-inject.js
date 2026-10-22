@@ -72,11 +72,18 @@
     const base = brand === "classic"
       ? (shell === "dark" ? QQ_THEME.variants?.dark || QQ_THEME : QQ_THEME)
       : QQ_THEME.variants?.[brand] || QQ_THEME;
-    const colors = base.schemes?.[shell] || base.colors;
-    return { ...base, appearance: shell, colors };
+    // Some built-in identities intentionally have only a dark presentation.
+    // Keep Codex's own appearance preference untouched when switching brands.
+    const appearance = base.appearanceMode === "dark-only" ? "dark" : shell;
+    const colors = base.schemes?.[appearance] || base.colors;
+    return { ...base, appearance, colors };
   };
   try {
-    const savedAppearance = window.localStorage?.getItem(QQ_APPEARANCE_STORAGE_KEY);
+    let savedAppearance = window.localStorage?.getItem(QQ_APPEARANCE_STORAGE_KEY);
+    if (savedAppearance === "cs16-buy") {
+      savedAppearance = "matrix";
+      window.localStorage?.setItem(QQ_APPEARANCE_STORAGE_KEY, savedAppearance);
+    }
     if (QQ_APPEARANCES.includes(savedAppearance)) qqAppearance = savedAppearance;
     else if (["light", "dark"].includes(savedAppearance)) {
       window.localStorage?.setItem(QQ_APPEARANCE_STORAGE_KEY, "classic");

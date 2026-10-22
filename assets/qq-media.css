@@ -2022,6 +2022,483 @@ html.codex-qq-skin[data-qq-palette="neumorphism"][data-dream-shell="dark"] {
   }
 }
 
+/* Skeuomorphism: bound paper, stitched leather, brass and ceramic keycaps.
+   Original CSS materials; see docs/skeuomorphism-references.md. */
+html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] {
+  --qq-font-ui: "Helvetica Neue", Helvetica, "Microsoft YaHei", "QQ Media PingFang SC", Arial, sans-serif;
+  --qq-radius-control: 5px;
+  --qq-radius-card: 7px;
+  --qq-radius-action: 5px;
+  --qq-platform-composer-radius: 6px;
+  --sk-hide: #694730;
+  --sk-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.38 .56' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='.2'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  --sk-leather: var(--sk-grain), radial-gradient(ellipse at 30% 5%, #b48a5844, transparent 65%), linear-gradient(100deg, #493020, #805537 45%, #51321f);
+  --sk-stitch: #d1ad7a;
+  --sk-paper: repeating-linear-gradient(0deg, #86652b05 0 1px, transparent 1px 4px), linear-gradient(110deg, #fff9eb, #f5ecd8);
+  --sk-linen: repeating-linear-gradient(0deg, #7d633a09 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, #7d633a09 0 1px, transparent 1px 3px), linear-gradient(#eee2c9, #dfccaa);
+  --sk-metal: repeating-linear-gradient(0deg, #ffffff15 0 1px, transparent 1px 3px), linear-gradient(#eedab4, #c5a475 48%, #b28c56 51%, #d9bd8e);
+  --sk-key: linear-gradient(#fffdf5, #ece0c7 48%, #d9c9a8 51%, #f0e5cb);
+  --sk-key-ink: #49371e;
+  --sk-edge: #917349;
+  --sk-emboss: inset 0 1px #fff9e3, inset 0 -2px #8a693866, 0 2px 2px #24150c45;
+  --sk-recess: inset 0 2px 5px #2c1c1540, inset 0 0 0 1px #ffffff55;
+  --sk-lcd: linear-gradient(#e6d5b4, #f6ecd5);
+  --sk-lcd-ink: #654319;
+  --sk-meter: linear-gradient(#dab773, #94652b);
+  --sk-action: linear-gradient(#ae863f, #886020 48%, #704914 51%, #986e2c);
+  --sk-rule: #967b3e13;
+  --sk-margin: #a65d4a3b;
+  --sk-sheet-edge: #d8c5a0;
+  --sk-ribbon: linear-gradient(90deg, #5a251e, #a34c37 45%, #622a20);
+  --sk-spine: linear-gradient(90deg, #382217, #835437 35%, #b37e4d 48%, #483020 60%, #2e1d13);
+  --ds-on-accent: #fff6df;
+  --qq-text-accent: var(--ds-accent);
+  --qq-card-bar: var(--sk-metal);
+  --qq-card-heading: var(--sk-key-ink);
+  --qq-card-border: var(--sk-edge);
+  --qq-night-title: var(--sk-leather);
+  --qq-night-bar: var(--sk-metal);
+  --qq-night-selected: var(--sk-key);
+  --qq-night-glint: inset 0 1px #ffffff40;
+  --qq-night-border: var(--sk-edge);
+  --qq-shadow-popup: 0 8px 20px #24150c55;
+}
+html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell="dark"] {
+  --sk-hide: #29201a;
+  --sk-leather: var(--sk-grain), radial-gradient(ellipse at 30% 5%, #99674322, transparent 65%), linear-gradient(100deg, #211913, #463326 45%, #281d16);
+  --sk-stitch: #9e8055;
+  --sk-paper: repeating-linear-gradient(0deg, #d3bb8b04 0 1px, transparent 1px 4px), linear-gradient(110deg, #302c25, #27251f);
+  --sk-linen: repeating-linear-gradient(0deg, #dac69a08 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, #dac69a06 0 1px, transparent 1px 3px), linear-gradient(#373129, #27231e);
+  --sk-metal: repeating-linear-gradient(0deg, #ffe5b00c 0 1px, transparent 1px 3px), linear-gradient(#796344, #53432e 48%, #3e3122 51%, #655037);
+  --sk-key: linear-gradient(#66563e, #493d2e 48%, #382f24 51%, #514331);
+  --sk-key-ink: #f5e5c5;
+  --sk-edge: #8d734e;
+  --sk-emboss: inset 0 1px #d6bb8555, inset 0 -2px #09070499, 0 2px 3px #0008;
+  --sk-recess: inset 0 2px 5px #0008, inset 0 0 0 1px #bca07022;
+  --sk-lcd: linear-gradient(#231d16, #34291c);
+  --sk-lcd-ink: #f0cd8c;
+  --sk-meter: linear-gradient(#e9c785, #a77837);
+  --sk-action: linear-gradient(#d3b16a, #a6813d 48%, #8f6b2d 51%, #b5914d);
+  --sk-rule: #e8cd9510;
+  --sk-margin: #c5886c30;
+  --sk-sheet-edge: #62513a;
+  --sk-ribbon: linear-gradient(90deg, #431e19, #833d2e 45%, #49241c);
+  --ds-on-accent: #211a0f;
+}
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] body {
+    background: var(--sk-leather) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] :is(
+    #codex-qq-skin-retro-shell::before, #codex-qq-skin-retro-shell::after,
+    .dream-retro-toolbar, #codex-qq-skin-retro-profile,
+    [class*="_ApplicationMenuTopBar_"]
+  ) {
+    background: var(--sk-leather) !important;
+    border-color: #301d13 !important;
+    color: #f6e6c9 !important;
+    box-shadow: inset 0 1px #c2a17b70, inset 0 -1px #1b100b, 0 2px 4px #1a0e0850 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] .dream-retro-toolbar {
+    outline: 1px dashed var(--sk-stitch);
+    outline-offset: -5px;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root :is(
+    main.main-surface, main.qq-skin-thread-frame .thread-scroll-container,
+    .qq-skin-home-stack > div:first-child > div:first-child
+  ) {
+    background: var(--sk-paper) !important;
+    color: var(--ds-text) !important;
+    border-color: var(--ds-line) !important;
+    box-shadow: inset 5px 0 7px #452e1820, inset 0 0 0 1px #b6a27b55 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root aside.app-shell-left-panel {
+    background: var(--sk-linen) !important;
+    color: var(--ds-text) !important;
+    box-shadow: inset -3px 0 5px #24150c40, inset 1px 0 #f5dfb755 !important;
+    border-color: var(--sk-edge) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] :is(
+    #codex-qq-skin-usage-panel, #codex-qq-skin-right-tray, .qq-skin-reference-card,
+    [data-pip-obstacle="thread-summary-panel"]:not(:empty)
+  ) {
+    background: var(--sk-paper) !important;
+    border: 1px solid var(--sk-edge) !important;
+    box-shadow: inset 0 0 0 1px #fff2c744, 0 3px 7px #1b100b44 !important;
+    border-radius: 6px !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] :is(
+    .qq-skin-usage-title, .qq-skin-details-title, .qq-skin-usage-footer,
+    .qq-skin-section-bar, [class~="group/nav-section-title"], [data-app-navigation-rail]
+  ) {
+    background: var(--sk-metal) !important;
+    color: var(--sk-key-ink) !important;
+    border-color: var(--sk-edge) !important;
+    box-shadow: inset 0 1px #fff3d855, inset 0 -1px #32221155 !important;
+    text-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] :is(
+    .dream-retro-toolbar button, .qq-skin-window-toggle, .qq-skin-profile-settings,
+    .qq-skin-usage-footer button, #codex-qq-skin-toggle button[aria-pressed="true"],
+    .qq-skin-home .group\/home-suggestions button, .qq-skin-home .group\/project-selector > button
+  ) {
+    background: var(--sk-key) !important;
+    color: var(--sk-key-ink) !important;
+    border: 1px solid var(--sk-edge) !important;
+    border-radius: 5px !important;
+    box-shadow: var(--sk-emboss) !important;
+    text-shadow: none !important;
+    font-family: var(--qq-font-ui) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] :is(
+    .dream-retro-toolbar button, .qq-skin-window-toggle, .qq-skin-usage-footer button
+  ):active:not(:disabled):not([aria-disabled="true"]) {
+    box-shadow: var(--sk-recess) !important;
+    filter: brightness(.92);
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root :is(
+    [class*="_ComposerLayoutRoot_"], .composer-surface-chrome, [data-user-message-bubble="true"]
+  ) {
+    background: var(--sk-paper) !important;
+    border: 1px solid var(--sk-edge) !important;
+    border-radius: 6px !important;
+    box-shadow: var(--sk-recess) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root :is(
+    [class*="_ComposerLayoutRoot_"], .composer-surface-chrome
+  ):focus-within {
+    outline: 2px solid var(--ds-accent);
+    outline-offset: 2px;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] [class*="_ComposerLayoutRoot_"] button.bg-composer-primary:not(:disabled) {
+    background: var(--sk-action) !important;
+    color: var(--ds-on-accent) !important;
+    box-shadow: var(--sk-emboss) !important;
+    border: 1px solid var(--sk-edge) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #codex-qq-skin-usage-panel :is(
+    .qq-skin-usage-metrics > div, .qq-skin-usage-chart
+  ) {
+    background: var(--sk-lcd) !important;
+    color: var(--sk-lcd-ink) !important;
+    border: 1px solid var(--sk-edge) !important;
+    border-radius: 4px !important;
+    box-shadow: var(--sk-recess) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] .qq-skin-usage-metrics b {
+    color: var(--sk-lcd-ink) !important;
+    font-family: "Consolas", "Courier New", monospace !important;
+    font-variant-numeric: tabular-nums;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] .qq-skin-usage-chart > i > span {
+    background: var(--sk-meter) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
+    background: var(--sk-key) !important;
+    color: var(--sk-key-ink) !important;
+    box-shadow: var(--sk-emboss) !important;
+    border-radius: 4px !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] :focus-visible:not([contenteditable="true"]) {
+    outline: 2px solid var(--ds-accent) !important;
+    outline-offset: 2px;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] .qq-skin-home-stack > div:first-child > div:first-child::before {
+    background: none !important;
+  }
+}
+
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root :is(
+    [class*="_ApplicationMenuTopBar_"], .app-header-tint
+  ) :is(button, [role="menuitem"], a),
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #codex-qq-skin-retro-profile :is(span, strong, b) {
+    color: #f6e6c9 !important;
+    text-shadow: 0 1px 1px #1b100b;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #codex-qq-skin-usage-panel :is(.qq-skin-usage-title, .qq-skin-usage-footer),
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root .qq-skin-details-title {
+    background: var(--sk-metal) !important;
+    color: var(--sk-key-ink) !important;
+    box-shadow: inset 0 1px #fff3d855, inset 0 -1px #32221155 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #codex-qq-skin-usage-panel .qq-skin-usage-metrics span {
+    color: var(--sk-lcd-ink) !important;
+  }
+}
+
+/* Matrix: dark-only phosphor terminal, code columns and restrained CRT glow. */
+html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] {
+  --qq-font-ui: "Consolas", "Cascadia Mono", "Microsoft YaHei", monospace;
+  --qq-radius-control: 0px;
+  --qq-radius-card: 0px;
+  --qq-radius-action: 0px;
+  --qq-platform-composer-radius: 0px;
+  --mx-overlay: #080f0bf5;
+  --mx-menu: #050c08;
+  --mx-selected: #163a24;
+  --mx-selected-ink: #b7ffd0;
+  --mx-rule: #2b583b;
+  --mx-digit: #52f58b;
+  --mx-bar: linear-gradient(#9bffbb, #279b53);
+  --qq-text-accent: var(--ds-accent);
+  --qq-card-bar: var(--mx-menu);
+  --qq-card-heading: var(--ds-accent);
+  --qq-card-border: var(--mx-rule);
+  --qq-night-title: var(--mx-menu);
+  --qq-night-bar: var(--mx-menu);
+  --qq-night-selected: var(--mx-selected);
+  --qq-night-border: var(--mx-rule);
+  --qq-night-glint: none;
+  --qq-shadow-popup: 0 4px 12px #0004;
+  --ds-on-accent: #030705;
+}
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] body {
+    background: var(--ds-bg) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] :is(
+    #codex-qq-skin-retro-shell::before, #codex-qq-skin-retro-shell::after,
+    .dream-retro-toolbar, #codex-qq-skin-retro-profile,
+    [class*="_ApplicationMenuTopBar_"]
+  ) {
+    background: var(--mx-menu) !important;
+    color: var(--ds-text) !important;
+    border-color: var(--mx-rule) !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #root :is(
+    main.main-surface, main.qq-skin-thread-frame .thread-scroll-container,
+    aside.app-shell-left-panel, #codex-qq-skin-usage-panel, #codex-qq-skin-right-tray,
+    .qq-skin-reference-card, [data-pip-obstacle="thread-summary-panel"]:not(:empty),
+    .qq-skin-home-stack > div:first-child > div:first-child
+  ) {
+    background: var(--mx-overlay) !important;
+    color: var(--ds-text) !important;
+    border-color: var(--mx-rule) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #root :is(
+    .qq-skin-usage-title, .qq-skin-details-title, .qq-skin-usage-footer,
+    .qq-skin-section-bar, [class~="group/nav-section-title"], [data-app-navigation-rail]
+  ) {
+    background: var(--mx-menu) !important;
+    color: var(--mx-digit) !important;
+    border-color: var(--mx-rule) !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-radius: 0 !important;
+    font-family: var(--qq-font-ui) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #codex-qq-skin-usage-panel :is(.qq-skin-usage-title, .qq-skin-usage-footer) {
+    background: var(--mx-menu) !important;
+    color: var(--mx-digit) !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] :is(
+    .dream-retro-toolbar button, .qq-skin-window-toggle, .qq-skin-profile-settings,
+    .qq-skin-usage-footer button, .qq-skin-home .group\/home-suggestions button,
+    #codex-qq-skin-toggle button[aria-pressed="true"]
+  ) {
+    background: var(--mx-menu) !important;
+    color: var(--ds-text) !important;
+    border: 1px solid var(--mx-rule) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    font-family: var(--qq-font-ui) !important;
+  }
+  /* Prompt markers are decorative; no synthetic keyboard shortcuts. */
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] .dream-retro-toolbar button[data-retro-action]::before {
+    content: ">_";
+    color: var(--mx-digit);
+    font: 12px Consolas, monospace;
+    margin-inline-end: 6px;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] :is(
+    .dream-retro-toolbar button, .qq-skin-window-toggle, .qq-skin-usage-footer button
+  ):hover:not(:disabled):not([aria-disabled="true"]),
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
+    background: var(--mx-selected) !important;
+    color: var(--mx-selected-ink) !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] .dream-retro-toolbar button:hover::before {
+    color: var(--mx-selected-ink);
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #root aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] :is(span, div, svg) {
+    color: var(--mx-selected-ink) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #root :is(
+    [class*="_ComposerLayoutRoot_"], .composer-surface-chrome, [data-user-message-bubble="true"]
+  ) {
+    background: var(--mx-menu) !important;
+    border: 1px solid var(--mx-rule) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] [class*="_ComposerLayoutRoot_"] button.bg-composer-primary:not(:disabled) {
+    background: var(--mx-selected) !important;
+    color: var(--mx-selected-ink) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #codex-qq-skin-usage-panel :is(
+    .qq-skin-usage-metrics > div, .qq-skin-usage-chart
+  ) {
+    background: var(--mx-menu) !important;
+    border: 1px solid var(--mx-rule) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #codex-qq-skin-usage-panel .qq-skin-usage-metrics :is(b, span) {
+    color: var(--mx-digit) !important;
+    font-family: Consolas, "Courier New", monospace !important;
+    font-variant-numeric: tabular-nums;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] .qq-skin-usage-chart > i > span {
+    background: var(--mx-bar) !important;
+    border-radius: 0 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] :focus-visible:not([contenteditable="true"]) {
+    outline: 2px solid var(--mx-digit) !important;
+    outline-offset: 2px;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] [class*="_ComposerLayoutRoot_"]:focus-within {
+    outline: 2px solid var(--mx-digit);
+    outline-offset: 1px;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] .qq-skin-home-stack > div:first-child > div:first-child::before {
+    background: none !important;
+  }
+}
+
+/* Material construction: endpapers, bound spine, brass rings, index tabs and ribbon.
+   Decoration stays in existing margins and never intercepts input. */
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root main.main-surface {
+    position: relative;
+    background: linear-gradient(90deg, #38221755, transparent 24px),
+      linear-gradient(90deg, transparent 32px, var(--sk-margin) 32px 33px, transparent 33px),
+      repeating-linear-gradient(0deg, transparent 0 31px, var(--sk-rule) 31px 32px), var(--sk-paper) !important;
+    border-left: 12px solid #523822 !important;
+    border-image: var(--sk-spine) 1 !important;
+    box-shadow: inset 4px 0 7px #23160d55, inset -2px 0 var(--sk-sheet-edge) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root main.main-surface::after {
+    content: "";
+    position: absolute;
+    inset: 70px auto 18px -12px;
+    width: 21px;
+    pointer-events: none;
+    z-index: 2;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='21' height='112'%3E%3Cdefs%3E%3ClinearGradient id='m' x2='0' y2='1'%3E%3Cstop stop-color='%23503b21'/%3E%3Cstop offset='.27' stop-color='%23f3e2ae'/%3E%3Cstop offset='.46' stop-color='%23b99450'/%3E%3Cstop offset='.55' stop-color='%23684e2b'/%3E%3Cstop offset='.8' stop-color='%23e3cb8d'/%3E%3Cstop offset='1' stop-color='%23846434'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cellipse cx='13' cy='22' rx='6' ry='10' fill='%23241910' opacity='.6'/%3E%3Crect x='1' y='17' width='18' height='8' rx='4' fill='url(%23m)' stroke='%23503c22'/%3E%3Cpath d='M4 19h11' stroke='%23fff4cf' opacity='.7'/%3E%3C/svg%3E") repeat-y left top;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root main.qq-skin-thread-frame .thread-scroll-container {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root aside.app-shell-left-panel {
+    background: linear-gradient(90deg, #51341f22, transparent 22px), var(--sk-linen) !important;
+    border-right: 4px double var(--sk-edge) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] .dream-retro-toolbar {
+    background: radial-gradient(circle at 10px 50%, #fff0c1 0 1px, #b38d4c 2px 3px, #332012 4px, transparent 5px),
+      radial-gradient(circle at calc(100% - 10px) 50%, #fff0c1 0 1px, #b38d4c 2px 3px, #332012 4px, transparent 5px), var(--sk-leather) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] :is(.qq-skin-usage-title, .qq-skin-details-title) {
+    text-shadow: 0 1px #fff2ca55 !important;
+    letter-spacing: .5px;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #codex-qq-skin-usage-panel {
+    position: relative;
+    border: 5px solid #694730 !important;
+    border-image: var(--sk-leather) 5 !important;
+    box-shadow: 1px 1px 0 var(--sk-sheet-edge), 2px 2px 0 #60452c, 3px 3px 0 var(--sk-sheet-edge), 0 6px 12px #1c100966 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #codex-qq-skin-usage-panel::after {
+    content: "";
+    position: absolute;
+    right: 100px;
+    top: -8px;
+    width: 16px;
+    height: 44px;
+    pointer-events: none;
+    background: repeating-linear-gradient(90deg, #ffffff0c 0 1px, transparent 1px 3px), var(--sk-ribbon);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+    filter: drop-shadow(1px 2px 1px #24150c66);
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #codex-qq-skin-usage-panel .qq-skin-usage-title {
+    background: radial-gradient(circle at 8px 50%, #ffefb2 0 1px, #79603b 2px, transparent 3px), var(--sk-metal) !important;
+    padding-inline-start: 20px;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #codex-qq-skin-usage-panel .qq-skin-usage-metrics > div {
+    border: 3px ridge var(--sk-edge) !important;
+    background: linear-gradient(140deg, #ffffff2b, transparent 35% 70%, #ffffff0d), var(--sk-lcd) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #codex-qq-skin-usage-panel .qq-skin-usage-chart {
+    background: repeating-linear-gradient(0deg, transparent 0 23px, #9d783c22 23px 24px), var(--sk-lcd) !important;
+    border: 3px ridge var(--sk-edge) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] :is(.qq-skin-section-bar, [class~="group/nav-section-title"]) {
+    border: 1px solid var(--sk-edge) !important;
+    border-radius: 2px 8px 0 0 !important;
+    box-shadow: inset 0 1px #fff4d766, 0 2px 2px #25160933 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root [data-app-action-sidebar-thread-row][aria-current="page"] {
+    background: linear-gradient(90deg, transparent 8px, var(--sk-margin) 8px 9px, transparent 9px), var(--sk-paper) !important;
+    border-bottom: 2px solid var(--sk-sheet-edge) !important;
+    box-shadow: 0 3px 3px #25160944 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="skeuomorphism"][data-dream-shell] #root [class*="_ComposerLayoutRoot_"] {
+    border: 1px solid var(--sk-edge) !important;
+    box-shadow: inset 0 2px 3px #37231733, 0 2px 0 var(--sk-sheet-edge), 0 3px 0 var(--sk-edge), 0 5px 7px #25160933 !important;
+  }
+}
+
+/* Phosphor terminal atmosphere is limited to the frame, not reading text. */
+html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] {
+  color-scheme: dark;
+  --mx-code: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='210' height='160'%3E%3Cg fill='%2343e878' opacity='.17' font-family='monospace' font-size='11'%3E%3Ctext x='8' y='0' writing-mode='vertical-rl'%3E01ｱ7ﾈ01ｷ4ﾄ1ﾘ0%3C/text%3E%3Ctext x='38' y='-42' writing-mode='vertical-rl'%3Eﾐ01ﾆ7ﾃ0ｽ91ﾊ%3C/text%3E%3Ctext x='71' y='12' writing-mode='vertical-rl'%3Eｺ30ﾆ1ｦ8ﾑ01%3C/text%3E%3Ctext x='113' y='-18' writing-mode='vertical-rl'%3E01ﾈ7ｱﾘ3ﾄ09%3C/text%3E%3Ctext x='157' y='-57' writing-mode='vertical-rl'%3Eﾎ7ﾒ09ｷ01ｱ4ﾄ%3C/text%3E%3Ctext x='195' y='21' writing-mode='vertical-rl'%3E01ﾘ7ﾆｱ09ﾄ1%3C/text%3E%3C/g%3E%3C/svg%3E");
+}
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] :is(.dream-retro-toolbar, #codex-qq-skin-retro-profile, [class*="_ApplicationMenuTopBar_"], [data-app-navigation-rail]) {
+    background: var(--mx-code), linear-gradient(90deg, #030705, #0b1c11 50%, #030705) !important;
+    border-color: var(--mx-rule) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #root main.main-surface {
+    background: radial-gradient(ellipse at 50% 0, #0d2114, transparent 65%), #050b08 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #root main.qq-skin-thread-frame .thread-scroll-container {
+    background: transparent !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] :is(.dream-retro-toolbar button, .qq-skin-usage-title, .qq-skin-details-title, .qq-skin-usage-metrics b) {
+    color: var(--mx-digit) !important;
+    text-shadow: 0 0 7px #43e87844 !important;
+    font-family: var(--qq-font-ui) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #codex-qq-skin-usage-panel {
+    box-shadow: inset 0 0 22px #43e87808, 0 0 0 1px #030705, 0 0 12px #43e8780a !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #codex-qq-skin-usage-panel .qq-skin-usage-chart {
+    background: repeating-linear-gradient(0deg, transparent 0 19px, #43e87814 19px 20px), repeating-linear-gradient(90deg, transparent 0 31px, #43e8780d 31px 32px), #030906 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #root aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
+    border-inline-start: 3px solid #52f58b !important;
+    box-shadow: inset 0 0 16px #43e87812 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] #root :is([class*="_ApplicationMenuTopBar_"], .app-header-tint) :is(button, [role="menuitem"], a) {
+    color: var(--ds-text) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] [class*="_ComposerLayoutRoot_"] button.bg-composer-primary:not(:disabled) {
+    background: #52f58b !important;
+    color: #030705 !important;
+  }
+}
+
 /* Theme typography stays on text surfaces; code, Monaco and xterm retain monospace. */
 @layer qq-reference {
   html.codex-qq-skin:is([data-qq-palette="frutiger-aero"], [data-qq-palette="neumorphism"])[data-dream-shell] :is(

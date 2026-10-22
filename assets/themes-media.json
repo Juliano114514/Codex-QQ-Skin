@@ -1,4 +1,43 @@
 {
+  "matrix": {
+    "id": "qq-matrix",
+    "name": "黑客帝国 · Matrix",
+    "brandSubtitle": "MATRIX · FOLLOW THE WHITE RABBIT",
+    "tagline": "Wake up. 让灵感穿过代码。",
+    "appearance": "dark",
+    "colors": {
+      "background": "#030705",
+      "panel": "#080f0b",
+      "panelAlt": "#101e15",
+      "accent": "#52f58b",
+      "accentAlt": "#a4ffc0",
+      "secondary": "#72bd88",
+      "highlight": "#c3ffd4",
+      "text": "#d0e7d7",
+      "muted": "#8aaf96",
+      "line": "#2b583b"
+    },
+    "appearanceMode": "dark-only"
+  },
+  "skeuomorphism": {
+    "id": "qq-skeuomorphism",
+    "name": "拟物化 · 皮革手账",
+    "brandSubtitle": "LEATHER & PAPER · CODEX",
+    "tagline": "把灵感写进一本有温度的手账。",
+    "appearance": "light",
+    "colors": {
+      "background": "#674530",
+      "panel": "#faf3e2",
+      "panelAlt": "#eee0c6",
+      "accent": "#775017",
+      "accentAlt": "#926521",
+      "secondary": "#426455",
+      "highlight": "#8a4526",
+      "text": "#362c23",
+      "muted": "#74634e",
+      "line": "#b59b72"
+    }
+  },
   "frutiger-aero": {
     "id": "qq-frutiger-aero",
     "name": "复古未来·Frutiger Aero",

@@ -1,4 +1,18 @@
 {
+  "skeuomorphism": {
+    "dark": {
+      "background": "#201b17",
+      "panel": "#2c2923",
+      "panelAlt": "#39332a",
+      "accent": "#dfbc75",
+      "accentAlt": "#eed29a",
+      "secondary": "#a5c0ac",
+      "highlight": "#e5a076",
+      "text": "#efe4cd",
+      "muted": "#c2b296",
+      "line": "#756046"
+    }
+  },
   "frutiger-aero": {
     "dark": {
       "background": "#061e30",
