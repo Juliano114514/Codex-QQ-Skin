@@ -1,4 +1,42 @@
 {
+  "frutiger-aero": {
+    "id": "qq-frutiger-aero",
+    "name": "复古未来·Frutiger Aero",
+    "brandSubtitle": "AERO · CODEX",
+    "tagline": "澄澈天空，流动灵感。",
+    "appearance": "light",
+    "colors": {
+      "background": "#c8edf7",
+      "panel": "#effbfc",
+      "panelAlt": "#d4eff3",
+      "accent": "#00749c",
+      "accentAlt": "#005a7a",
+      "secondary": "#3c7626",
+      "highlight": "#886013",
+      "text": "#123b4c",
+      "muted": "#426572",
+      "line": "#83bbc8"
+    }
+  },
+  "neumorphism": {
+    "id": "qq-neumorphism",
+    "name": "新拟物 · Neumorphism",
+    "brandSubtitle": "SOFT UI · CODEX",
+    "tagline": "柔和光影，专注每一个灵感。",
+    "appearance": "light",
+    "colors": {
+      "background": "#e9e7e2",
+      "panel": "#e9e7e2",
+      "panelAlt": "#dedcd6",
+      "accent": "#526a58",
+      "accentAlt": "#405b48",
+      "secondary": "#746349",
+      "highlight": "#846527",
+      "text": "#353934",
+      "muted": "#596057",
+      "line": "#cbc9c3"
+    }
+  },
   "bilibili": {
     "id": "qq-bilibili",
     "name": "哔哩哔哩 · 樱粉轻盈",

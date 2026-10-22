@@ -26,16 +26,16 @@
     "online": "knock"
   },
   "colors": {
-    "background": "#182633",
-    "panel": "#1c3040",
-    "panelAlt": "#233f52",
-    "accent": "#61cbe9",
-    "accentAlt": "#8fe3ee",
-    "secondary": "#81b6d0",
-    "highlight": "#e7ba62",
-    "text": "#d9edf5",
-    "muted": "#99b7c8",
-    "line": "rgba(103, 172, 202, .32)"
+    "background": "#182430",
+    "panel": "#182430",
+    "panelAlt": "#1c3344",
+    "accent": "#82c5e1",
+    "accentAlt": "#b0e1ed",
+    "secondary": "#6cabc8",
+    "highlight": "#e4c568",
+    "text": "#dbedf2",
+    "muted": "#a2bdca",
+    "line": "#365d77"
   },
   "promoTitle": "感谢 Passion8 赞助",
   "promoSub": "passion8.cc",

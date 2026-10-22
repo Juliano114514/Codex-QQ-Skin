@@ -561,7 +561,7 @@ async function loadStaticPayloadAssets() {
       fs.readFile(path.join(root, "assets", "theme-appearances.json"), "utf8"),
       fs.readFile(path.join(root, "assets", "qq-media.css"), "utf8").then(async (css) => {
         for (const file of ["IQYHT-Regular.ttf", "IQYHT-Medium.ttf", "IQYHT-Bold.ttf", "QY_Digital-Regular.ttf", "QY_Digital-SemiBold.ttf",
-          "HarmonyOS_Sans_SC_Regular.ttf", "HarmonyOS_Sans_SC_Bold.ttf", "PingFangSC-Regular.otf", "PingFangSC-Semibold.otf"]) {
+          "HarmonyOS_Sans_SC_Regular.ttf", "HarmonyOS_Sans_SC_Bold.ttf", "PingFangSC-Regular.otf", "PingFangSC-Semibold.otf", "NunitoSans-Variable.ttf"]) {
           const bytes = await fs.readFile(path.join(root, "assets", "fonts", file));
           const name = path.basename(file, path.extname(file)).replaceAll("-", "_");
           const mime = file.endsWith(".otf") ? "font/otf" : "font/ttf";

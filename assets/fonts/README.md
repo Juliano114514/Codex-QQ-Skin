@@ -26,6 +26,20 @@ PingFang SC，避免六个主题的字体资源影响经典浅色/深色的字�
 
 ## 文件校验
 
+### 复古未来与新拟物（2026-10-22）
+
+- 复古未来：Windows 本机 `Segoe UI` 搭配 `Microsoft YaHei`，对应
+  [Windows 7 字体规范](https://learn.microsoft.com/en-us/windows/win32/uxguide/vis-fonts)。
+  仅引用系统字体，不复制或分发微软字体文件；其他系统使用 CSS 回退字体。
+- 新拟物：英文和数字使用 Nunito Sans，中文沿用已接入的 PingFang SC。
+  依据 [Neumorphism UI 字体文档](https://themesberg.com/docs/neumorphism-ui/foundation/typography/)，
+  这是代表性搭配，并非该风格的统一官方字体。
+- `NunitoSans-Variable.ttf` 来源为
+  [Google Fonts 上游固定版本](https://github.com/googlefonts/NunitoSans/tree/058bd7a2f33d6ad5ef1df985b3db403622016a8c)，
+  原文件 `fonts/variable/NunitoSans[YTLC,opsz,wdth,wght].ttf`，保留原始字体字节，
+  许可随附 `LICENSE-NunitoSans.txt`（SIL OFL 1.1）。字体约 558 KiB，注入时内嵌，运行时不联网。
+  SHA-256：`f934d7142fb4784bf828da485b7dcbd90c0c80d514e9d49a5da0ed3a1ae2491d`。
+
 | 文件 | SHA-256 |
 | --- | --- |
 | `HarmonyOS_Sans_SC_Bold.ttf` | `43a424b85e47fb53a17b3b32026a71801f86f8e022ca6798d186b47d39fa5f01` |

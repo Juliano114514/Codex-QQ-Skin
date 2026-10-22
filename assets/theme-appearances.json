@@ -1,4 +1,32 @@
 {
+  "frutiger-aero": {
+    "dark": {
+      "background": "#061e30",
+      "panel": "#0c3042",
+      "panelAlt": "#164557",
+      "accent": "#6ae2fa",
+      "accentAlt": "#a0f3f4",
+      "secondary": "#b2ee8b",
+      "highlight": "#f2d992",
+      "text": "#e9fcfc",
+      "muted": "#afd2d9",
+      "line": "#407c94"
+    }
+  },
+  "neumorphism": {
+    "dark": {
+      "background": "#292b2a",
+      "panel": "#292b2a",
+      "panelAlt": "#242625",
+      "accent": "#bad2b6",
+      "accentAlt": "#d1e3c6",
+      "secondary": "#d7c5a3",
+      "highlight": "#e3c28b",
+      "text": "#f1f1e9",
+      "muted": "#b8beb3",
+      "line": "#454a44"
+    }
+  },
   "iqiyi": {
     "light": {
       "background": "#f5f7f6",
