@@ -72,9 +72,10 @@
     const base = brand === "classic"
       ? (shell === "dark" ? QQ_THEME.variants?.dark || QQ_THEME : QQ_THEME)
       : QQ_THEME.variants?.[brand] || QQ_THEME;
-    // Some built-in identities intentionally have only a dark presentation.
-    // Keep Codex's own appearance preference untouched when switching brands.
-    const appearance = base.appearanceMode === "dark-only" ? "dark" : shell;
+    // Fixed identities render immediately; selectSkinMode also synchronizes
+    // Codex's persisted appearance through its existing settings route.
+    const appearance = base.appearanceMode === "dark-only" ? "dark"
+      : base.appearanceMode === "light-only" ? "light" : shell;
     const colors = base.schemes?.[appearance] || base.colors;
     return { ...base, appearance, colors };
   };
@@ -215,6 +216,8 @@
   let analysisTimer = null;
   let samplingNativeShell = false;
   let rootObserver = null;
+  let toggleAppearanceObserver = null;
+  let appearanceRequestCleanup = null;
   let routeSettleTimer = null;
   const now = () => typeof performance === "object" && typeof performance.now === "function"
     ? performance.now() : Date.now();
@@ -259,6 +262,8 @@
 
   if (previous?.observer) previous.observer.disconnect();
   if (previous?.rootObserver) previous.rootObserver.disconnect();
+  previous?.toggleAppearanceObserver?.disconnect();
+  previous?.cancelAppearanceRequest?.();
   if (previous?.resizeObserver) previous.resizeObserver.disconnect();
   previous?.cancelResizeSettle?.();
   if (previous?.timer) clearInterval(previous.timer);
@@ -2101,6 +2106,151 @@
     return String(Math.round(number));
   };
 
+  // Original 5x7 LCD glyphs. Keep the real, selectable numeric text beneath
+  // an accessibility-hidden display copy, drawn on whole device pixels.
+  const LCD_GLYPHS = {
+    "0": [14,17,19,21,25,17,14], "1": [4,12,4,4,4,4,14],
+    "2": [14,17,1,2,4,8,31], "3": [30,1,1,14,1,1,30],
+    "4": [2,6,10,18,31,2,2], "5": [31,16,16,30,1,1,30],
+    "6": [14,16,16,30,17,17,14], "7": [31,1,2,4,8,8,8],
+    "8": [14,17,17,14,17,17,14], "9": [14,17,17,15,1,1,14],
+    ".": [0,0,0,0,0,0,4], "K": [17,18,20,24,20,18,17],
+    "M": [17,27,21,21,17,17,17], "B": [30,17,17,30,17,17,30],
+  };
+  const lcdCanvas = (host, className, inset = 0) => {
+    if (!host) return null;
+    const box = host.getBoundingClientRect();
+    if (box.width < 1 || box.height < 1) return null;
+    const style = getComputedStyle(host);
+    const zoom = box.width / (parseFloat(style.width) || box.width);
+    const ratio = window.devicePixelRatio || 1;
+    const unit = zoom * ratio;
+    const left = Math.ceil((box.left + inset * zoom) * ratio);
+    const top = Math.ceil((box.top + inset * zoom) * ratio);
+    const width = Math.min(4096, Math.floor((box.right - inset * zoom) * ratio) - left);
+    const height = Math.min(1024, Math.floor((box.bottom - inset * zoom) * ratio) - top);
+    if (width < 1 || height < 1) return null;
+    let canvas = host.querySelector(`.${className}`);
+    if (!canvas) {
+      canvas = document.createElement("canvas");
+      canvas.className = className;
+      canvas.setAttribute("aria-hidden", "true");
+      host.appendChild(canvas);
+    }
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
+    setStyleProperty(canvas, "left", `${(left / ratio - box.left) / zoom - (parseFloat(style.borderLeftWidth) || 0)}px`);
+    setStyleProperty(canvas, "top", `${(top / ratio - box.top) / zoom - (parseFloat(style.borderTopWidth) || 0)}px`);
+    setStyleProperty(canvas, "width", `${width / unit}px`);
+    setStyleProperty(canvas, "height", `${height / unit}px`);
+    const context = canvas.getContext("2d");
+    if (!context) { canvas.remove(); return null; }
+    context.clearRect(0, 0, width, height);
+    return { context, width, height, unit };
+  };
+  const lcdHistoryPixels = (chart, maximum, columns, rows) => {
+    const points = chart.map((item, index) => {
+      const fraction = visibleUsageTokens(item) / maximum;
+      return {
+        x: chart.length === 1 ? Math.floor(columns / 2) : Math.round(index * (columns - 1) / (chart.length - 1)),
+        y: Math.round((rows - 1) * (1 - (Number.isFinite(fraction) ? clamp(fraction, 0, 1) : 0))),
+      };
+    });
+    const pixels = new Set();
+    points.forEach((point, index) => {
+      let { x, y } = point;
+      const end = points[index + 1] || point;
+      const dx = Math.abs(end.x - x), dy = -Math.abs(end.y - y);
+      const sx = x < end.x ? 1 : -1, sy = y < end.y ? 1 : -1;
+      let error = dx + dy;
+      // Rasterize the segments between the same real daily samples, once per
+      // snapshot. This is a static dot matrix, with no polling or animation.
+      for (let step = 0; step <= columns + rows; step += 1) {
+        pixels.add(y * columns + x);
+        if (x === end.x && y === end.y) break;
+        const twice = 2 * error;
+        if (twice >= dy) { error += dy; x += sx; }
+        if (twice <= dx) { error += dx; y += sy; }
+      }
+    });
+    return pixels;
+  };
+
+  const renderLCDUsage = () => {
+    if (skinMode !== "qq" || qqAppearance !== "millennium-pc" || !usageParts) return;
+    const displayStyle = getComputedStyle(usageParts.panel);
+    const ink = displayStyle.getPropertyValue("--pc-lcd-ink").trim() || "#26351c";
+    const grid = displayStyle.getPropertyValue("--pc-lcd-grid").trim() || "#4653340c";
+    for (const metric of [usageParts.today, usageParts.week, usageParts.lifetime]) {
+      const image = lcdCanvas(metric, "qq-skin-lcd-number");
+      if (!image) continue;
+      const { context, width, height, unit } = image;
+      const text = metric.textContent;
+      // The decimal occupies one column; every other glyph has five. Fit
+      // whole square dots, rather than stretching a tiny SVG to the field.
+      const columns = [...text].reduce((sum, character) => sum + (character === "." ? 2 : 6), -1);
+      const pitch = Math.max(1, Math.min(Math.round(3 * unit), Math.floor(width / columns), Math.floor(height / 7)));
+      const dot = Math.max(1, pitch - Math.max(1, Math.round(unit)));
+      let offset = Math.floor((width - (columns - 1) * pitch - dot) / 2);
+      const top = Math.floor((height - 6 * pitch - dot) / 2);
+      context.fillStyle = ink;
+      for (const character of text) {
+        (LCD_GLYPHS[character] || []).forEach((row, y) => {
+          for (let x = 0; x < 5; x += 1) {
+            if (row & (1 << (4 - x))) context.fillRect(offset + (character === "." ? 0 : x) * pitch, top + y * pitch, dot, dot);
+          }
+        });
+        offset += (character === "." ? 2 : 6) * pitch;
+      }
+    }
+    const image = lcdCanvas(usageParts.chart, "qq-skin-lcd-history", 5);
+    if (!image) return;
+    const { context, width, height, unit } = image;
+    const pitch = Math.max(3, Math.round(3 * unit));
+    const dot = Math.max(2, pitch - Math.max(1, Math.round(unit)));
+    const columns = Math.max(1, Math.floor(width / pitch));
+    const rows = Math.max(1, Math.floor(height / pitch));
+    const left = Math.floor((width - (columns - 1) * pitch - dot) / 2);
+    const top = Math.floor((height - (rows - 1) * pitch - dot) / 2);
+    context.fillStyle = grid;
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < columns; x += 1) context.fillRect(left + x * pitch, top + y * pitch, dot, dot);
+    }
+    const chart = Array.isArray(usageSnapshot?.chart) ? usageSnapshot.chart.slice(-7) : [];
+    const maximum = Math.max(1, ...chart.map(visibleUsageTokens));
+    context.fillStyle = ink;
+    for (const pixel of lcdHistoryPixels(chart, maximum, columns, rows)) {
+      context.fillRect(left + pixel % columns * pitch, top + Math.floor(pixel / columns) * pitch, dot, dot);
+    }
+  };
+  // Observe only the four small displays while this skin is active. Resize
+  // and new snapshots repaint once; there is no drawing timer or animation.
+  const lcdResizeObserver = new ResizeObserver(renderLCDUsage);
+  const lcdObserverBox = typeof ResizeObserverEntry === "function" && "devicePixelContentBoxSize" in ResizeObserverEntry.prototype
+    ? "device-pixel-content-box" : "content-box";
+  let observedLCDPanel = null;
+  let lcdResolutionQuery = null;
+  const syncLCDResolution = () => {
+    lcdResolutionQuery?.removeEventListener("change", syncLCDResolution);
+    lcdResolutionQuery = observedLCDPanel
+      ? window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`) : null;
+    lcdResolutionQuery?.addEventListener("change", syncLCDResolution);
+    renderLCDUsage();
+  };
+  const syncLCDUsage = (enabled) => {
+    const panel = enabled ? usageParts?.panel : null;
+    if (panel !== observedLCDPanel) {
+      lcdResizeObserver.disconnect();
+      observedLCDPanel = panel;
+      if (panel) for (const node of [usageParts.today, usageParts.week, usageParts.lifetime, usageParts.chart]) {
+        if (node) lcdResizeObserver.observe(node, { box: lcdObserverBox });
+      }
+      syncLCDResolution();
+    }
+    if (enabled) renderLCDUsage();
+    else usageParts?.panel.querySelectorAll(".qq-skin-lcd-number, .qq-skin-lcd-history").forEach(node => node.remove());
+  };
+
   const visibleUsageTokens = (value) => Math.max(0, Number(value?.totalTokens) || 0);
 
   // Read only the native query cache. No extra account requests or stored identity.
@@ -2231,6 +2381,10 @@
   let observedProfileMarquee = null;
   const profileCleanup = () => {
     profileResizeObserver.disconnect();
+    lcdResizeObserver.disconnect();
+    observedLCDPanel = null;
+    lcdResolutionQuery?.removeEventListener("change", syncLCDResolution);
+    lcdResolutionQuery = null;
     observedProfileMarquee = null;
     document.getElementById(PROFILE_DIALOG_ID)?.remove();
   };
@@ -2409,11 +2563,36 @@
     input.focus(); input.select();
   };
 
+  // Expand the actual chart by 20%, retaining each theme's grid and intrinsic
+  // text rows. Re-measure only when its theme, width or status content changes.
+  const syncUsageChartSize = () => {
+    const parts = usageParts;
+    const panel = parts?.panel;
+    if (!panel?.isConnected || !parts.chart?.offsetHeight || panel.classList.contains("qq-skin-window-collapsed")) return;
+    const key = [THEME.id, resolvedShell(), panel.clientWidth, window.innerHeight,
+      panel.classList.contains("qq-skin-growth-docked"), parts.breakdown?.textContent, parts.message?.textContent].join("|");
+    if (parts.chartSizeKey === key) return;
+    parts.chartSizeKey = key;
+    setStyleProperty(panel, "--qq-usage-chart-growth", "0px");
+    setStyleProperty(panel, "--qq-usage-chart-gap", "0px");
+    const style = getComputedStyle(parts.chart);
+    const edges = style.boxSizing === "border-box" ? 0 : [style.paddingTop, style.paddingBottom,
+      style.borderTopWidth, style.borderBottomWidth].reduce((sum, value) => sum + (parseFloat(value) || 0), 0);
+    const height = parseFloat(style.height) + edges;
+    if (Number.isFinite(height) && height > 0) {
+      setStyleProperty(panel, "--qq-usage-chart-growth", `${(height * .2 + 6).toFixed(3)}px`);
+    }
+    setStyleProperty(panel, "--qq-usage-chart-gap", "6px");
+  };
+
   const renderUsageSnapshot = () => {
     const parts = usageParts;
     if (!parts?.panel) return;
     syncPersonalProfile();
-    if (parts.hasRendered && parts.renderedSnapshot === usageSnapshot) return;
+    const xpHistory = skinMode === "qq" && qqAppearance === "windows-xp";
+    const lcdHistory = skinMode === "qq" && qqAppearance === "millennium-pc";
+    const historyStyle = xpHistory ? "xp" : lcdHistory ? `lcd-${resolvedShell()}` : "bars";
+    if (parts.hasRendered && parts.renderedSnapshot === usageSnapshot && parts.renderedHistoryStyle === historyStyle) return;
     renderQuotaProgress();
     const snapshot = usageSnapshot && typeof usageSnapshot === "object" ? usageSnapshot : { status: "error" };
     const status = ["loading", "indexing", "empty", "ready", "error"].includes(snapshot.status)
@@ -2442,13 +2621,15 @@
       const chart = Array.isArray(snapshot.chart) ? snapshot.chart.slice(-7) : [];
       const maximum = Math.max(1, ...chart.map(visibleUsageTokens));
       const count = chart.length || 7;
-      while (parts.chart.children.length > count) parts.chart.lastElementChild.remove();
-      while (parts.chart.children.length < count) {
+      const bars = [...parts.chart.children].filter(node => node.tagName === "I");
+      while (bars.length > count) bars.pop().remove();
+      while (bars.length < count) {
         const bar = document.createElement("i");
         bar.appendChild(document.createElement("span"));
         parts.chart.appendChild(bar);
+        bars.push(bar);
       }
-      [...parts.chart.children].forEach((bar, index) => {
+      bars.forEach((bar, index) => {
         const item = chart[index];
         const value = visibleUsageTokens(item);
         const height = value > 0 ? Math.max(9, Math.round(value / maximum * 100)) : 4;
@@ -2456,7 +2637,24 @@
         setAttribute(bar.firstElementChild, "data-qq-chart-latest", String(index === count - 1));
         setAttribute(bar, "title", item ? `${String(item.date || "").slice(5)} · ${formatTokenCount(value)} token` : "");
       });
+      // All histories use the same seven samples and daily hover values.
+      // XP keeps its vector trace; the PC LCD is rasterized below at 1:1.
+      let history = parts.chart.querySelector(".qq-skin-xp-history");
+      if (xpHistory && chart.length) {
+        if (!history) {
+          history = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          history.setAttribute("class", "qq-skin-xp-history");
+          history.setAttribute("viewBox", "0 0 300 100");
+          history.setAttribute("preserveAspectRatio", "none");
+          history.setAttribute("aria-hidden", "true");
+          history.appendChild(document.createElementNS("http://www.w3.org/2000/svg", "polyline"));
+          parts.chart.appendChild(history);
+        }
+        setAttribute(history.firstElementChild, "points", chart.map((item, index) =>
+          `${chart.length === 1 ? 150 : 3 + index * 294 / (chart.length - 1)},${96 - clamp(visibleUsageTokens(item) / maximum, 0, 1) * 88}`).join(" "));
+      } else history?.remove();
     }
+    syncLCDUsage(lcdHistory);
 
     let message = "";
     if (status === "loading") message = "正在读取本地 Codex 统计…";
@@ -2490,6 +2688,8 @@
     // level icons on every route pass needlessly invalidates style and paint.
     parts.hasRendered = true;
     parts.renderedSnapshot = usageSnapshot;
+    parts.renderedHistoryStyle = historyStyle;
+    syncUsageChartSize();
   };
 
   const setUsageSnapshot = (snapshot) => {
@@ -2998,7 +3198,7 @@
       retroShellParts.penguin.src = qqAvatarUrl;
     }
     const themeTitle = MEDIA_APPEARANCES.includes(qqAppearance)
-      ? THEME.name.split(" · ")[0] : "QQ 经典";
+      ? (qqAppearance === "millennium-pc" ? THEME.name : THEME.name.split(" · ")[0]) : "QQ 经典";
     setTextContent(retroShellParts.title, `Codex ${themeTitle} - ${findRetroTitle()}`);
     return retroShell;
   };
@@ -3720,6 +3920,7 @@
       weatherMonitor.ensure();
     }
     if (weatherMonitor.active) weatherMonitor.setStatus(soundMonitor.status);
+    syncUsageChartSize();
     const elapsed = now() - startedAt;
     metrics.ensureTotalMs += elapsed;
     metrics.ensureMaxMs = Math.max(metrics.ensureMaxMs, elapsed);
@@ -3775,8 +3976,22 @@
     chromeParts = null;
   };
 
+  const supportedAppearances = () => {
+    if (skinMode === "native" || (skinMode === "qq" && qqAppearance === "classic")) return ["light", "dark"];
+    const theme = skinMode === "qq" ? QQ_THEME.variants?.[qqAppearance] || THEME : CUSTOM_THEME;
+    if (theme.appearanceMode === "light-only") return ["light"];
+    if (theme.appearanceMode === "dark-only") return ["dark"];
+    if (theme.appearance === "auto" || (theme.schemes?.light && theme.schemes?.dark)) return ["light", "dark"];
+    return [theme.appearance === "dark" ? "dark" : "light"];
+  };
+  let appearanceBusy = false;
+  let appearanceError = "";
+  let queuedAppearance = null;
   const syncToggleButton = (control) => {
-    const stateKey = `${skinMode}|${qqAppearance}|${THEME.id}|${THEME.name}`;
+    const appearance = skinMode === "native" ? nativeAppearance() : resolvedShell();
+    const supported = supportedAppearances();
+    const nativeDark = nativeAppearance() === "dark";
+    const stateKey = `${skinMode}|${qqAppearance}|${THEME.id}|${THEME.name}|${appearance}|${nativeDark}|${appearanceBusy}|${appearanceError}`;
     if (control.qqSkinToggleState === stateKey) return;
     control.qqSkinToggleState = stateKey;
     for (const button of control.querySelectorAll("button[data-skin-mode]")) {
@@ -3793,15 +4008,107 @@
         : "transparent";
       button.style.boxShadow = selected ? "inset 0 1px rgba(255,255,255,.42),0 1px 2px rgba(0,54,112,.22)" : "none";
     }
-    const libraryButton = control.querySelector("button[data-skin-library]");
-    if (libraryButton) {
-      const selected = skinMode === "custom" || (skinMode === "qq" && MEDIA_APPEARANCES.includes(qqAppearance));
+    for (const libraryButton of control.querySelectorAll("button[data-skin-library]")) {
+      const category = libraryButton.dataset.skinLibrary;
+      const selected = category === "art" ? skinMode === "custom" ||
+        (skinMode === "qq" && QQ_THEME.variants?.[qqAppearance]?.category === "art")
+        : skinMode === "qq" && MEDIA_APPEARANCES.includes(qqAppearance) && QQ_THEME.variants?.[qqAppearance]?.category !== "art";
       libraryButton.setAttribute("aria-pressed", String(selected));
-      libraryButton.title = selected ? `当前主题：${THEME.name}` : "选择更多主题";
+      libraryButton.title = selected ? `当前主题：${THEME.name}` : `选择${category === "art" ? "美学风格" : "平台配色"}`;
       libraryButton.style.color = selected ? "#fff" : "#3b3f45";
       libraryButton.style.background = selected
         ? "linear-gradient(180deg,#4ba9f0 0%,#166fc8 100%)"
         : "transparent";
+    }
+    const locked = supported.length === 1;
+    const unavailable = locked || appearanceBusy || !window.electronBridge?.sendMessageFromView;
+    const reason = appearanceBusy ? "正在切换外观…" : appearanceError || (locked
+      ? `当前皮肤仅支持${supported[0] === "light" ? "浅色（日）" : "深色（夜）"}模式`
+      : !window.electronBridge?.sendMessageFromView ? "当前窗口不支持外观切换" : "");
+    const group = control.querySelector('[data-skin-group="appearance"]');
+    group?.setAttribute("aria-disabled", String(unavailable));
+    if (group) group.title = reason;
+    for (const button of control.querySelectorAll("button[data-skin-shell]")) {
+      const selected = button.dataset.skinShell === appearance;
+      button.disabled = unavailable;
+      button.title = reason || `切换到${button.dataset.skinShell === "light" ? "浅色（日）" : "深色（夜）"}模式`;
+      button.setAttribute("aria-pressed", String(selected));
+      // Inline priorities keep disabled buttons gray in every branded palette.
+      const priority = unavailable ? "important" : "";
+      button.style.setProperty("opacity", unavailable ? ".5" : "1", priority);
+      button.style.setProperty("color", unavailable ? "#80858c" : selected ? "#fff" : "#3b3f45", priority);
+      button.style.setProperty("background", unavailable ? selected ? "#dfe2e6" : "transparent"
+        : selected ? "linear-gradient(180deg,#4ba9f0,#166fc8)" : "transparent", priority);
+      button.style.setProperty("box-shadow", "none", priority);
+      button.style.cursor = unavailable ? "not-allowed" : "pointer";
+    }
+    // Native mode has no skin stylesheet; keep the control readable there too.
+    if (skinMode === "native") {
+      control.style.background = nativeDark ? "#25262b" : "rgba(248,248,249,.96)";
+      for (const button of control.querySelectorAll("button:not(:disabled)")) {
+        if (button.getAttribute("aria-pressed") !== "true") button.style.color = nativeDark ? "#d8dce3" : "#3b3f45";
+      }
+    }
+  };
+
+  const selectAppearance = async (appearance, { fromTheme = false } = {}) => {
+    const supported = supportedAppearances();
+    if (!supported.includes(appearance) || (!fromTheme && supported.length < 2) ||
+        !window.electronBridge?.sendMessageFromView) return;
+    // Theme changes remain available while the native settings write is in
+    // flight. Serialize writes and keep the latest selected appearance.
+    if (appearanceBusy) { queuedAppearance = appearance; return; }
+    appearanceBusy = true;
+    appearanceError = "";
+    closeLibraryMenu();
+    ensureToggleButton();
+    try {
+      // Use the same local settings route as Codex's appearance settings.
+      // Codex persists the preference and updates its own theme tokens.
+      await new Promise((resolve, reject) => {
+        const requestId = window.crypto.randomUUID();
+        let settled = false;
+        const finish = (error) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          window.removeEventListener("message", onResponse);
+          appearanceRequestCleanup = null;
+          error ? reject(error) : resolve();
+        };
+        const onResponse = (event) => {
+          if (event.source != null && event.source !== window) return;
+          const message = event.data;
+          if (message?.type !== "fetch-response" || message.requestId !== requestId) return;
+          finish(message.responseType === "success" && message.status >= 200 && message.status < 300
+            ? null : new Error("appearance-setting-failed"));
+        };
+        const timeout = setTimeout(() => finish(new Error("appearance-setting-timeout")), 8000);
+        appearanceRequestCleanup = () => finish(new Error("appearance-setting-cancelled"));
+        window.addEventListener("message", onResponse);
+        window.electronBridge.sendMessageFromView({
+          type: "fetch", requestId, method: "POST", url: "vscode://codex/set-setting",
+          body: JSON.stringify({ key: "appearanceTheme", value: appearance }),
+        }).catch(() => finish(new Error("appearance-setting-unavailable")));
+      });
+    } catch {
+      appearanceError = "外观切换未成功，请重试";
+    } finally {
+      appearanceBusy = false;
+      if (window[STATE_KEY]?.installToken === installToken) {
+        if (skinMode !== "native") ensure({ root: true, route: true });
+        ensureToggleButton();
+        const next = queuedAppearance;
+        queuedAppearance = null;
+        if (next) void selectAppearance(next, { fromTheme: true });
+      }
+    }
+  };
+
+  const syncThemeAppearance = () => {
+    const supported = supportedAppearances();
+    if (skinMode !== "native" && supported.length === 1) {
+      void selectAppearance(supported[0], { fromTheme: true });
     }
   };
 
@@ -3810,8 +4117,8 @@
     libraryMenuCleanup?.();
     libraryMenuCleanup = null;
     document.getElementById(LIBRARY_MENU_ID)?.remove();
-    const anchor = document.querySelector(`#${TOGGLE_ID} [data-skin-library]`);
-    anchor?.setAttribute("aria-expanded", "false");
+    const anchor = document.querySelector(`#${TOGGLE_ID} [data-skin-library][aria-expanded="true"]`);
+    for (const button of document.querySelectorAll(`#${TOGGLE_ID} [data-skin-library]`)) button.setAttribute("aria-expanded", "false");
     if (restoreFocus) anchor?.focus();
   };
 
@@ -3829,12 +4136,13 @@
     } catch {}
   };
 
-  const openLibraryMenu = (anchor) => {
+  const openLibraryMenu = (anchor, category = anchor?.dataset?.skinLibrary === "platform" ? "platform" : "art") => {
     closeLibraryMenu();
     const menu = document.createElement("div");
     menu.id = LIBRARY_MENU_ID;
     menu.setAttribute("role", "menu");
-    menu.setAttribute("aria-label", "更多主题");
+    menu.setAttribute("aria-label", category === "platform" ? "平台配色" : "美学风格");
+    menu.dataset.skinCategory = category;
     const dark = skinMode !== "native" ? resolvedShell() === "dark"
       : document.documentElement.classList.contains("electron-dark");
     const foreground = dark ? "#f2f3f5" : "#253345";
@@ -3896,9 +4204,10 @@
       });
       menu.appendChild(option);
     };
-    for (const [category, title] of [["platform", "平台配色"], ["art", "艺术风格"]]) {
+    for (const [categoryKey, title] of [["platform", "平台配色"], ["art", "美学风格"]]) {
+      if (categoryKey !== category) continue;
       const appearances = MEDIA_APPEARANCES.filter((appearance) =>
-        (QQ_THEME.variants[appearance].category || "platform") === category);
+        (QQ_THEME.variants[appearance].category || "platform") === categoryKey);
       if (!appearances.length) continue;
       heading(title);
       for (const appearance of appearances) {
@@ -3986,6 +4295,7 @@
     // created during ensure() cannot swallow the next click.
     const control = ensureToggleButton();
     if (control?.parentElement === document.body) document.body.appendChild(control);
+    syncThemeAppearance();
     if (typeof window.dispatchEvent === "function" && typeof window.Event === "function") {
       window.dispatchEvent(new window.Event("resize"));
     }
@@ -3996,13 +4306,13 @@
 
     if (
       !control || control.parentElement !== document.body || control.tagName === "BUTTON"
-      || control.dataset.qqModes !== "brands-v2"
+      || control.dataset.qqModes !== "brands-v3"
     ) {
       control?.remove();
       closeLibraryMenu();
       control = document.createElement("div");
       control.id = TOGGLE_ID;
-      control.dataset.qqModes = "brands-v2";
+      control.dataset.qqModes = "brands-v3";
       control.setAttribute("role", "group");
       control.setAttribute("aria-label", "切换皮肤");
       control.style.cssText = [
@@ -4012,11 +4322,17 @@
         "background:rgba(248,248,249,.91)", "box-shadow:0 1px 2px rgba(0,0,0,.08),0 5px 14px rgba(0,0,0,.08)",
         "-webkit-app-region:no-drag",
       ].join(";");
-      for (const [mode, label, appearance] of [["native", "原生"], ["qq", "QQ 经典", "classic"], ["more", "更多"]]) {
+      const themeGroup = document.createElement("div");
+      themeGroup.dataset.skinGroup = "themes";
+      themeGroup.setAttribute("role", "group");
+      themeGroup.setAttribute("aria-label", "皮肤风格");
+      themeGroup.style.cssText = "display:flex;align-items:center;gap:2px";
+      for (const [mode, label, appearance] of [["native", "原生"], ["qq", "QQ经典", "classic"], ["platform", "平台配色"], ["art", "美学风格"]]) {
         const button = document.createElement("button");
         button.type = "button";
-        if (mode === "more") {
-          button.dataset.skinLibrary = "more";
+        const library = mode === "platform" || mode === "art";
+        if (library) {
+          button.dataset.skinLibrary = mode;
           button.setAttribute("aria-haspopup", "menu");
           button.setAttribute("aria-expanded", "false");
           button.setAttribute("aria-controls", LIBRARY_MENU_ID);
@@ -4031,19 +4347,38 @@
         const activateMode = (event) => {
           event.preventDefault();
           event.stopPropagation();
-          if (mode !== "more") selectSkinMode(mode, appearance);
-          else if (document.getElementById(LIBRARY_MENU_ID)) closeLibraryMenu({ restoreFocus: true });
+          if (!library) selectSkinMode(mode, appearance);
+          else if (button.getAttribute("aria-expanded") === "true") closeLibraryMenu({ restoreFocus: true });
           else openLibraryMenu(button);
         };
         button.addEventListener?.("click", activateMode);
-        if (mode === "more") button.addEventListener("keydown", (event) => {
+        if (library) button.addEventListener("keydown", (event) => {
           if (event.key === "ArrowDown") {
             event.preventDefault();
             openLibraryMenu(button);
           }
         });
-        control.appendChild(button);
+        themeGroup.appendChild(button);
       }
+      const separator = document.createElement("span");
+      separator.textContent = "|";
+      separator.setAttribute("aria-hidden", "true");
+      separator.style.cssText = "padding:0 4px;color:#9ca0a6";
+      const appearanceGroup = document.createElement("div");
+      appearanceGroup.dataset.skinGroup = "appearance";
+      appearanceGroup.setAttribute("role", "group");
+      appearanceGroup.setAttribute("aria-label", "日夜模式");
+      appearanceGroup.style.cssText = "display:flex;align-items:center;gap:2px";
+      for (const [appearance, label] of [["light", "日"], ["dark", "夜"]]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.skinShell = appearance;
+        button.textContent = label;
+        button.style.cssText = "height:22px;padding:0 9px;border:0;border-radius:7px;white-space:nowrap;font:650 11px/22px system-ui,sans-serif";
+        button.addEventListener("click", () => selectAppearance(appearance));
+        appearanceGroup.appendChild(button);
+      }
+      control.append(themeGroup, separator, appearanceGroup);
       document.body.appendChild(control);
     }
     syncToggleButton(control);
@@ -4061,6 +4396,8 @@
     document.getElementById(WEATHER_AUDIO_ID)?.remove();
     state?.observer?.disconnect();
     state?.rootObserver?.disconnect();
+    state?.toggleAppearanceObserver?.disconnect();
+    appearanceRequestCleanup?.();
     state?.resizeObserver?.disconnect();
     cancelResizeSettle();
     if (state?.timer) clearInterval(state.timer);
@@ -4196,7 +4533,21 @@
     if (samplingNativeShell) return;
     scheduleEnsure({ root: true, route: true });
   });
-  const resizeHandler = () => scheduleEnsure({ route: true, layout: true });
+  // Keep day/night selection in sync even when the native skin pauses the
+  // heavier layout observers. Watching only native theme attributes is cheap.
+  toggleAppearanceObserver = new MutationObserver(() => {
+    const control = document.getElementById(TOGGLE_ID);
+    if (control) syncToggleButton(control);
+  });
+  toggleAppearanceObserver.observe(document.documentElement, {
+    attributes: true, attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode"],
+  });
+  const resizeHandler = () => {
+    scheduleEnsure({ route: true, layout: true });
+    // A display/DPI or application-zoom change can leave CSS content sizes
+    // unchanged. Rebuild the small LCD bitmaps at the new device pixel size.
+    renderLCDUsage();
+  };
   const routeInteractionHandler = (event) => {
     if (window[DISABLED_KEY] || isSkinNode(event.target) || event.target?.closest?.('.thread-scroll-container, [data-codex-composer="true"]')) return;
     if (event.target?.closest?.('[data-app-shell-sidebar-trigger]')) {
@@ -4242,6 +4593,8 @@
     setUsageSnapshot,
     observer,
     rootObserver,
+    toggleAppearanceObserver,
+    cancelAppearanceRequest: () => appearanceRequestCleanup?.(),
     resizeObserver,
     cancelResizeSettle,
     timer: null,
@@ -4285,6 +4638,7 @@
   ensureToggleButton();
   const firstEnsureStartedAt = now();
   ensure({ layout: !previous || !document.getElementById(CHROME_ID) });
+  syncThemeAppearance();
   metrics.firstEnsureMs = Number((now() - firstEnsureStartedAt).toFixed(3));
   if (previous?.artUrl && previous.artUrl !== artUrl) URL.revokeObjectURL(previous.artUrl);
   if (previous?.qqArtUrl && previous.qqArtUrl !== qqArtUrl) URL.revokeObjectURL(previous.qqArtUrl);

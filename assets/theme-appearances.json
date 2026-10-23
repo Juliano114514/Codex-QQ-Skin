@@ -1,4 +1,18 @@
 {
+  "millennium-pc": {
+    "dark": {
+      "background": "#171a19",
+      "panel": "#292e2c",
+      "panelAlt": "#202522",
+      "accent": "#a5c4b4",
+      "accentAlt": "#c7d8cf",
+      "secondary": "#a5c8a2",
+      "highlight": "#bac9be",
+      "text": "#dde3de",
+      "muted": "#a5afa8",
+      "line": "#4a534c"
+    }
+  },
   "skeuomorphism": {
     "dark": {
       "background": "#201b17",

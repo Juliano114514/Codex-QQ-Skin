@@ -26,14 +26,35 @@ PingFang SC，避免六个主题的字体资源影响经典浅色/深色的字�
 
 ## 文件校验
 
-### 复古未来与新拟物（2026-10-22）
+许可文件按上游原文保留。`LICENSE-Nunito.txt:21` 和 `fusion-pixel-licenses/cubic-11-OFL.txt:36` 各有一处上游行尾空格，未为格式检查改写许可。
+
+### 拟物化 · 千禧年机箱（2026-10-23）
+
+- 使用 [Fusion Pixel Font / 缝合像素](https://github.com/TakWolf/fusion-pixel-font)
+  的 12px 比例宽度简体中文版本，替换单纯的系统宋体；仅此主题使用。
+- 上游固定 [2026.10.16 发布包](https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.10.16/fusion-pixel-font-12px-proportional-otf.woff2-v2026.10.16.zip)，
+  原始条目 `fusion-pixel-12px-proportional-zh_hans.otf.woff2`。
+  本地 `fusion-pixel-12px-proportional-zh_hans.woff2` 保持字体字节不变，680388 bytes。
+- 原始 OFL 1.1 与上游包中的 Ark Pixel、Cubic 11、Galmuri 许可均逐字节保留在
+  `fusion-pixel-licenses/`。没有修改字形、转码、安装到系统或使用远程字体服务。
+- 注入时内嵌 WOFF2；界面与聊天正文使用此字体，缺字回退到系统宋体。
+  代码和终端继续沿用原有等宽字体。LCD 统计数字另按真实文本绘制方点，避免字体缩放影响数值辨认。
+- SHA-256：`037fb51624ec39500a6be28f7eac4aa6a8c9366205b2344dd2b4f182879519ce`。
+
+### 复古未来与新拟物（2026-10-22 / 2026-10-23）
 
 - 复古未来：Windows 本机 `Segoe UI` 搭配 `Microsoft YaHei`，对应
   [Windows 7 字体规范](https://learn.microsoft.com/en-us/windows/win32/uxguide/vis-fonts)。
   仅引用系统字体，不复制或分发微软字体文件；其他系统使用 CSS 回退字体。
-- 新拟物：英文和数字使用 Nunito Sans，中文沿用已接入的 PingFang SC。
-  依据 [Neumorphism UI 字体文档](https://themesberg.com/docs/neumorphism-ui/foundation/typography/)，
-  这是代表性搭配，并非该风格的统一官方字体。
+- 新拟物：英文和数字从 Nunito Sans 改为具有圆润端点的 **Nunito**，中文沿用已接入的 PingFang SC。
+  [Google Fonts 原始说明](https://github.com/google/fonts/blob/main/ofl/nunito/DESCRIPTION.en_us.html)
+  明确区分圆润的 Nunito 和移除圆润端点的 Nunito Sans。新拟物没有统一的专属字体。
+- `Nunito-Variable.ttf` 于 2026-10-23 从
+  [Google Fonts 上游](https://github.com/google/fonts/blob/main/ofl/nunito/Nunito%5Bwght%5D.ttf)
+  下载，保留字体原始字节，276932 bytes；许可逐字保存在 `LICENSE-Nunito.txt`（SIL OFL 1.1）。
+  SHA-256：`bb55a5ca5c2042335b3991af27c4d0705d0ef41cac6164ac737fd8f2a1e85207`。
+  运行时内嵌，不安装到系统、不请求远程字体；不覆盖代码和终端字体。
+- 以下 Nunito Sans 为此前资源，保留原文件与许可，但已不进入运行时注入载荷。
 - `NunitoSans-Variable.ttf` 来源为
   [Google Fonts 上游固定版本](https://github.com/googlefonts/NunitoSans/tree/058bd7a2f33d6ad5ef1df985b3db403622016a8c)，
   原文件 `fonts/variable/NunitoSans[YTLC,opsz,wdth,wght].ttf`，保留原始字体字节，

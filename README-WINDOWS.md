@@ -1,10 +1,12 @@
-# ChatGPT QQ Skin for Windows 2.7.0
+# ChatGPT QQ Skin for Windows 2.8.0
 
 Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动”“上传图片生成皮肤”“应用内置大黄蜂皮肤”“应用内置霓虹雨夜皮肤”和“安装 Codex 深度皮肤助手”入口，并内置运行引擎与 Node.js，无需用户另外安装依赖。
 
 项目不会修改官方 ChatGPT/Codex 安装目录、`app.asar`、API Key 或 Base URL。皮肤通过仅监听 `127.0.0.1` 的 Chromium DevTools Protocol 注入。
 
 ## 下载
+
+当前源码版本为 2.8.0，尚未发布对应安装包；以下为既有 Release 的下载与安装说明。
 
 从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载：
 
@@ -37,12 +39,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\instal
 `-NoLaunch` 只安装，不关闭当前 Codex。保存当前工作后，双击桌面的
 `ChatGPT QQ Skin.cmd`；该入口会按需重启 Codex、开启本机调试端口并加载皮肤。
 以后也使用此入口启动；直接打开官方 Codex 图标不保证加载皮肤。
-顶部固定为 `原生 / QQ 经典 / 更多`。`QQ 经典` 合并原来的浅色、深色入口；
-点击 `更多` 选择爱奇艺、哔哩哔哩、抖音、快手、腾讯视频、优酷和芒果 TV 七组平台主题。
-八组主题均包含浅色与深色，跟随 **Codex 设置 → 外观 → 系统 / 浅色 / 深色**，
-皮肤不再强制修改 Codex 的外观设置。系统模式以 Codex 当前解析出的明暗为准。
+顶部为 `原生 / QQ经典 / 平台配色 / 美学风格 | 日 / 夜`。`QQ经典` 合并浅色、深色入口；
+点击 `平台配色` 选择爱奇艺、哔哩哔哩、抖音、快手、腾讯视频、优酷和芒果 TV 七组平台主题。
+经典和平台主题均包含浅色与深色，跟随 **Codex 设置 → 外观 → 系统 / 浅色 / 深色**，
+也可通过 `日 / 夜` 写入同一本机外观设置。系统模式以 Codex 当前解析出的明暗为准。
+`美学风格` 提供新拟物、XP、Aero、Matrix、皮革手账和千禧年机箱；XP 仅浅色、Matrix 仅深色，
+选择这类主题时自动同步原生外观，并禁用日夜按钮；其他主题按各自外观能力切换。
 经典浅色保留蓝银风格，经典深色保留手机 QQ 2008–2010 风格；`原生` 即时移除皮肤。
-更多菜单不再展示大黄蜂与霓虹雨夜自定义皮肤。
 菜单展示色块和当前选中项，支持方向键、Home/End、Enter、Esc 和外部点击关闭。
 最近选择的主题保存在本机；旧的 `light` / `dark` 选择自动迁移为 `classic`。
 切换外观不改变主题选择，重新启动皮肤引擎后继续使用。
@@ -86,6 +89,15 @@ QQ 模式右侧的“个人资料”显示昵称、头像、状态、签名和�
 点击齿轮或底栏昵称编辑个人资料；点击头像选择经典头像，40px 与底栏 16px 版本配对切换。底栏签名支持点击编辑，Enter/失焦保存，Escape 取消。资料保存在本机皮肤设置，不修改 Codex 账号。
 
 统计只读取当前 Windows 用户目录下的 Codex 本地 session 日志，增量缓存保存在 `%APPDATA%\CodexQQSkin\usage`。Token 展示与加速档位均包含缓存。不需要额外登录，不读取 API Key，也不会上传 prompt 或 token 数据。统计是本机口径，不是 OpenAI 官方账单或账号云端等级。
+
+## 2.8.0 更新（2026-10-23）
+
+- 新增 Windows XP 蓝天白云与千禧年机箱；机箱支持米白、炭黑两套外观及点阵 LCD。
+- 完善六套美学主题的侧栏、聊天三键与个人设置；手账窗口控制区域增加黄铜书扣，保留原生系统按钮。
+- 增加独立主题分类入口和日夜切换；固定明暗主题自动同步 Codex 外观。
+- 全部内置配色的个人资料七日图增高 20%，与统计数字间距增加 6px；保留原有滚动条样式。
+- 修复输入区模型选择器与语音按钮刷新时位移；补齐原创素材、字体许可与参考记录。
+- 本机已完成主题呈现和窗口检查；本次未运行完整测试或本地重建安装器，尚未发布 2.8.0 安装包。
 
 ## 2.7.0 更新（2026-10-23）
 
@@ -180,12 +192,12 @@ $env:CODEX_EXE = 'C:\完整路径\ChatGPT.exe'
 需要 **Windows 10/11** 或 GitHub Actions `windows-2022`。macOS 无法直接生成本安装器 `.exe`。
 
 ```powershell
-.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.7.0.exe'
+.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.8.0.exe'
 ```
 
 不使用 `-UseInstalledNode` 时，构建脚本会下载官方 Node.js 运行时并校验 SHA-256。输出文件保存在 `release` 目录。
 
-发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.7.0`），由 CI 构建并上传 EXE。
+发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.8.0`），由 CI 构建并上传 EXE。
 
 ## 安全说明
 

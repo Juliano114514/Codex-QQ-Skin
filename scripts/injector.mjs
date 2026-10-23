@@ -11,7 +11,7 @@ import { loadDeepThemeDirectory, mimeForExtension } from "./deep-theme-core.mjs"
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "2.7.0";
+const SKIN_VERSION = "2.8.0";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
@@ -563,8 +563,17 @@ async function loadStaticPayloadAssets() {
       fs.readFile(path.join(root, "assets", "themes-media.json"), "utf8"),
       fs.readFile(path.join(root, "assets", "theme-appearances.json"), "utf8"),
       fs.readFile(path.join(root, "assets", "qq-media.css"), "utf8").then(async (css) => {
+        css += "\n" + await fs.readFile(path.join(root, "assets", "qq-aesthetics.css"), "utf8");
+        // Compressed display copies keep custom-property values below the
+        // renderer's token-stream limit; oversized inline PNGs become invalid.
+        const xpMeadow = await fs.readFile(path.join(root, "assets", "windows-xp-meadow.jpg"));
+        css = css.replace("__QQ_XP_MEADOW__", `data:image/jpeg;base64,${xpMeadow.toString("base64")}`);
+        const pcAbs = await fs.readFile(path.join(root, "assets", "millennium-ivory-abs.jpg"));
+        css = css.replace("__QQ_PC_ABS__", `data:image/jpeg;base64,${pcAbs.toString("base64")}`);
+        const pcPixelFont = await fs.readFile(path.join(root, "assets", "fonts", "fusion-pixel-12px-proportional-zh_hans.woff2"));
+        css = css.replace("__QQ_FONT_fusion_pixel_12px_proportional_zh_hans__", `data:font/woff2;base64,${pcPixelFont.toString("base64")}`);
         for (const file of ["IQYHT-Regular.ttf", "IQYHT-Medium.ttf", "IQYHT-Bold.ttf", "QY_Digital-Regular.ttf", "QY_Digital-SemiBold.ttf",
-          "HarmonyOS_Sans_SC_Regular.ttf", "HarmonyOS_Sans_SC_Bold.ttf", "PingFangSC-Regular.otf", "PingFangSC-Semibold.otf", "NunitoSans-Variable.ttf"]) {
+          "HarmonyOS_Sans_SC_Regular.ttf", "HarmonyOS_Sans_SC_Bold.ttf", "PingFangSC-Regular.otf", "PingFangSC-Semibold.otf", "Nunito-Variable.ttf"]) {
           const bytes = await fs.readFile(path.join(root, "assets", "fonts", file));
           const name = path.basename(file, path.extname(file)).replaceAll("-", "_");
           const mime = file.endsWith(".otf") ? "font/otf" : "font/ttf";
@@ -1271,7 +1280,7 @@ function watchPayloadSources(themeDir, onDirty) {
         const name = filename ? String(filename) : "";
         const staticChanged = directory === assetsRoot &&
           (!name || name === "qq-skin.css" || name === "custom-skin.css" || name === "renderer-inject.js" ||
-            name === "portal-hero.png" || name === "theme.json" || name === "theme-dark.json" || name === "theme-iqiyi.json" || name === "themes-media.json" || name === "theme-appearances.json" || name === "qq-media.css" || name === "qq-dark.css" || name === "qq-ui.css" ||
+            name === "portal-hero.png" || name === "windows-xp-meadow.jpg" || name === "millennium-ivory-abs.jpg" || name === "theme.json" || name === "theme-dark.json" || name === "theme-iqiyi.json" || name === "themes-media.json" || name === "theme-appearances.json" || name === "qq-media.css" || name === "qq-aesthetics.css" || name === "qq-dark.css" || name === "qq-ui.css" ||
             name === "codex-pet.png" || name === "retro-window-frame.png" ||
             name === "qq-avatar.png" || name === "qq-avatars.json" || name === "level-icons" || name === "audio");
         if (kind === "static" && !staticChanged) return;

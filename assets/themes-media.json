@@ -20,6 +20,47 @@
     },
     "appearanceMode": "dark-only"
   },
+  "windows-xp": {
+    "id": "qq-windows-xp",
+    "name": "Windows XP · 蓝天白云",
+    "category": "art",
+    "brandSubtitle": "LUNA · CODEX",
+    "tagline": "蓝天白云下，开始今天的创作。",
+    "appearance": "light",
+    "appearanceMode": "light-only",
+    "colors": {
+      "background": "#dce9f9",
+      "panel": "#ffffff",
+      "panelAlt": "#ece9d8",
+      "accent": "#245edb",
+      "accentAlt": "#1746a2",
+      "secondary": "#327b24",
+      "highlight": "#946116",
+      "text": "#162642",
+      "muted": "#53627b",
+      "line": "#8fa9cd"
+    }
+  },
+  "millennium-pc": {
+    "id": "qq-millennium-pc",
+    "name": "拟物化 · 千禧年机箱",
+    "category": "art",
+    "brandSubtitle": "PERSONAL COMPUTER · CODEX",
+    "tagline": "按下电源，写下新的想法。",
+    "appearance": "light",
+    "colors": {
+      "background": "#eae7d7",
+      "panel": "#fffcf0",
+      "panelAlt": "#f5efd8",
+      "accent": "#386a83",
+      "accentAlt": "#2d566b",
+      "secondary": "#496d38",
+      "highlight": "#746c42",
+      "text": "#343730",
+      "muted": "#61685f",
+      "line": "#bcbc9f"
+    }
+  },
   "skeuomorphism": {
     "id": "qq-skeuomorphism",
     "name": "拟物化 · 皮革手账",
