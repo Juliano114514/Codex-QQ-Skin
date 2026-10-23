@@ -1,4 +1,4 @@
-# ChatGPT QQ Skin for Windows 2.6.3
+# ChatGPT QQ Skin for Windows 2.7.0
 
 Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动”“上传图片生成皮肤”“应用内置大黄蜂皮肤”“应用内置霓虹雨夜皮肤”和“安装 Codex 深度皮肤助手”入口，并内置运行引擎与 Node.js，无需用户另外安装依赖。
 
@@ -87,6 +87,14 @@ QQ 模式右侧的“个人资料”显示昵称、头像、状态、签名和�
 
 统计只读取当前 Windows 用户目录下的 Codex 本地 session 日志，增量缓存保存在 `%APPDATA%\CodexQQSkin\usage`。Token 展示与加速档位均包含缓存。不需要额外登录，不读取 API Key，也不会上传 prompt 或 token 数据。统计是本机口径，不是 OpenAI 官方账单或账号云端等级。
 
+## 2.7.0 更新（2026-10-23）
+
+- QQ 经典浅色侧边栏在新建任务和聊天页使用一致的项目卡片、分组标题及任务行样式。
+- 优化侧栏展开/收起时的布局刷新，修正原生标题栏、浏览器工具栏与 Aero 顶部背景衔接。
+- “更多”菜单区分平台配色与艺术风格，并统一艺术主题名称。
+- 修复成长记录持久化和历史缓存恢复，避免日志缺失导致成长回退或后续成长停滞。
+- 本次未重新构建 Windows 安装器，下载区保留原有安装包说明。
+
 ## 2.6.3 更新
 
 - 修复霓虹雨夜主题下用户菜单与设置页对比度问题；设置页回退 Codex 原生浅色样式。
@@ -172,12 +180,12 @@ $env:CODEX_EXE = 'C:\完整路径\ChatGPT.exe'
 需要 **Windows 10/11** 或 GitHub Actions `windows-2022`。macOS 无法直接生成本安装器 `.exe`。
 
 ```powershell
-.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.6.3.exe'
+.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.7.0.exe'
 ```
 
 不使用 `-UseInstalledNode` 时，构建脚本会下载官方 Node.js 运行时并校验 SHA-256。输出文件保存在 `release` 目录。
 
-发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.6.3`），由 CI 构建并上传 EXE。
+发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.7.0`），由 CI 构建并上传 EXE。
 
 ## 安全说明
 

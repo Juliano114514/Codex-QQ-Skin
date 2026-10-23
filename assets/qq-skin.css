@@ -1320,7 +1320,9 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   background: var(--dream-classic-panel) !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+/* Classic chats share the home sidebar even when the summary dock is closed.
+   :where keeps selector priority and other palettes unchanged. */
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel {
   border-right: 1px solid rgb(46 108 172 / .72) !important;
   border-radius: 0 !important;
@@ -1331,13 +1333,13 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
     4px 0 14px rgb(41 91 143 / .12) !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel nav:not([data-app-navigation-rail]),
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [role="list"],
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel .overflow-y-auto,
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [class*="overflow-y"] {
   width: 100% !important;
   max-width: none !important;
@@ -1348,9 +1350,9 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 /* Full-bleed XP bars for 置顶 / 项目 / 任务.
    Target the shared `nav-section-title` row (JS also marks `.qq-skin-section-bar`).
    Break out of `px-row-x` / `pl-2` so all three bars share the aside width. */
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel .qq-skin-section-bar,
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [class~="group/nav-section-title"] {
   display: flex !important;
   align-items: center !important;
@@ -1372,16 +1374,16 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 }
 
 /* Inner flex-1 wrappers around the toggle must not keep their own inset bar. */
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [class~="group/nav-section-title"]
   [data-qq-sidebar-part~="toggle"],
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel .qq-skin-section-bar
   [data-qq-sidebar-part~="toggle"],
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [class~="group/nav-section-title"]
   > *:not(button),
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel .qq-skin-section-bar
   > *:not(button) {
   width: auto !important;
@@ -1394,7 +1396,7 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
   flex: 1 1 auto !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-section-toggle] {
   display: flex !important;
   flex: 1 1 auto !important;
@@ -1416,9 +1418,9 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
   box-sizing: border-box !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel .qq-skin-section-bar > button:not([data-app-action-sidebar-section-toggle]),
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [data-qq-sidebar-part~="toggle"]
   > button:not([data-app-action-sidebar-section-toggle]) {
   flex: 0 0 auto !important;
@@ -1449,14 +1451,14 @@ html.codex-qq-skin[data-dream-shell="light"]
   outline: none !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-section-toggle] svg {
   color: #477eaf !important;
   opacity: .86 !important;
 }
 
 /* Each project is a small folder panel; stretch to the full sidebar width. */
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [data-sidebar-project-kind][role="listitem"] {
   display: block !important;
   align-self: stretch !important;
@@ -1474,7 +1476,7 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
   box-sizing: border-box !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-project-row] {
   display: flex !important;
   width: 100% !important;
@@ -1491,14 +1493,14 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
 }
 
 /* Keep the native transparent/outline folder glyph. */
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-project-row] [data-sidebar-project-kind] {
   color: #5b87b4 !important;
   opacity: .92 !important;
   filter: none;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row] {
   display: flex !important;
   width: calc(100% - 8px) !important;
@@ -1514,13 +1516,13 @@ html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], 
   box-sizing: border-box !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row]:hover {
   border-color: rgb(81 139 194 / .34) !important;
   background: #e6f2fd !important;
 }
 
-html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"])
+html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-three-pane="true"], [data-qq-home-route="true"], :where([data-qq-palette="classic"])[data-dream-task-route="true"])
   aside.app-shell-left-panel [data-app-action-sidebar-thread-row][aria-current="page"] {
   border-color: rgb(57 125 190 / .54) !important;
   background: linear-gradient(180deg, #deeffd, #c8e3f9) !important;
