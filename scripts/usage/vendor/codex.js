@@ -1007,5 +1007,5 @@ export async function parse() {
     }
   }
 
-  return { ...mergeFileResults(results), cache: cacheStats };
+  return { ...mergeFileResults(results), sessionUsage: results, cache: cacheStats };
 }

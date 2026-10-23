@@ -13,11 +13,11 @@ import { fileURLToPath } from "node:url";
 import { parse as parseCodex } from "./vendor/codex.js";
 import {
   SNAPSHOT_SCHEMA_VERSION,
-  aggregateUsage,
   errorSnapshot,
   indexingSnapshot,
   localDateKey,
 } from "./aggregate-usage.mjs";
+import { updateGrowthLedger } from "./growth-ledger.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 
@@ -90,21 +90,9 @@ export async function createUsageSnapshot({ stateDir = defaultStateDir(), now = 
     if (parsed?.skipped) {
       snapshot = indexingSnapshot(previous, parsed.indexing, now);
     } else {
-      snapshot = aggregateUsage({
-        buckets: parsed?.buckets || [],
-        sessions: parsed?.sessions || [],
-        heartbeatDates,
-        now,
-        highestGrowth: growthState.highestGrowth,
-      });
-      const nextGrowth = {
-        schemaVersion: 1,
-        heartbeatDates,
-        highestGrowth: snapshot.growth.points,
-        highestLevel: Math.max(Number(growthState.highestLevel) || 0, snapshot.growth.level),
-        updatedAt: now.toISOString(),
-      };
-      writeJsonAtomic(growthPath, nextGrowth);
+      const updated = updateGrowthLedger({ parsed, previous: growthState, heartbeatDates, now });
+      snapshot = updated.snapshot;
+      writeJsonAtomic(growthPath, updated.state);
     }
   } catch (error) {
     snapshot = errorSnapshot(previous, error?.message, now);

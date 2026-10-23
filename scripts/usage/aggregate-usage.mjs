@@ -60,12 +60,12 @@ function addTotals(target, source) {
   return target;
 }
 
-export function aggregateUsage({ buckets = [], sessions = [], heartbeatDates = [], now = new Date(), highestGrowth = 0 } = {}) {
+export function aggregateUsage({ buckets = [], sessions = [], heartbeatDates = [], now = new Date(), highestGrowth = 0, dayPoints = {}, growthOffset = 0 } = {}) {
   const todayKey = localDateKey(now);
   const daily = new Map();
   for (const bucket of buckets) {
     const key = localDateKey(bucket.bucketStart);
-    if (!key) continue;
+    if (!key || key > todayKey) continue;
     if (!daily.has(key)) daily.set(key, emptyTotals());
     addBucket(daily.get(key), bucket);
   }
@@ -77,10 +77,10 @@ export function aggregateUsage({ buckets = [], sessions = [], heartbeatDates = [
 
   let computedGrowth = 0;
   for (const key of activeDays) {
-    computedGrowth += dailyGrowth(daily.get(key)?.totalTokens || 0, true);
+    computedGrowth += Math.max(Number(dayPoints[key]) || 0, dailyGrowth(daily.get(key)?.totalTokens || 0, true));
   }
   computedGrowth = Math.round(computedGrowth * 100) / 100;
-  const growth = Math.max(Number(highestGrowth) || 0, computedGrowth);
+  const growth = Math.max(Number(highestGrowth) || 0, computedGrowth + growthOffset);
   const level = levelProgress(growth);
 
   const today = daily.get(todayKey) || emptyTotals();
