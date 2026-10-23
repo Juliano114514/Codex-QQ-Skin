@@ -3791,12 +3791,17 @@
       });
       menu.appendChild(option);
     };
-    heading("平台配色");
-    for (const appearance of MEDIA_APPEARANCES) {
-      const item = selectedQQTheme(appearance);
-      addOption({ id: item.id, label: item.name, colors: item.colors,
-        selected: skinMode === "qq" && qqAppearance === appearance,
-        activate: () => selectSkinMode("qq", appearance) });
+    for (const [category, title] of [["platform", "平台配色"], ["art", "艺术风格"]]) {
+      const appearances = MEDIA_APPEARANCES.filter((appearance) =>
+        (QQ_THEME.variants[appearance].category || "platform") === category);
+      if (!appearances.length) continue;
+      heading(title);
+      for (const appearance of appearances) {
+        const item = selectedQQTheme(appearance);
+        addOption({ id: item.id, label: item.name, colors: item.colors,
+          selected: skinMode === "qq" && qqAppearance === appearance,
+          activate: () => selectSkinMode("qq", appearance) });
+      }
     }
     document.body.appendChild(menu);
     anchor.setAttribute("aria-expanded", "true");

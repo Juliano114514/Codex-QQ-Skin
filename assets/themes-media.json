@@ -1,7 +1,8 @@
 {
   "matrix": {
     "id": "qq-matrix",
-    "name": "黑客帝国 · Matrix",
+    "name": "黑客帝国 · 数字幻境",
+    "category": "art",
     "brandSubtitle": "MATRIX · FOLLOW THE WHITE RABBIT",
     "tagline": "Wake up. 让灵感穿过代码。",
     "appearance": "dark",
@@ -22,6 +23,7 @@
   "skeuomorphism": {
     "id": "qq-skeuomorphism",
     "name": "拟物化 · 皮革手账",
+    "category": "art",
     "brandSubtitle": "LEATHER & PAPER · CODEX",
     "tagline": "把灵感写进一本有温度的手账。",
     "appearance": "light",
@@ -40,7 +42,8 @@
   },
   "frutiger-aero": {
     "id": "qq-frutiger-aero",
-    "name": "复古未来·Frutiger Aero",
+    "name": "Frutiger Aero · 碧空流光",
+    "category": "art",
     "brandSubtitle": "AERO · CODEX",
     "tagline": "澄澈天空，流动灵感。",
     "appearance": "light",
@@ -59,7 +62,8 @@
   },
   "neumorphism": {
     "id": "qq-neumorphism",
-    "name": "新拟物 · Neumorphism",
+    "name": "新拟物 · 柔光浮雕",
+    "category": "art",
     "brandSubtitle": "SOFT UI · CODEX",
     "tagline": "柔和光影，专注每一个灵感。",
     "appearance": "light",
