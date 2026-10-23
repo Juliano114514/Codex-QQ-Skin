@@ -138,6 +138,9 @@
         mark(stack.children[1], "second-composer");
       }
       for (const banner of home.querySelectorAll('.home-banners')) mark(banner.parentElement, "banner-row");
+      for (const indicator of home.querySelectorAll('[class~="@container/home-mode-toggle"] [class*="_indicator_"]')) {
+        mark(indicator, "mode-indicator");
+      }
       for (const project of home.querySelectorAll('[class~="group/project-selector"]')) {
         const row = project.closest('.horizontal-scroll-fade-mask')?.parentElement;
         if (row?.matches('div') && home.contains(row)) mark(row, "project-row");
@@ -219,6 +222,7 @@
     ensureCalls: 0,
     rootPasses: 0,
     routePasses: 0,
+    geometryPasses: 0,
     layoutReads: 0,
     attributeWrites: 0,
     styleWrites: 0,
@@ -256,6 +260,7 @@
   if (previous?.observer) previous.observer.disconnect();
   if (previous?.rootObserver) previous.rootObserver.disconnect();
   if (previous?.resizeObserver) previous.resizeObserver.disconnect();
+  previous?.cancelResizeSettle?.();
   if (previous?.timer) clearInterval(previous.timer);
   if (previous?.startupTimer) clearInterval(previous.startupTimer);
   if (previous?.scheduler?.timeout) clearTimeout(previous.scheduler.timeout);
@@ -822,10 +827,18 @@
   let observedShellMain = null;
   let observedReferenceHost = null;
   let resizeObserver = null;
+  let shellGeometry = null;
+  let resizeSettleTimer = null;
+  const cancelResizeSettle = () => {
+    if (resizeSettleTimer) clearTimeout(resizeSettleTimer);
+    resizeSettleTimer = null;
+  };
 
   const pinnedSummaryLabel = /(toggle pinned summary|pinned summary|toggle summary|切换摘要|置顶摘要|固定摘要|釘選概要|釘選摘要|概要.*釘選|摘要.*固定)/i;
+  const isActiveRouteElement = (node) => Boolean(node &&
+    !node.closest?.('[inert], [hidden], [data-app-shell-active-page="false"]'));
   const isVisibleElement = (node) => {
-    if (!node || node.closest?.('[inert], [hidden], [data-app-shell-active-page="false"]')) return false;
+    if (!isActiveRouteElement(node)) return false;
     const box = node.getBoundingClientRect();
     return box.width > 0 && box.height > 0;
   };
@@ -2440,6 +2453,7 @@
         const value = visibleUsageTokens(item);
         const height = value > 0 ? Math.max(9, Math.round(value / maximum * 100)) : 4;
         setStyleProperty(bar, "--usage-bar", `${height}%`);
+        setAttribute(bar.firstElementChild, "data-qq-chart-latest", String(index === count - 1));
         setAttribute(bar, "title", item ? `${String(item.date || "").slice(5)} · ${formatTokenCount(value)} token` : "");
       });
     }
@@ -2734,7 +2748,8 @@
     // Reuse that card and its handlers, without moving React-owned content.
     const modernShell = Boolean(document.querySelector('[data-app-shell-application-menu-bar]'));
     const footer = !settingsRoute && modernShell && skinMode === "qq"
-      ? findVisibleElement('main.qq-skin-thread-frame [data-pip-obstacle="thread-footer"]') : null;
+      ? [...document.querySelectorAll('main:is(.qq-skin-thread-frame,[data-qq-thread-frame]) [data-pip-obstacle="thread-footer"]')]
+        .find(isActiveRouteElement) : null;
     const thread = footer?.closest('[class~="group/thread-scroll-layout"]');
     const host = thread?.parentElement;
     if (!host || document.querySelector('section[data-pip-obstacle="quick-chat"][data-state="open"]')) {
@@ -2761,15 +2776,15 @@
       dock.append(toggle, content);
       host.appendChild(dock);
     }
-    host.classList.add("qq-skin-profile-host");
-    thread.classList.add("qq-skin-profile-thread");
-    panel.classList.add("qq-skin-growth-docked");
+    host.classList.toggle("qq-skin-profile-host", true);
+    thread.classList.toggle("qq-skin-profile-thread", true);
+    panel.classList.toggle("qq-skin-growth-docked", true);
     const canFit = host.clientWidth >= 760;
     const open = profileDockOpen && canFit;
     setAttribute(host, "data-qq-dock-open", String(open));
     setAttribute(dock, "data-open", String(open));
     const content = dock.lastElementChild;
-    content.hidden = !open;
+    if (content.hidden !== !open) content.hidden = !open;
     const nativeToggle = findPinnedSummaryToggle();
     if (dockSummaryToggle !== nativeToggle) {
       dockSummaryToggle?.removeEventListener("click", onSummaryToggle, true);
@@ -2798,14 +2813,14 @@
     }
     syncDockAccessibility();
     if (card && open) {
-      card.classList.add("qq-skin-dock-card");
+      card.classList.toggle("qq-skin-dock-card", true);
       const list = card.parentElement;
-      list.classList.add("qq-skin-dock-stack");
+      list.classList.toggle("qq-skin-dock-stack", true);
       ensureSummaryTitle(card);
       if (panel.parentElement !== list) list.appendChild(panel);
     } else if (panel.parentElement !== content) content.appendChild(panel);
     const toggle = dock.firstElementChild;
-    toggle.disabled = !canFit;
+    if (toggle.disabled !== !canFit) toggle.disabled = !canFit;
     setAttribute(toggle, "aria-expanded", String(open));
     setAttribute(toggle, "aria-label", `${open ? "收起" : "展开"}详细信息侧栏`);
     setAttribute(toggle, "title", canFit ? `${open ? "收起" : "展开"}摘要与个人资料`
@@ -2898,16 +2913,24 @@
     // the real thread via its semantic footer; do not move React-owned nodes.
     const threadMains = new Set(enabled
       ? [...document.querySelectorAll('[data-pip-obstacle="thread-footer"]')]
-        .filter(isVisibleElement)
+        // Sidebar motion can briefly give the footer a zero-sized box. Its
+        // route ownership stays valid; do not strip/reapply the chat surface.
+        .filter(isActiveRouteElement)
         .map((footer) => footer.closest("main")).filter(Boolean)
       : []);
-    for (const main of document.querySelectorAll("main.qq-skin-thread-frame")) {
-      if (!threadMains.has(main)) main.classList.remove("qq-skin-thread-frame");
+    for (const main of document.querySelectorAll("main:is(.qq-skin-thread-frame,[data-qq-thread-frame])")) {
+      if (!threadMains.has(main)) {
+        main.removeAttribute("data-qq-thread-frame");
+        main.classList.remove("qq-skin-thread-frame");
+      }
     }
     for (const main of threadMains) {
-      if (!main.classList.contains("qq-skin-thread-frame")) main.classList.add("qq-skin-thread-frame");
+      // React replaces main.className when navigation opens/closes. A private
+      // data marker survives that render and keeps the reading surface painted.
+      setAttribute(main, "data-qq-thread-frame", "true");
+      if (main.classList.contains("qq-skin-thread-frame")) main.classList.remove("qq-skin-thread-frame");
     }
-    if (!enabled || !document.querySelector("aside.app-shell-left-panel, main.qq-skin-thread-frame")) {
+    if (!enabled || !document.querySelector("aside.app-shell-left-panel, main:is(.qq-skin-thread-frame,[data-qq-thread-frame])")) {
       document.getElementById(RETRO_PROFILE_ID)?.remove();
       setAttribute(document.documentElement, "data-qq-profile-visible", "false");
       return;
@@ -2999,12 +3022,9 @@
         if (candidate.disabled || candidate.closest?.(`#${RETRO_SHELL_ID}`)) return false;
         const groupText = String(candidate.parentElement?.textContent || "").replace(/\s+/g, "").toLowerCase();
         const text = String(candidate.textContent || "").replace(/\s+/g, " ").trim();
+        if (!/插件|plugins?/.test(groupText) || !/技能|skills?/.test(groupText) || !matcher.text?.test(text)) return false;
         const box = candidate.getBoundingClientRect?.();
-        return Boolean(
-          box && box.width >= 8 && box.height >= 8 &&
-          /插件|plugins?/.test(groupText) && /技能|skills?/.test(groupText) &&
-          matcher.text?.test(text)
-        );
+        return Boolean(box && box.width >= 8 && box.height >= 8);
       });
       if (nativeTab) return nativeTab;
       if (action === "skills") return null;
@@ -3026,14 +3046,18 @@
   const syncRetroToolbarActions = () => {
     const toolbar = document.querySelector(`#${RETRO_SHELL_ID} .dream-retro-toolbar`);
     if (!toolbar) return;
-    for (const button of toolbar.querySelectorAll("button[data-retro-action]")) {
+    // Finish native visibility reads before changing any toolbar attributes.
+    const actions = [...toolbar.querySelectorAll("button[data-retro-action]")].map((button) => {
       const action = button.dataset.retroAction;
       const target = findNativeRetroAction(action);
       const fallback = action === "skills" ? findNativeRetroAction("plugins") : null;
+      return { button, action, target, fallback };
+    });
+    for (const { button, action, target, fallback } of actions) {
       const unavailable = !(target || fallback);
       if (button.hidden !== unavailable) button.hidden = unavailable;
       if (button.disabled !== unavailable) button.disabled = unavailable;
-      button.setAttribute("aria-disabled", target || fallback ? "false" : "true");
+      setAttribute(button, "aria-disabled", target || fallback ? "false" : "true");
       if (button.dataset.retroActionBound === "true") continue;
       button.dataset.retroActionBound = "true";
       button.addEventListener("click", (event) => {
@@ -3109,6 +3133,9 @@
     "data-dream-art-wide", "data-dream-art-safe", "data-dream-art-safe-area",
     "data-dream-task-mode", "data-dream-art-task-mode", "data-dream-art-aspect",
     "data-dream-art-fit", "data-dream-deep-theme",
+    "data-qq-settings", "data-qq-home-route", "data-dream-three-pane",
+    "data-dream-task-route", "data-dream-side-task", "data-qq-reference-layout",
+    "data-qq-native-shell", "data-qq-right-dock",
   ]);
   const selectorParts = (selector, compound = false) => {
     const parts = [];
@@ -3143,8 +3170,8 @@
         if (variantAttributes.has(gate[1]) && !root.matches(gate[0])) return true;
       }
       if (/:(?:has|not)\(/.test(head)) return false;
-      // Route, dock, focus and weather conditions stay live. Only attributes
-      // owned by applyRootState may remove a rule from the theme stylesheet.
+      // Theme and route markers are refreshed before pruning. Interaction
+      // states such as focus/hover remain live inside retained rules.
       const attributes = [...head.matchAll(/\[([a-z-]+)/g)].map(match => match[1]);
       if (attributes.some(name => !variantAttributes.has(name))) return false;
       try { return !root.matches(head); } catch { return false; }
@@ -3278,6 +3305,7 @@
     profileCleanup();
     clearProfileDock();
     clearReferenceLayout();
+    document.querySelectorAll('[data-qq-thread-frame]').forEach((node) => node.removeAttribute('data-qq-thread-frame'));
     document.querySelectorAll(".qq-skin-thread-frame").forEach((node) => node.classList.remove("qq-skin-thread-frame"));
     document.getElementById(CHROME_ID)?.remove();
     document.getElementById(COMPANION_ID)?.remove();
@@ -3301,11 +3329,21 @@
     metrics.routePasses += 1;
     const root = document.documentElement;
     if (!root) return;
+    for (const composer of document.querySelectorAll('[class*=_ComposerLayoutRoot_]')) {
+      setAttribute(composer, 'data-qq-native-composer', 'true');
+    }
     shell ||= root.getAttribute(SHELL_ATTR) || resolvedShell();
     // React can retain previous workspaces with display:none. A hidden first
     // match must not receive the dock or supply the current header geometry.
-    const shellMain = findVisibleElement('[data-pip-obstacle="app-shell-header"]')?.closest("main") ||
+    const activeFooter = [...document.querySelectorAll('[data-pip-obstacle="thread-footer"]')]
+      .find(isActiveRouteElement);
+    const shellMain = activeFooter?.closest("main") ||
+      findVisibleElement('[data-pip-obstacle="app-shell-header"]')?.closest("main") ||
       findVisibleElement("main.main-surface") || findVisibleElement("main");
+    // Older CSS-module shells predate the native semantic attribute. Mark
+    // those once so styles never need a live class-substring ancestor query.
+    if (shellMain?.matches('[class*="_MainContentSurface_"]') &&
+      !shellMain.hasAttribute('data-app-shell-main-surface')) setAttribute(shellMain, 'data-qq-native-main', 'true');
     // The outer layout and portaled webviews have stable ownership. Mark their
     // hosts on shell mounts instead of matching through body with :has().
     const appRoot = document.getElementById('root');
@@ -3447,9 +3485,15 @@
     setStyleProperty(root, "--qq-content-top", `${contentTop}px`);
     setStyleProperty(root, "--qq-toolbar-top", `${contentTop - 34}px`);
     const nativeHeaderBox = shellMain.getBoundingClientRect();
-    setStyleProperty(root, "--qq-native-header-left", `${nativeHeaderBox.left}px`);
-    setStyleProperty(root, "--qq-native-header-right", `${Math.max(0, window.innerWidth - nativeHeaderBox.right)}px`);
-    setStyleProperty(root, "--qq-native-header-width", `${nativeHeaderBox.width}px`);
+    // Header geometry changes on every sidebar toggle. Keep these inherited
+    // variables on the header, so changing them cannot invalidate the whole app.
+    const nativeHeader = findVisibleElement('[data-app-shell-application-menu-bar][data-pip-obstacle="app-shell-header"]') ||
+      shellMain.querySelector('header.app-header-tint');
+    if (nativeHeader) {
+      setStyleProperty(nativeHeader, "--qq-native-header-left", `${nativeHeaderBox.left}px`);
+      setStyleProperty(nativeHeader, "--qq-native-header-right", `${Math.max(0, window.innerWidth - nativeHeaderBox.right)}px`);
+      setStyleProperty(nativeHeader, "--qq-native-header-width", `${nativeHeaderBox.width}px`);
+    }
     ensureRetroShell();
     syncRetroToolbarActions();
     ensureToggleButton();
@@ -3500,7 +3544,10 @@
       leftSidebarToggle.click();
       leftSidebarOpen = true;
     }
-    const layoutEligible = layoutBaseEligible && leftSidebarOpen && Boolean(summaryToggle);
+    // Modern Codex owns the summary independently of the left navigation.
+    // Collapsing navigation must not toggle the legacy three-pane surface
+    // (and repaint the entire conversation with a different background).
+    const layoutEligible = layoutBaseEligible && (nativePanelState || leftSidebarOpen) && Boolean(summaryToggle);
     let autoOpening = false;
     if (
       !nativePanelState && layoutEligible && shouldAutoOpenSummary && summaryToggle.getAttribute("aria-pressed") !== "true" &&
@@ -3601,6 +3648,55 @@
       chrome.dataset.dreamShell = shell;
       metrics.attributeWrites += 1;
     }
+    const dock = document.getElementById(PROFILE_DOCK_ID);
+    shellGeometry = {
+      main: shellMain, header: nativeHeader, chrome, dock,
+      dockFits: dock ? dock.parentElement.clientWidth >= 760 : null,
+      page: shellMain.closest('[data-app-shell-active-page]'),
+      footer: activeFooter, home,
+      href: window.location.href, width: window.innerWidth, height: window.innerHeight,
+      overlays: document.querySelectorAll('[role="dialog"], [role="menu"], [role="listbox"]').length,
+      webviews: document.querySelectorAll('[data-browser-sidebar-webview]').length,
+    };
+    // Route markers now participate in pruning too. Sidebar geometry updates
+    // leave them unchanged, so inactive home/settings rules stay out of motion.
+    syncStyleVariants(root);
+  };
+
+  const syncShellGeometry = () => {
+    const cached = shellGeometry;
+    // Only reuse geometry on the same modern native page. Navigation, theme,
+    // window resize and new overlays still take the complete route path.
+    if (skinMode !== "qq" || !cached?.main.isConnected || !cached.header?.isConnected ||
+      !cached.main.hasAttribute('data-app-shell-main-surface') ||
+      cached.page?.getAttribute('data-app-shell-active-page') === "false" ||
+      (cached.footer && !cached.footer.isConnected) || (cached.home && !cached.home.isConnected) ||
+      cached.href !== window.location.href || cached.width !== window.innerWidth || cached.height !== window.innerHeight ||
+      cached.overlays !== document.querySelectorAll('[role="dialog"], [role="menu"], [role="listbox"]').length ||
+      cached.webviews !== document.querySelectorAll('[data-browser-sidebar-webview]').length) return false;
+    const box = cached.main.getBoundingClientRect();
+    const dockFits = cached.dock?.isConnected ? cached.dock.parentElement.clientWidth >= 760 : null;
+    syncRetroToolbarActions();
+    setStyleProperty(cached.header, "--qq-native-header-left", `${box.left}px`);
+    setStyleProperty(cached.header, "--qq-native-header-right", `${Math.max(0, window.innerWidth - box.right)}px`);
+    setStyleProperty(cached.header, "--qq-native-header-width", `${box.width}px`);
+    if (cached.chrome.isConnected) {
+      setStyleProperty(cached.chrome, "left", `${Math.round(box.left)}px`);
+      setStyleProperty(cached.chrome, "top", `${Math.round(box.top)}px`);
+      setStyleProperty(cached.chrome, "width", `${Math.round(box.width)}px`);
+      setStyleProperty(cached.chrome, "height", `${Math.round(box.height)}px`);
+    }
+    if (dockFits !== cached.dockFits) {
+      const panel = document.getElementById(USAGE_PANEL_ID);
+      if (panel) syncProfileDock(panel, false);
+      cached.dockFits = dockFits;
+    }
+    const expanded = document.querySelector('[data-app-shell-sidebar-trigger]')?.getAttribute('aria-expanded');
+    if (["true", "false"].includes(expanded)) {
+      setAttribute(document.documentElement, 'data-dream-left-sidebar', expanded === "true" ? "open" : "closed");
+    }
+    metrics.geometryPasses += 1;
+    return true;
   };
 
   const ensure = ({ root: rootPass = true, route = true, layout = true } = {}) => {
@@ -3610,10 +3706,15 @@
     const startedAt = now();
     metrics.ensureCalls += 1;
     const shell = rootPass ? applyRootState(root) : null;
-    soundMonitor.scan();
+    const geometryOnly = !rootPass && !route && layout;
+    if (!geometryOnly) soundMonitor.scan();
     // Route first so data-qq-settings / native settings chrome is decided
     // before the weather layer mounts or paints neon tokens.
     if (route) syncRouteState(shell, { layout });
+    else if (geometryOnly && !syncShellGeometry()) {
+      soundMonitor.scan();
+      syncRouteState(shell, { layout });
+    }
     else if (rootPass) {
       ensureToggleButton();
       weatherMonitor.ensure();
@@ -3625,11 +3726,12 @@
   };
 
   const removeSkinVisuals = () => {
+    shellGeometry = null;
     profileCleanup();
     clearProfileDock();
     clearReferenceLayout();
     document.getElementById(MEDIA_STYLE_ID)?.remove();
-    for (const name of ['data-qq-home-part', 'data-qq-shell-layout', 'data-qq-browser-layer', 'data-qq-sidebar-part', 'data-qq-main-layer']) {
+    for (const name of ['data-qq-home-part', 'data-qq-shell-layout', 'data-qq-browser-layer', 'data-qq-sidebar-part', 'data-qq-main-layer', 'data-qq-thread-frame', 'data-qq-native-main', 'data-qq-native-composer']) {
       document.querySelectorAll(`[${name}]`).forEach((node) => node.removeAttribute(name));
     }
     document.querySelectorAll(".qq-skin-thread-frame").forEach((node) => node.classList.remove("qq-skin-thread-frame"));
@@ -3674,6 +3776,9 @@
   };
 
   const syncToggleButton = (control) => {
+    const stateKey = `${skinMode}|${qqAppearance}|${THEME.id}|${THEME.name}`;
+    if (control.qqSkinToggleState === stateKey) return;
+    control.qqSkinToggleState = stateKey;
     for (const button of control.querySelectorAll("button[data-skin-mode]")) {
       const selected = button.dataset.skinMode === skinMode
         && (skinMode !== "qq" || button.dataset.skinAppearance === qqAppearance);
@@ -3957,6 +4062,7 @@
     state?.observer?.disconnect();
     state?.rootObserver?.disconnect();
     state?.resizeObserver?.disconnect();
+    cancelResizeSettle();
     if (state?.timer) clearInterval(state.timer);
     if (state?.startupTimer) clearInterval(state.startupTimer);
     if (state?.scheduler?.timeout) clearTimeout(state.scheduler.timeout);
@@ -3985,6 +4091,9 @@
     return true;
   };
 
+  let sidebarSettleUntil = 0;
+  let sidebarGeometryPending = false;
+  let sidebarGeometryUntil = 0;
   const scheduler = { timeout: null, frame: null, root: false, route: false, layout: false };
   const flushScheduledEnsure = () => {
     if (scheduler.frame !== null && typeof cancelAnimationFrame === "function") {
@@ -3993,10 +4102,22 @@
     if (scheduler.timeout) clearTimeout(scheduler.timeout);
     scheduler.frame = null;
     scheduler.timeout = null;
+    // A sidebar toggle also emits mount/status mutations and a click settle.
+    // Coalesce all of them, not just ResizeObserver, outside the native motion.
+    const sidebarDelay = sidebarSettleUntil - Date.now();
+    if (sidebarDelay > 0) {
+      scheduler.timeout = setTimeout(flushScheduledEnsure, sidebarDelay);
+      return;
+    }
     const pending = { root: scheduler.root, route: scheduler.route, layout: scheduler.layout };
     scheduler.root = false;
     scheduler.route = false;
     scheduler.layout = false;
+    if ((sidebarGeometryPending || Date.now() < sidebarGeometryUntil) && !pending.root && (pending.route || pending.layout)) {
+      pending.route = false;
+      pending.layout = true;
+    }
+    sidebarGeometryPending = false;
     ensure(pending);
   };
   const scheduleEnsure = ({ root = false, route = true, layout = false } = {}) => {
@@ -4028,10 +4149,24 @@
     if (window[DISABLED_KEY]) return;
     let route = false;
     let sound = false;
+    let layout = false;
     for (const record of records) {
       if (isSkinNode(record.target)) continue;
       const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
       if (target?.closest('[role="tooltip"], [data-app-shell-active-page="false"]')) continue;
+      if (target?.matches('[data-app-shell-sidebar-trigger]')) {
+        sidebarSettleUntil = Date.now() + 240;
+        sidebarGeometryUntil = Date.now() + 600;
+        sidebarGeometryPending = true;
+        layout = true;
+        continue;
+      }
+      // Navigation rows and header controls cannot change task sound/route
+      // state. Their React remounts only require the cached shell geometry.
+      if (target?.closest('aside.app-shell-left-panel, [data-app-shell-application-menu-bar]')) {
+        layout = true;
+        continue;
+      }
       if (record.type === "attributes") {
         if (target?.matches('button, [role="button"]')) sound = true;
         // Quick Chat can open through a keyboard shortcut without remounting.
@@ -4055,7 +4190,7 @@
         changed.filter(node => node.nodeType !== 1 || !node.closest(hiddenRouteSelector)), shellMountSelector,
       )) route = true;
     }
-    if (sound || route) scheduleEnsure({ route });
+    if (sound || route || layout) scheduleEnsure({ route, layout });
   });
   rootObserver = new MutationObserver(() => {
     if (samplingNativeShell) return;
@@ -4064,6 +4199,14 @@
   const resizeHandler = () => scheduleEnsure({ route: true, layout: true });
   const routeInteractionHandler = (event) => {
     if (window[DISABLED_KEY] || isSkinNode(event.target) || event.target?.closest?.('.thread-scroll-container, [data-codex-composer="true"]')) return;
+    if (event.target?.closest?.('[data-app-shell-sidebar-trigger]')) {
+      sidebarSettleUntil = Date.now() + 240;
+      sidebarGeometryUntil = Date.now() + 600;
+      sidebarGeometryPending = true;
+    } else {
+      sidebarGeometryPending = false;
+      sidebarGeometryUntil = 0;
+    }
     // Profile menus open on click — restyle quickly before the slower route settle.
     try { weatherMonitor.syncAudioUi?.(); } catch {}
     if (routeSettleTimer) clearTimeout(routeSettleTimer);
@@ -4073,7 +4216,15 @@
     }, 120);
   };
   if (typeof ResizeObserver === "function") {
-    resizeObserver = new ResizeObserver(() => scheduleEnsure({ route: true, layout: true }));
+    resizeObserver = new ResizeObserver(() => {
+      // Native sidebar animations resize main on every frame. Measure once
+      // after settling instead of scanning the shell and writing styles mid-frame.
+      cancelResizeSettle();
+      resizeSettleTimer = setTimeout(() => {
+        resizeSettleTimer = null;
+        scheduleEnsure({ route: false, layout: true });
+      }, 100);
+    });
   }
 
   let mediaQuery = null;
@@ -4092,6 +4243,7 @@
     observer,
     rootObserver,
     resizeObserver,
+    cancelResizeSettle,
     timer: null,
     startupTimer: null,
     scheduler,
@@ -4154,6 +4306,7 @@
       observer.disconnect();
       rootObserver.disconnect();
       resizeObserver?.disconnect();
+      cancelResizeSettle();
       observedShellMain = null;
       observedReferenceHost = null;
       clearInterval(window[STATE_KEY].timer);
@@ -4239,7 +4392,9 @@
     }, 250);
     window[STATE_KEY].startupTimer = startupTimer;
   };
-  syncRuntime({ startup: true });
+  // A live reinjection already has a mounted shell. Replaying the cold-start
+  // resize loop would schedule sixteen full route scans over the next 4s.
+  syncRuntime({ startup: !previous });
   // Only analyze the uploaded custom image while custom mode is active. QQ must
   // never adopt that analysis after a mode switch or a late analysis callback.
   const analysisPromise = (skinMode === "custom" && !artAnalysis)

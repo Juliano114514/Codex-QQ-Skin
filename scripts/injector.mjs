@@ -23,13 +23,16 @@ let staticPayloadAssets = null;
 
 // Codex 26.908 moved shell/composer classes to CSS modules. Match semantic
 // prefixes, never build-specific hashes, and retain the legacy selectors.
-const SHELL_SELECTOR = 'main:is(.main-surface,[class*=_MainContentSurface_])';
-const COMPOSER_SELECTOR = ':is(.composer-surface-chrome,[class*=_ComposerLayoutRoot_])';
+// Native sidebar changes rewrite main.className. Attribute-substring matching
+// there invalidates every descendant rule even though this is the same page.
+const SHELL_SELECTOR = 'main:is(.main-surface,[data-app-shell-main-surface],[data-qq-native-main])';
+const COMPOSER_SELECTOR = ':is(.composer-surface-chrome,[data-qq-native-composer])';
 function adaptShellSelectors(source) {
   return source
     .replaceAll('main.main-surface', SHELL_SELECTOR)
     .replaceAll('header.app-header-tint', 'header:is(.app-header-tint,.draggable)')
     .replaceAll('.composer-surface-chrome', COMPOSER_SELECTOR)
+    .replaceAll('[class*="_ComposerLayoutRoot_"]', '[data-qq-native-composer]')
     // The newer marker is an empty PiP obstacle; its sibling owns the UI.
     .replaceAll('[data-pip-obstacle="thread-summary-panel"]',
       ':is([data-pip-obstacle="thread-summary-panel"]:not([aria-hidden="true"]),[data-pip-obstacle="thread-summary-panel"][aria-hidden="true"] + div)');

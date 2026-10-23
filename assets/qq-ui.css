@@ -52,7 +52,7 @@ html.codex-qq-skin [data-test-id="header-shell-slot"]:first-child {
 }
 /* The native pinned-summary layout removes its toolbar inset. Our dock keeps
    that toolbar visible, so reserve its row for both the conversation and dock. */
-html.codex-qq-skin[data-qq-reference-layout="true"] main.qq-skin-thread-frame [class*="_MainContentFrame_"] {
+html.codex-qq-skin[data-qq-reference-layout="true"] main:is(.qq-skin-thread-frame,[data-qq-thread-frame]) [class*="_MainContentFrame_"] {
   margin-top: var(--height-toolbar, 46px) !important;
 }
 html.codex-qq-skin [data-app-shell-tab-row] {
@@ -96,7 +96,7 @@ html.codex-qq-skin [class~="@container/home-mode-toggle"] [role="group"] > butto
   color: var(--ds-text);
   font-weight: 600;
 }
-html.codex-qq-skin [class~="@container/home-mode-toggle"] [class*="_indicator_"] {
+html.codex-qq-skin [data-qq-home-part~="mode-indicator"] {
   background: var(--ds-panel);
   border: 1px solid var(--ds-line);
   box-shadow: 0 1px 3px rgb(0 0 0 / .12);

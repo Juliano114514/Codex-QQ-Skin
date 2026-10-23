@@ -2786,6 +2786,29 @@ html.codex-qq-skin :is([class*="_ApplicationMenuTopBar_"], body > #root > div > 
   color: var(--ds-text) !important;
   padding-right: var(--spacing-token-safe-header-right, 140px);
 }
+/* The content frame is inset, but the native titlebar spans the window.
+   Extend its paint into both gutters without moving native hit targets. */
+html.codex-qq-skin[data-codex-window-chrome="application-menu"] [class*="_ApplicationMenuTopBar_"] {
+  box-shadow: -32px 0 var(--ds-panel), 32px 0 var(--ds-panel);
+}
+/* Browser tabs use the unified toolbar rather than main > header. Give its
+   action area the same surface and interaction states as the chat header. */
+html.codex-qq-skin :is([data-app-shell-tab-row], [data-app-shell-header-toolbar]) {
+  background: var(--ds-panel) !important;
+  color: var(--ds-text) !important;
+}
+html.codex-qq-skin :is([data-app-shell-tab-row], [data-app-shell-header-toolbar]) button {
+  color: var(--ds-text);
+  -webkit-app-region: no-drag !important;
+}
+html.codex-qq-skin :is([data-app-shell-tab-row], [data-app-shell-header-toolbar]) button:not([aria-pressed="true"]):is(:enabled:hover, [data-state="open"]) {
+  background: var(--ds-panel-2) !important;
+  box-shadow: inset 0 0 0 1px var(--ds-line);
+}
+html.codex-qq-skin :is([data-app-shell-tab-row], [data-app-shell-header-toolbar]) button:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: -2px;
+}
 html.codex-qq-skin main.main-surface > header.app-header-tint {
   top: 70px !important;
   height: 40px !important;
@@ -2838,6 +2861,7 @@ html.codex-qq-skin[data-codex-window-chrome="application-menu"]
   aside.app-shell-left-panel > .absolute.inset-y-0 {
   top: max(0px, calc((var(--qq-content-top) - var(--qq-native-shell-top, 0px)) / var(--codex-window-zoom, 1))) !important;
 }
+
 
 html.codex-qq-skin[data-codex-window-chrome="application-menu"] .dream-retro-body-frame,
 html.codex-qq-skin[data-codex-window-chrome="application-menu"] #codex-qq-skin-retro-shell::before,
@@ -2977,7 +3001,7 @@ html.codex-qq-skin[data-dream-shell="dark"] #codex-qq-skin-retro-profile {
 
 /* Current native shell geometry: its frame already reserves the toolbar.
    Move that single inset below QQ's toolbar; never reserve both offsets. */
-html.codex-qq-skin main.qq-skin-thread-frame {
+html.codex-qq-skin main:is(.qq-skin-thread-frame,[data-qq-thread-frame]) {
   padding-top: max(0px, calc(var(--qq-content-top) - var(--qq-native-shell-top, 36px))) !important;
   background: var(--ds-panel) !important;
 }
@@ -3172,21 +3196,21 @@ html.codex-qq-skin .qq-skin-details-collapsed > :not(.qq-skin-details-title) { d
   /* Keep native reading width, editor sizing, wrapping and responsive footer.
      In particular, do not move the attachment button out of its native grid. */
   html.codex-qq-skin .qq-skin-home,
-  html.codex-qq-skin main.qq-skin-thread-frame {
+  html.codex-qq-skin main:is(.qq-skin-thread-frame,[data-qq-thread-frame]) {
     --thread-content-max-width: 48rem !important;
     --thread-body-max-width: 48rem !important;
     border-radius: 2px !important;
   }
-  html.codex-qq-skin main.qq-skin-thread-frame .thread-scroll-container {
+  html.codex-qq-skin main:is(.qq-skin-thread-frame,[data-qq-thread-frame]) .thread-scroll-container {
     scrollbar-gutter: stable !important;
     scrollbar-width: auto !important;
     background: var(--ds-panel) !important;
     border: 1px solid var(--qq-card-border);
   }
-  html.codex-qq-skin main.qq-skin-thread-frame .thread-scroll-container::-webkit-scrollbar {
+  html.codex-qq-skin main:is(.qq-skin-thread-frame,[data-qq-thread-frame]) .thread-scroll-container::-webkit-scrollbar {
     width: 10px !important;
   }
-  html.codex-qq-skin main.qq-skin-thread-frame [data-turn-key] {
+  html.codex-qq-skin main:is(.qq-skin-thread-frame,[data-qq-thread-frame]) [data-turn-key] {
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
