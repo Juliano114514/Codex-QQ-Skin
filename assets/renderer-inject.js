@@ -2921,6 +2921,7 @@
       const nativeOpen = Boolean(dockedNativeSummary.querySelector("[data-pip-obstacle='thread-summary-panel']"));
       dockedNativeSummary.toggleAttribute("inert", !nativeOpen);
       setAttribute(dockedNativeSummary, "aria-hidden", String(!nativeOpen));
+      dockedNativeSummary.querySelectorAll(".qq-skin-dock-motion").forEach(node => node.classList.remove("qq-skin-dock-motion"));
       dockedNativeSummary.classList.remove("qq-skin-profile-summary");
     }
     dockedNativeSummary = null;
@@ -3013,6 +3014,12 @@
     }
     syncDockAccessibility();
     if (card && open) {
+      // The native closed panel keeps its entrance animation translated and
+      // transparent. Only neutralize wrappers on this docked card's ancestry;
+      // animations and expand/collapse controls inside the card stay native.
+      for (let node = card.parentElement; node && node !== summary; node = node.parentElement) {
+        if (node.style.transform || node.style.opacity) node.classList.add("qq-skin-dock-motion");
+      }
       card.classList.toggle("qq-skin-dock-card", true);
       const list = card.parentElement;
       list.classList.toggle("qq-skin-dock-stack", true);

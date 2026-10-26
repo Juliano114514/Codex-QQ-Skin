@@ -3106,6 +3106,11 @@ html.codex-qq-skin :is(.qq-skin-profile-thread, .qq-skin-reference-host)
   transform: none !important;
 }
 html.codex-qq-skin .qq-skin-profile-summary {
+  /* Codex may wrap the floating panel in display:contents. Give the dock's
+     positioning and width a real box instead of leaking into the chat area. */
+  display: block !important;
+  position: absolute !important;
+  z-index: 2;
   top: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
@@ -3127,7 +3132,16 @@ html.codex-qq-skin .qq-skin-profile-summary > div > div > div {
   padding: 0 !important;
 }
 html.codex-qq-skin .qq-skin-profile-summary > div > div:empty { display: none; }
+html.codex-qq-skin .qq-skin-profile-summary > div[class~="absolute"] {
+  position: static !important;
+}
 html.codex-qq-skin .qq-skin-profile-summary > div > div:not(:empty) {
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}
+html.codex-qq-skin .qq-skin-profile-summary .qq-skin-dock-motion {
   visibility: visible !important;
   opacity: 1 !important;
   transform: none !important;
