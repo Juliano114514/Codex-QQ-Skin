@@ -259,12 +259,10 @@ html.codex-qq-skin[data-dream-shell="dark"] :is(.qq-skin-level-progress) {
   border-color: #46758e;
 }
 
-
 /* Home keeps live Codex controls and the existing penguin, with a quiet canvas. */
 html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home-stack > div:first-child > div:first-child {
   background: linear-gradient(180deg, #21455e, #1b3447 48%, #182f40) !important;
   border: 1px solid #3d7899 !important;
-  border-radius: 6px !important;
   box-shadow: var(--qq-night-glint), 0 8px 24px rgb(6 16 24 / .24) !important;
 }
 
@@ -274,7 +272,6 @@ html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home-stack > div:first-chil
 
 html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home [data-feature="game-source"] {
   color: #ddf4ff !important;
-  font-size: clamp(18px, 1.5vw, 25px) !important;
   text-wrap: balance;
   text-shadow: 0 1px #102738 !important;
 }
@@ -285,7 +282,6 @@ html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home [data-feature="game-so
 
 html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home .group\/home-suggestions button {
   border: 1px solid #3d7089 !important;
-  border-radius: 4px !important;
   background: linear-gradient(180deg, #2a526b, #1c384c) !important;
   color: #d0edf7 !important;
   box-shadow: var(--qq-night-glint), 0 3px 6px rgb(4 16 24 / .2) !important;
@@ -332,41 +328,9 @@ html.codex-qq-skin[data-dream-shell="dark"] #codex-qq-skin-toggle button[aria-pr
 html.codex-qq-skin[data-dream-shell="dark"] #codex-qq-skin-library-menu button { color: var(--ds-text) !important; }
 html.codex-qq-skin[data-dream-shell="dark"] ::selection { background: #17658c; color: #f0fdff; }
 html.codex-qq-skin[data-dream-shell="dark"] :focus-visible { outline-color: #7ddbef; }
-
-html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home-stack > div:first-child {
-  flex-basis: auto !important;
-  min-height: 320px !important;
-  padding-bottom: 130px !important;
-}
-html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home-stack > div:first-child > div:first-child {
-  height: clamp(220px, 23cqw, 280px) !important;
-  min-height: 220px !important;
-}
-html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home-stack > div:first-child > div:first-child > div:first-child {
-  padding: 0 190px 0 32px !important;
-  justify-content: center !important;
-}
-html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home-stack > div:first-child > div:first-child > div:first-child > div:first-child {
-  width: 100% !important;
-  max-width: none !important;
-}
 html.codex-qq-skin[data-dream-shell="dark"] .loading-shimmer-pure-text [class*="_cadencedShimmerHighlight_"] {
   color: #bfe7f4;
   -webkit-text-fill-color: #bfe7f4;
-}
-@media (max-width: 1100px) {
-  html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home-stack > div:first-child > div:first-child > div:first-child {
-    padding-right: 150px !important;
-  }
-}
-@media (max-width: 820px) {
-  html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home-stack > div:first-child > div:first-child > div:first-child {
-    padding: 0 22px 72px !important;
-  }
-  html.codex-qq-skin[data-dream-shell="dark"] .qq-skin-home [data-feature="game-source"] button {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-  }
 }
 
 html.codex-qq-skin[data-dream-shell="dark"][data-dream-three-pane="true"] [data-pip-obstacle='thread-summary-panel']:empty[aria-hidden="true"] {
