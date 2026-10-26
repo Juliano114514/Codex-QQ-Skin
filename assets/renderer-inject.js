@@ -4051,6 +4051,31 @@
     }
   };
 
+  let appearanceWriterPromise = null;
+  const resolveAppearanceWriter = () => {
+    if (appearanceWriterPromise) return appearanceWriterPromise;
+    appearanceWriterPromise = (async () => {
+      // Newer Codex versions replaced set-setting with the shared Settings RPC.
+      // Resolve the loaded module and its writer without pinning build hashes or
+      // minified export names. Older versions keep using the fetch route below.
+      const sharedModule = [...document.querySelectorAll('link[rel="modulepreload"][href]')]
+        .map(node => new URL(node.href, window.location.href))
+        .find(url => url.protocol === window.location.protocol && url.host === window.location.host
+          && /^\/assets\/app-shared-[\w-]+\.js$/.test(url.pathname) && !url.search && !url.hash);
+      if (!sharedModule) return null;
+      const exports = await import(sharedModule.href);
+      for (const value of Object.values(exports)) {
+        if (typeof value !== "function") continue;
+        try {
+          const source = Function.prototype.toString.call(value);
+          if (/\.settings\.write\(/.test(source) && source.includes("Settings are unavailable on this host")) return value;
+        } catch { /* Some exported RPC proxies cannot be inspected as functions. */ }
+      }
+      return null;
+    })().catch(() => null);
+    return appearanceWriterPromise;
+  };
+
   const selectAppearance = async (appearance, { fromTheme = false } = {}) => {
     const supported = supportedAppearances();
     if (!supported.includes(appearance) || (!fromTheme && supported.length < 2) ||
@@ -4063,7 +4088,7 @@
     closeLibraryMenu();
     ensureToggleButton();
     try {
-      // Use the same local settings route as Codex's appearance settings.
+      // Use the same settings service as Codex's appearance settings.
       // Codex persists the preference and updates its own theme tokens.
       await new Promise((resolve, reject) => {
         const requestId = window.crypto.randomUUID();
@@ -4086,10 +4111,20 @@
         const timeout = setTimeout(() => finish(new Error("appearance-setting-timeout")), 8000);
         appearanceRequestCleanup = () => finish(new Error("appearance-setting-cancelled"));
         window.addEventListener("message", onResponse);
-        window.electronBridge.sendMessageFromView({
-          type: "fetch", requestId, method: "POST", url: "vscode://codex/set-setting",
-          body: JSON.stringify({ key: "appearanceTheme", value: appearance }),
-        }).catch(() => finish(new Error("appearance-setting-unavailable")));
+        const write = async () => {
+          const writer = await resolveAppearanceWriter();
+          if (settled) return;
+          if (writer) {
+            await writer({ key: "appearanceTheme" }, appearance);
+            finish(null);
+          } else {
+            await window.electronBridge.sendMessageFromView({
+              type: "fetch", requestId, method: "POST", url: "vscode://codex/set-setting",
+              body: JSON.stringify({ key: "appearanceTheme", value: appearance }),
+            });
+          }
+        };
+        void write().catch(() => finish(new Error("appearance-setting-unavailable")));
       });
     } catch {
       appearanceError = "外观切换未成功，请重试";
