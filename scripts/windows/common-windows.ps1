@@ -262,6 +262,18 @@ function Stop-RecordedInjector {
   if (-not $state -or [int]$state.injectorPid -eq 0) { return }
   $process = Get-CimInstance Win32_Process -Filter "ProcessId=$([int]$state.injectorPid)" -ErrorAction SilentlyContinue
   if (-not $process) { return }
+  # A saved PID may now belong to an unrelated, protected process. Name and
+  # creation time can prove reuse even when its executable/command line cannot
+  # be read. Skip that process before requiring the full injector identity.
+  $expectedName = [IO.Path]::GetFileName([string]$state.nodePath)
+  $reusedPid = $process.Name -and $expectedName -and $process.Name -ne $expectedName
+  if (-not $reusedPid -and $state.injectorStartedAt -and $process.CreationDate) {
+    $reusedPid = ([DateTime]$process.CreationDate).ToUniversalTime() -ne ([DateTime]$state.injectorStartedAt).ToUniversalTime()
+  }
+  if ($reusedPid) {
+    Write-Warning 'The saved injector PID is stale and belongs to another process; skipping it without stopping that process.'
+    return
+  }
   if (-not $process.ExecutablePath -or -not $process.CommandLine) {
     Stop-WithError 'The recorded injector process identity could not be read; it was not stopped and state was preserved.'
   }
