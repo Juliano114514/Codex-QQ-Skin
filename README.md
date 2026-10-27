@@ -1,6 +1,16 @@
-# 2.8.0 更新
+# 2.9.0 更新
 
-## 2026-10-23
+## 2026-10-27
+
+- **日夜 UI 对齐：** 12 套双外观内置皮肤共享侧栏和首页布局尺寸，统一输入框圆角、项目行边框与字重；保留各主题配色和固定明暗主题。
+- **详情栏恢复：** 修复原生 `display: contents` 包装与关闭动画让摘要、个人资料移出可视区域的问题，保留展开、收起和原生内容交互。
+- **外观切换兼容：** 新版 Codex 使用 Settings RPC 写入外观偏好，旧版接口保留回退。
+- **Windows 启动修复：** 先用进程名和启动时间识别已复用的注入器 PID，避免读取无关受保护进程失败时阻断桌面 CMD 启动；身份无法确认时仍拒绝停止进程。
+- 本次更新源码与本机引擎；未重建安装器或发布 GitHub Release。检查范围见 [CHANGELOG](CHANGELOG.md)。
+
+## 2.8.0 更新
+
+### 2026-10-23
 
 - **新增两套美学皮肤：** XP 使用 Luna 蓝色标题、Explorer 任务窗格、蓝天绿丘和任务管理器式 Token 折线；「拟物化 · 千禧年机箱」支持米白 ABS / 炭黑双外观，搭配 CRT 玻璃、实体键帽、本地点阵字体与 LCD。[参考资料与设计取舍](docs/retro-pc-references.md)。
 - **美学细化：** 新拟物增加圆润 Nunito 字体和立体柱，Aero 完善玻璃侧栏，Matrix 使用错落静态代码雨与磷光文字，皮革手账增加书架、纸页和黄铜书扣，并修正浅色文字、图标对比度。六套主题的聊天三键均使用原创 SVG。[细化与验证记录](docs/aesthetics-refinement.md)。
@@ -81,9 +91,9 @@
 - 默认按“总用量”展示并让缓存输入参与成长，等级行右侧可开启“净用量”开关查看排除缓存后的数据；fork、子 Agent 继承历史和重复 token 事件会去重。
 - 当前日志没有稳定账号 ID，因此这里明确显示“本机统计 / 本机 Codex 等级”，不是 OpenAI 官方账单或账号云端等级。
 
-## 当前源码版本 2.8.0
+## 当前源码版本 2.9.0
 
-本版美学主题、日夜切换与个人资料图表更新见文首；下载区仍保留既有安装包说明。
+本版深浅色 UI 对齐、详情栏与 Windows 启动修复见文首；下载区仍保留既有安装包说明。
 
 ## 2.6.3 亮点
 
@@ -319,10 +329,10 @@ npm test
 npm run build:app
 ```
 
-`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。2.8.0 的预期构建产物如下，当前尚未发布：
+`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。2.9.0 的预期构建产物如下，当前尚未发布：
 
 - macOS：`Codex QQ Skin.app.zip`（可在本机 Mac 用 `npm run build:app` 生成）
-- Windows：`ChatGPT QQ Skin Setup 2.8.0.exe`（需 Windows CI / Windows 电脑构建，Mac 无法直接生成）
+- Windows：`ChatGPT QQ Skin Setup 2.9.0.exe`（需 Windows CI / Windows 电脑构建，Mac 无法直接生成）
 
 请只从本仓库的 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载。设置 `DEVELOPER_ID_APPLICATION` 环境变量后会使用对应证书签名；公开分发前还需使用 Apple 公证服务处理最终 ZIP/DMG。
 

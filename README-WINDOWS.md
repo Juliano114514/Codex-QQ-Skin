@@ -1,4 +1,4 @@
-# ChatGPT QQ Skin for Windows 2.8.0
+# ChatGPT QQ Skin for Windows 2.9.0
 
 Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动”“上传图片生成皮肤”“应用内置大黄蜂皮肤”“应用内置霓虹雨夜皮肤”和“安装 Codex 深度皮肤助手”入口，并内置运行引擎与 Node.js，无需用户另外安装依赖。
 
@@ -6,7 +6,7 @@ Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动
 
 ## 下载
 
-当前源码版本为 2.8.0，尚未发布对应安装包；以下为既有 Release 的下载与安装说明。
+当前源码版本为 2.9.0，尚未发布对应安装包；以下为既有 Release 的下载与安装说明。
 
 从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载：
 
@@ -89,6 +89,14 @@ QQ 模式右侧的“个人资料”显示昵称、头像、状态、签名和�
 点击齿轮或底栏昵称编辑个人资料；点击头像选择经典头像，40px 与底栏 16px 版本配对切换。底栏签名支持点击编辑，Enter/失焦保存，Escape 取消。资料保存在本机皮肤设置，不修改 Codex 账号。
 
 统计只读取当前 Windows 用户目录下的 Codex 本地 session 日志，增量缓存保存在 `%APPDATA%\CodexQQSkin\usage`。Token 展示与加速档位均包含缓存。不需要额外登录，不读取 API Key，也不会上传 prompt 或 token 数据。统计是本机口径，不是 OpenAI 官方账单或账号云端等级。
+
+## 2.9.0 更新（2026-10-27）
+
+- 统一 12 套双外观内置皮肤的侧栏、首页与输入控件尺寸，保留主题材质和配色。
+- 恢复右侧摘要与个人资料，修正原生动画层在停靠模式下仍透明、向右移出的问题。
+- 兼容新版 Codex Settings RPC 外观写入，保留旧版接口回退。
+- 修复桌面 CMD 因历史注入器 PID 被无关受保护进程复用而报错退出；进程名或启动时间确认复用后安全跳过，不停止该进程。
+- 本次未重建安装器或发布 GitHub Release；首页仅做静态复核，未执行完整测试。
 
 ## 2.8.0 更新（2026-10-23）
 
@@ -192,12 +200,12 @@ $env:CODEX_EXE = 'C:\完整路径\ChatGPT.exe'
 需要 **Windows 10/11** 或 GitHub Actions `windows-2022`。macOS 无法直接生成本安装器 `.exe`。
 
 ```powershell
-.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.8.0.exe'
+.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.9.0.exe'
 ```
 
 不使用 `-UseInstalledNode` 时，构建脚本会下载官方 Node.js 运行时并校验 SHA-256。输出文件保存在 `release` 目录。
 
-发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.8.0`），由 CI 构建并上传 EXE。
+发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.9.0`），由 CI 构建并上传 EXE。
 
 ## 安全说明
 
