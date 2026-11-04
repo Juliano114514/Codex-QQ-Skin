@@ -1,6 +1,17 @@
-# 2.9.0 更新
+# 2.10.0 更新
 
-## 2026-10-27
+**实测兼容版本** · Windows Codex Desktop `26.1029.7803.0`（Microsoft Store / MSIX）。
+
+- 恢复新版首页和聊天输入框样式，适配 Markdown、代码块和表格。修正左栏、原生右栏及「详细信息」栏开合时的聊天布局。
+- 改善新窗口的自动注入与验证，减少提示音状态扫描中对无关控件的布局读取。
+- 重排个人资料卡片，支持 7 天 / 30 天 Token 趋势。展开「用量明细」可查看活跃记录、今日成长和累计 Token 分类。
+- 将 Windows XP 和 Windows 98 拆为独立主题。XP 保持浅色，Windows 98 使用银灰外壳、深蓝标题栏和白色工作区。
+
+Windows 实测覆盖新窗口、侧栏开合、窗口化和最大化。版本记录见 [CHANGELOG](CHANGELOG.md)。
+
+## 2.9.0 更新
+
+### 2026-10-27
 
 - **日夜 UI 对齐：** 12 套双外观内置皮肤共享侧栏和首页布局尺寸，统一输入框圆角、项目行边框与字重；保留各主题配色和固定明暗主题。
 - **详情栏恢复：** 修复原生 `display: contents` 包装与关闭动画让摘要、个人资料移出可视区域的问题，保留展开、收起和原生内容交互。
@@ -38,7 +49,7 @@
 
 # fork之后的更新日志
 
-| 当前支持 Codex 版本 | 26.928.3736.0（Windows 当前源码实测） |
+| 当前实测 Codex 版本 | 26.1029.7803.0（Windows Microsoft Store / MSIX） |
 | --- | --- |
 
 ## 安装与新版 Codex 兼容
@@ -84,16 +95,16 @@
 
 ## Codex 成长中心
 
-- QQ 模式右侧上方默认显示本机 Codex token：今日、近 7 天、历史累计、七日趋势、活跃天数和连续活跃天数。
+- QQ 模式右侧「详细信息」栏中的个人资料卡片显示今日、所选周期和历史累计用量，可在趋势图上切换 7 天和 30 天。
 - 根据活跃日和每日总 token 档位计算成长值，以 QQ 经典的星星、月亮、太阳、皇冠显示等级。
-- 点击右上角“资料”可恢复 Codex 原生输出/来源面板，再点“成长统计”即可返回。
+- 「用量明细」分组展示累计与连续活跃天数、今日用量和成长门槛，以及累计输入、输出、推理输出和缓存输入。
 - 统计直接读取本机 `~/.codex/sessions` 与 `archived_sessions`，使用增量缓存；不需要额外账号，不读取 API Key，不上传 prompt 或 token 数据。
-- 默认按“总用量”展示并让缓存输入参与成长，等级行右侧可开启“净用量”开关查看排除缓存后的数据；fork、子 Agent 继承历史和重复 token 事件会去重。
+- 卡片展示本机总用量，缓存输入参与成长。fork、子 Agent 继承历史和重复 Token 事件会去重。
 - 当前日志没有稳定账号 ID，因此这里明确显示“本机统计 / 本机 Codex 等级”，不是 OpenAI 官方账单或账号云端等级。
 
-## 当前源码版本 2.9.0
+## 当前源码版本 2.10.0
 
-本版深浅色 UI 对齐、详情栏与 Windows 启动修复见文首；下载区仍保留既有安装包说明。
+本版聊天适配、资料卡片和主题更新见文首。下载区列出已发布的安装包。
 
 ## 2.6.3 亮点
 
@@ -329,10 +340,10 @@ npm test
 npm run build:app
 ```
 
-`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。2.9.0 的预期构建产物如下，当前尚未发布：
+`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。2.10.0 源码对应以下构建产物：
 
 - macOS：`Codex QQ Skin.app.zip`（可在本机 Mac 用 `npm run build:app` 生成）
-- Windows：`ChatGPT QQ Skin Setup 2.9.0.exe`（需 Windows CI / Windows 电脑构建，Mac 无法直接生成）
+- Windows：`ChatGPT QQ Skin Setup 2.10.0.exe`（由 Windows CI 或 Windows 电脑构建）
 
 请只从本仓库的 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载。设置 `DEVELOPER_ID_APPLICATION` 环境变量后会使用对应证书签名；公开分发前还需使用 Apple 公证服务处理最终 ZIP/DMG。
 

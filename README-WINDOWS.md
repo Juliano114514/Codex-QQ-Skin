@@ -1,4 +1,4 @@
-# ChatGPT QQ Skin for Windows 2.9.0
+# ChatGPT QQ Skin for Windows 2.10.0
 
 Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动”“上传图片生成皮肤”“应用内置大黄蜂皮肤”“应用内置霓虹雨夜皮肤”和“安装 Codex 深度皮肤助手”入口，并内置运行引擎与 Node.js，无需用户另外安装依赖。
 
@@ -6,7 +6,7 @@ Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动
 
 ## 下载
 
-当前源码版本为 2.9.0，尚未发布对应安装包；以下为既有 Release 的下载与安装说明。
+当前源码版本为 2.10.0。以下是已发布安装包的下载与安装说明。
 
 从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载：
 
@@ -26,10 +26,9 @@ ChatGPT QQ Skin Setup 2.6.3.exe.sha256
 
 ## 安装与使用
 
-### 当前源码兼容修复（Codex 26.908.9136.0）
+### 当前源码兼容版本（Codex 26.1029.7803.0）
 
-源码已适配新版 CSS Modules 主面板、输入框和右侧资料面板，并修复 QQ
-模式文字对比度。此修复尚未打包到上述 2.6.3 Release EXE；请从本项目运行：
+本版在 Microsoft Store / MSIX 客户端实测了新窗口、聊天输入框、Markdown、代码块、表格、侧栏和窗口尺寸切换，并验证了个人资料的 7 天 / 30 天图表。要安装当前源码，请从本项目运行以下命令。
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\install-qq-skin-windows.ps1 -Force -NoLaunch
@@ -43,7 +42,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\instal
 点击 `平台配色` 选择爱奇艺、哔哩哔哩、抖音、快手、腾讯视频、优酷和芒果 TV 七组平台主题。
 经典和平台主题均包含浅色与深色，跟随 **Codex 设置 → 外观 → 系统 / 浅色 / 深色**，
 也可通过 `日 / 夜` 写入同一本机外观设置。系统模式以 Codex 当前解析出的明暗为准。
-`美学风格` 提供新拟物、XP、Aero、Matrix、皮革手账和千禧年机箱；XP 仅浅色、Matrix 仅深色，
+`美学风格` 提供新拟物、Windows XP、Windows 98、Aero、Matrix、皮革手账和千禧年机箱。XP 仅浅色，Windows 98 和 Matrix 仅深色，
 选择这类主题时自动同步原生外观，并禁用日夜按钮；其他主题按各自外观能力切换。
 经典浅色保留蓝银风格，经典深色保留手机 QQ 2008–2010 风格；`原生` 即时移除皮肤。
 菜单展示色块和当前选中项，支持方向键、Home/End、Enter、Esc 和外部点击关闭。
@@ -68,8 +67,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\instal
 [2026 平台配色依据](docs/media-palettes-2026.md)。这些是面向 Codex 阅读界面调整的
 主题方案，不是各平台官方发布的完整设计规范。
 
-本次在上述 Codex 版本实际检查了首页、任务页和注入验证；未重新构建 GUI
-安装器，也未验证关闭应用后重新启动的完整链路。
+本次运行验证使用 Windows 和千禧年机箱深色主题。完整变更见 [CHANGELOG](CHANGELOG.md)。
 
 ### Release 安装器
 
@@ -89,6 +87,12 @@ QQ 模式右侧的“个人资料”显示昵称、头像、状态、签名和�
 点击齿轮或底栏昵称编辑个人资料；点击头像选择经典头像，40px 与底栏 16px 版本配对切换。底栏签名支持点击编辑，Enter/失焦保存，Escape 取消。资料保存在本机皮肤设置，不修改 Codex 账号。
 
 统计只读取当前 Windows 用户目录下的 Codex 本地 session 日志，增量缓存保存在 `%APPDATA%\CodexQQSkin\usage`。Token 展示与加速档位均包含缓存。不需要额外登录，不读取 API Key，也不会上传 prompt 或 token 数据。统计是本机口径，不是 OpenAI 官方账单或账号云端等级。
+
+## 2.10.0 更新（2026-11-04）
+
+- 恢复新版 Codex 聊天输入框、Markdown、代码块和表格样式，修正侧栏切换时的布局。
+- 个人资料支持切换 7 天 / 30 天趋势，用量明细按活跃记录、今日成长和累计 Token 分组。
+- Windows XP 和 Windows 98 现在可以独立选择。参见 [主题说明](docs/windows-time-machine.md)。
 
 ## 2.9.0 更新（2026-10-27）
 
@@ -200,12 +204,12 @@ $env:CODEX_EXE = 'C:\完整路径\ChatGPT.exe'
 需要 **Windows 10/11** 或 GitHub Actions `windows-2022`。macOS 无法直接生成本安装器 `.exe`。
 
 ```powershell
-.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.9.0.exe'
+.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 2.10.0.exe'
 ```
 
 不使用 `-UseInstalledNode` 时，构建脚本会下载官方 Node.js 运行时并校验 SHA-256。输出文件保存在 `release` 目录。
 
-发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.9.0`），由 CI 构建并上传 EXE。
+发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v2.10.0`），由 CI 构建并上传 EXE。
 
 ## 安全说明
 
