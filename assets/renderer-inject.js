@@ -2583,7 +2583,7 @@
     const parts = usageParts;
     if (!parts?.panel) return;
     syncPersonalProfile();
-    const xpHistory = skinMode === "qq" && qqAppearance === "windows-xp";
+    const xpHistory = skinMode === "qq" && ["windows-xp", "windows-98"].includes(qqAppearance);
     const lcdHistory = skinMode === "qq" && qqAppearance === "millennium-pc";
     const historyStyle = xpHistory ? "xp" : lcdHistory ? `lcd-${resolvedShell()}` : "bars";
     if (parts.hasRendered && parts.renderedSnapshot === usageSnapshot && parts.renderedHistoryStyle === historyStyle

@@ -41,6 +41,27 @@
       "line": "#8fa9cd"
     }
   },
+  "windows-98": {
+    "id": "qq-windows-98",
+    "name": "Windows 98 · 经典桌面",
+    "category": "art",
+    "brandSubtitle": "WINDOWS 98 · CODEX",
+    "tagline": "打开经典窗口，写下新的灵感。",
+    "appearance": "dark",
+    "appearanceMode": "dark-only",
+    "colors": {
+      "background": "#ffffff",
+      "panel": "#c0c0c0",
+      "panelAlt": "#dfdfdf",
+      "accent": "#000080",
+      "accentAlt": "#000080",
+      "secondary": "#006060",
+      "highlight": "#800080",
+      "text": "#000000",
+      "muted": "#404040",
+      "line": "#808080"
+    }
+  },
   "millennium-pc": {
     "id": "qq-millennium-pc",
     "name": "拟物化 · 千禧年机箱",

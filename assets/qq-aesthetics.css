@@ -2,7 +2,7 @@
    native caption glyphs remain system-owned. Static material treatments.
    References: docs/aesthetics-refinement.md. */
 
-html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"]) {
+html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="windows-98"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"]) {
   --ae-more: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cg fill='none' stroke='black' stroke-width='1.6'%3E%3Crect x='2' y='3' width='16' height='14' rx='3'/%3E%3C/g%3E%3Cg%3E%3Ccircle cx='6' cy='10' r='1.1'/%3E%3Ccircle cx='10' cy='10' r='1.1'/%3E%3Ccircle cx='14' cy='10' r='1.1'/%3E%3C/g%3E%3C/svg%3E");
   --ae-summary: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cg fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='3' width='16' height='14' rx='2'/%3E%3Cpath d='M12 3v14M5 7h4M5 10h4M5 13h3'/%3E%3C/g%3E%3C/svg%3E");
   --ae-tab: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cg fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 16V5h6l2-2h8v13zM7 10h6M10 7v6'/%3E%3C/g%3E%3C/svg%3E");
@@ -82,7 +82,7 @@ html.codex-qq-skin[data-qq-palette="millennium-pc"] {
 @layer qq-reference {
   /* Only the three existing chat-header controls. Preserve their DOM, native
      handlers, accessible names, hit areas and pressed/expanded attributes. */
-  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"])[data-dream-shell] #root [data-pip-obstacle="app-shell-header"] button:is(
+  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="windows-98"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"])[data-dream-shell] #root [data-pip-obstacle="app-shell-header"] button:is(
     [aria-label="聊天操作"], [aria-label="Chat actions"], [aria-label*="摘要"], [aria-label*="summary" i], [data-app-shell-workspace-layout-toggle="main"]
   ) {
     position: relative;
@@ -92,7 +92,7 @@ html.codex-qq-skin[data-qq-palette="millennium-pc"] {
     border-radius: var(--ae-key-radius) !important;
     box-shadow: var(--ae-key-shadow) !important;
   }
-  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"])[data-dream-shell] #root [data-pip-obstacle="app-shell-header"] button:is(
+  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="windows-98"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"])[data-dream-shell] #root [data-pip-obstacle="app-shell-header"] button:is(
     [aria-label="聊天操作"], [aria-label="Chat actions"], [aria-label*="摘要"], [aria-label*="summary" i], [data-app-shell-workspace-layout-toggle="main"]
   )::after {
     content: "";
@@ -105,13 +105,13 @@ html.codex-qq-skin[data-qq-palette="millennium-pc"] {
     mask: var(--ae-icon) center / contain no-repeat;
     pointer-events: none;
   }
-  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"])[data-dream-shell] #root [data-pip-obstacle="app-shell-header"] button:is(
+  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="windows-98"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"])[data-dream-shell] #root [data-pip-obstacle="app-shell-header"] button:is(
     [aria-label="聊天操作"], [aria-label="Chat actions"], [aria-label*="摘要"], [aria-label*="summary" i], [data-app-shell-workspace-layout-toggle="main"]
   ) svg { opacity: 0 !important; }
-  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"]) [data-pip-obstacle="app-shell-header"] button:is([aria-label="聊天操作"], [aria-label="Chat actions"]) { --ae-icon: var(--ae-more); }
-  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"]) [data-pip-obstacle="app-shell-header"] button:is([aria-label*="摘要"], [aria-label*="summary" i]) { --ae-icon: var(--ae-summary); }
-  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"]) [data-pip-obstacle="app-shell-header"] [data-app-shell-workspace-layout-toggle="main"] { --ae-icon: var(--ae-tab); }
-  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"])[data-dream-shell] #root [data-pip-obstacle="app-shell-header"] button:is(
+  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="windows-98"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"]) [data-pip-obstacle="app-shell-header"] button:is([aria-label="聊天操作"], [aria-label="Chat actions"]) { --ae-icon: var(--ae-more); }
+  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="windows-98"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"]) [data-pip-obstacle="app-shell-header"] button:is([aria-label*="摘要"], [aria-label*="summary" i]) { --ae-icon: var(--ae-summary); }
+  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="windows-98"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"]) [data-pip-obstacle="app-shell-header"] [data-app-shell-workspace-layout-toggle="main"] { --ae-icon: var(--ae-tab); }
+  html.codex-qq-skin:is([data-qq-palette="neumorphism"], [data-qq-palette="windows-xp"], [data-qq-palette="windows-98"], [data-qq-palette="frutiger-aero"], [data-qq-palette="matrix"], [data-qq-palette="skeuomorphism"], [data-qq-palette="millennium-pc"])[data-dream-shell] #root [data-pip-obstacle="app-shell-header"] button:is(
     [aria-label="聊天操作"], [aria-label="Chat actions"], [aria-label*="摘要"], [aria-label*="summary" i], [data-app-shell-workspace-layout-toggle="main"]
   ):not(:disabled):not([aria-disabled="true"]):is(:hover, [aria-pressed="true"], [data-state="open"]) {
     outline: 1px solid var(--qq-text-accent) !important;
@@ -525,4 +525,376 @@ html.codex-qq-skin[data-qq-palette="millennium-pc"] {
 /* Original staggered katakana/digit columns. Single static tile, no frame loop. */
 html.codex-qq-skin[data-qq-palette="matrix"][data-dream-shell] {
   --mx-code: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27512%27%20height%3D%27459%27%20viewBox%3D%270%200%20512%20459%27%3E%3Cg%20font-family%3D%27MS%20Gothic%2Cmonospace%27%20font-size%3D%2714%27%20font-weight%3D%27400%27%3E%3Cg%20transform%3D%27translate(16%200)%20scale(-1%201)%27%3E%3Ctext%20x%3D%278%27%20y%3D%27250%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.38%27%3E1%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%27233%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.34%27%3E%EF%BD%B4%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%27216%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.31%27%3E%EF%BE%89%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%27199%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.27%27%3E%EF%BE%82%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%27182%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.24%27%3E%EF%BD%BF%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%27165%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.21%27%3E%EF%BE%8F%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%27148%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.18%27%3E%EF%BE%85%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%27131%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%EF%BD%A5%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%27114%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.12%27%3E%EF%BE%97%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%2797%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.09%27%3E%EF%BE%93%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%2780%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E%EF%BD%B6%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%2763%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.05%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%2746%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.03%27%3E7%3C%2Ftext%3E%3Ctext%20x%3D%278%27%20y%3D%2729%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.01%27%3E%EF%BE%81%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%2726%27%20y%3D%2746%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%91%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%2729%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.74%27%3E7%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%2712%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.67%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27454%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.59%27%3E%EF%BD%BF%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.52%27%3E%EF%BE%9A%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.45%27%3E%EF%BD%BC%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.39%27%3E%EF%BE%81%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.32%27%3E%EF%BD%B7%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BD%A5%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.20%27%3E%EF%BE%80%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%EF%BE%90%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.10%27%3E%EF%BE%81%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%2726%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E%EF%BE%82%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%2744%27%20y%3D%27233%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%83%3C%2Ftext%3E%3Ctext%20x%3D%2744%27%20y%3D%27216%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.70%27%3E%EF%BE%8A%3C%2Ftext%3E%3Ctext%20x%3D%2744%27%20y%3D%27199%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.58%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%2744%27%20y%3D%27182%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.47%27%3E%EF%BE%88%3C%2Ftext%3E%3Ctext%20x%3D%2744%27%20y%3D%27165%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.37%27%3E%EF%BE%99%3C%2Ftext%3E%3Ctext%20x%3D%2744%27%20y%3D%27148%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.27%27%3E%EF%BD%B9%3C%2Ftext%3E%3Ctext%20x%3D%2744%27%20y%3D%27131%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.19%27%3E%EF%BE%91%3C%2Ftext%3E%3Ctext%20x%3D%2744%27%20y%3D%27114%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.11%27%3E%EF%BE%87%3C%2Ftext%3E%3Ctext%20x%3D%2744%27%20y%3D%2797%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.04%27%3E%3A%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate(124%200)%20scale(-1%201)%27%3E%3Ctext%20x%3D%2762%27%20y%3D%27199%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%91%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%27182%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.75%27%3E%EF%BD%B7%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%27165%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.68%27%3E%EF%BD%B9%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%27148%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.62%27%3E%EF%BE%91%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%27131%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.56%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%27114%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.49%27%3E%EF%BE%8C%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%2797%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.43%27%3E%EF%BE%91%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%2780%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.38%27%3E4%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%2763%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.32%27%3E%EF%BE%84%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%2746%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.27%27%3E%EF%BE%86%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%2729%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.22%27%3E%EF%BD%BE%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%2712%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.17%27%3E3%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%27454%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.13%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.09%27%3E%EF%BE%83%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.05%27%3E%EF%BE%92%3C%2Ftext%3E%3Ctext%20x%3D%2762%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E9%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%2780%27%20y%3D%27131%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.38%27%3E%EF%BE%90%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27114%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.35%27%3E%EF%BD%B4%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%2797%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.33%27%3E%EF%BE%84%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%2780%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.31%27%3E%EF%BE%98%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%2763%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.28%27%3E%EF%BE%83%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%2746%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E4%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%2729%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.23%27%3E3%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%2712%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.21%27%3E%EF%BD%BF%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27454%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.19%27%3E%EF%BD%BA%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.17%27%3E%EF%BE%8D%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%EF%BD%BF%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.13%27%3E%EF%BE%90%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.11%27%3E%EF%BE%86%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.09%27%3E%EF%BE%8C%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E%EF%BD%BE%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BD%A5%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.04%27%3E%EF%BE%88%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.03%27%3E2%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E%EF%BE%84%3C%2Ftext%3E%3Ctext%20x%3D%2780%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.01%27%3E1%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%2798%27%20y%3D%27420%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%83%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27403%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.74%27%3E%EF%BE%84%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27386%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.67%27%3E%EF%BE%86%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.59%27%3E%EF%BD%BC%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.52%27%3E%EF%BE%8A%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.45%27%3E%EF%BD%BA%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.39%27%3E2%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.32%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BD%BF%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.20%27%3E%EF%BD%B9%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%EF%BD%BF%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.10%27%3E%EF%BD%BE%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BD%B9%3C%2Ftext%3E%3Ctext%20x%3D%2798%27%20y%3D%27199%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E%EF%BE%86%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate(232%200)%20scale(-1%201)%27%3E%3Ctext%20x%3D%27116%27%20y%3D%27386%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E1%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27369%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.75%27%3E%EF%BE%8E%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27352%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.68%27%3E%EF%BE%8A%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.62%27%3E%EF%BD%A5%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.56%27%3E%EF%BE%80%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.49%27%3E7%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.43%27%3E3%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.38%27%3E5%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.32%27%3E%EF%BD%B4%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.27%27%3E%EF%BE%92%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.22%27%3E%EF%BE%97%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27199%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.17%27%3E2%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27182%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.13%27%3E%EF%BE%8E%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27165%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.09%27%3E%EF%BD%B8%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27148%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.05%27%3E%EF%BD%B2%3C%2Ftext%3E%3Ctext%20x%3D%27116%27%20y%3D%27131%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E%EF%BD%B9%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27134%27%20y%3D%27454%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E3%3C%2Ftext%3E%3Ctext%20x%3D%27134%27%20y%3D%27437%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.64%27%3E%EF%BE%8D%3C%2Ftext%3E%3Ctext%20x%3D%27134%27%20y%3D%27420%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.47%27%3E%EF%BE%80%3C%2Ftext%3E%3Ctext%20x%3D%27134%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.32%27%3E%EF%BD%BD%3C%2Ftext%3E%3Ctext%20x%3D%27134%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.19%27%3E%EF%BE%83%3C%2Ftext%3E%3Ctext%20x%3D%27134%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E%EF%BE%92%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27152%27%20y%3D%2729%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.38%27%3E%EF%BE%80%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%2712%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.35%27%3E4%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27454%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.32%27%3E4%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.30%27%3E4%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.27%27%3E1%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.24%27%3E4%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.22%27%3E%EF%BD%B3%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.20%27%3E%EF%BD%BF%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.17%27%3E%EF%BD%B2%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E7%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.13%27%3E2%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.11%27%3E%EF%BE%8D%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.09%27%3E%EF%BD%B8%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E%EF%BE%88%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.05%27%3E5%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.03%27%3E7%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E2%3C%2Ftext%3E%3Ctext%20x%3D%27152%27%20y%3D%27199%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.01%27%3E%EF%BE%8A%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate(340%200)%20scale(-1%201)%27%3E%3Ctext%20x%3D%27170%27%20y%3D%27182%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BD%B2%3C%2Ftext%3E%3Ctext%20x%3D%27170%27%20y%3D%27165%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.67%27%3E%EF%BE%8B%3C%2Ftext%3E%3Ctext%20x%3D%27170%27%20y%3D%27148%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.52%27%3E%EF%BE%81%3C%2Ftext%3E%3Ctext%20x%3D%27170%27%20y%3D%27131%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.39%27%3E1%3C%2Ftext%3E%3Ctext%20x%3D%27170%27%20y%3D%27114%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BE%97%3C%2Ftext%3E%3Ctext%20x%3D%27170%27%20y%3D%2797%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%27170%27%20y%3D%2780%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BE%8D%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27188%27%20y%3D%27250%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%3A%3C%2Ftext%3E%3Ctext%20x%3D%27188%27%20y%3D%27233%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.67%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%27188%27%20y%3D%27216%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.52%27%3E3%3C%2Ftext%3E%3Ctext%20x%3D%27188%27%20y%3D%27199%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.39%27%3E%EF%BD%B9%3C%2Ftext%3E%3Ctext%20x%3D%27188%27%20y%3D%27182%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BE%81%3C%2Ftext%3E%3Ctext%20x%3D%27188%27%20y%3D%27165%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E8%3C%2Ftext%3E%3Ctext%20x%3D%27188%27%20y%3D%27148%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BD%BF%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27206%27%20y%3D%2712%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%91%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27454%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.74%27%3E%EF%BD%B9%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27437%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.65%27%3E%EF%BE%98%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.58%27%3E%EF%BE%8C%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.50%27%3E8%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.43%27%3E%EF%BE%8A%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.36%27%3E%EF%BD%B1%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.29%27%3E%EF%BE%86%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.23%27%3E%EF%BE%89%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.17%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.11%27%3E%EF%BE%84%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E%EF%BE%84%3C%2Ftext%3E%3Ctext%20x%3D%27206%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.03%27%3E%EF%BE%8D%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate(448%200)%20scale(-1%201)%27%3E%3Ctext%20x%3D%27224%27%20y%3D%2729%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.38%27%3E%EF%BE%8B%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%2712%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.35%27%3E%EF%BD%A5%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27454%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.32%27%3E%EF%BE%82%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.29%27%3E%EF%BD%B9%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BE%99%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.24%27%3E4%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.21%27%3E%EF%BE%8C%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.19%27%3E%EF%BD%B1%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.16%27%3E%EF%BE%82%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.14%27%3E3%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.11%27%3E%EF%BE%8D%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.09%27%3E3%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E1%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.05%27%3E7%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.04%27%3E%EF%BE%93%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E5%3C%2Ftext%3E%3Ctext%20x%3D%27224%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.01%27%3E%EF%BE%91%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27242%27%20y%3D%2729%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%8A%3C%2Ftext%3E%3Ctext%20x%3D%27242%27%20y%3D%2712%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.67%27%3E%EF%BD%BD%3C%2Ftext%3E%3Ctext%20x%3D%27242%27%20y%3D%27454%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.52%27%3E%EF%BD%BD%3C%2Ftext%3E%3Ctext%20x%3D%27242%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.39%27%3E%EF%BD%B4%3C%2Ftext%3E%3Ctext%20x%3D%27242%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BE%83%3C%2Ftext%3E%3Ctext%20x%3D%27242%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%EF%BE%86%3C%2Ftext%3E%3Ctext%20x%3D%27242%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BE%88%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27260%27%20y%3D%2763%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%9B%3C%2Ftext%3E%3Ctext%20x%3D%27260%27%20y%3D%2746%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.71%27%3E%3A%3C%2Ftext%3E%3Ctext%20x%3D%27260%27%20y%3D%2729%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.61%27%3E%EF%BD%BC%3C%2Ftext%3E%3Ctext%20x%3D%27260%27%20y%3D%2712%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.51%27%3E0%3C%2Ftext%3E%3Ctext%20x%3D%27260%27%20y%3D%27454%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.41%27%3E8%3C%2Ftext%3E%3Ctext%20x%3D%27260%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.32%27%3E3%3C%2Ftext%3E%3Ctext%20x%3D%27260%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.24%27%3E%EF%BD%BC%3C%2Ftext%3E%3Ctext%20x%3D%27260%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.16%27%3E%EF%BE%88%3C%2Ftext%3E%3Ctext%20x%3D%27260%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.09%27%3E4%3C%2Ftext%3E%3Ctext%20x%3D%27260%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.04%27%3E%EF%BE%88%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate(556%200)%20scale(-1%201)%27%3E%3Ctext%20x%3D%27278%27%20y%3D%27437%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%82%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27420%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.74%27%3E%EF%BE%92%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27403%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.67%27%3E8%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.59%27%3E5%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.52%27%3E%EF%BD%BA%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.45%27%3E%EF%BE%8A%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.39%27%3E8%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.32%27%3E%EF%BE%91%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BE%83%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.20%27%3E%EF%BD%BA%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%3A%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.10%27%3E%EF%BE%80%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BE%92%3C%2Ftext%3E%3Ctext%20x%3D%27278%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E%EF%BD%B4%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27296%27%20y%3D%27403%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.38%27%3E%EF%BE%8D%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27386%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.34%27%3E%EF%BE%84%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27369%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.30%27%3E%EF%BE%8E%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BD%B9%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.22%27%3E%EF%BE%90%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.18%27%3E%EF%BE%93%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%EF%BE%8F%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.12%27%3E%EF%BE%89%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.09%27%3E%EF%BE%8D%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BD%BD%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.03%27%3E%EF%BD%BA%3C%2Ftext%3E%3Ctext%20x%3D%27296%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.01%27%3E%EF%BE%9A%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27314%27%20y%3D%27284%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%9B%3C%2Ftext%3E%3Ctext%20x%3D%27314%27%20y%3D%27267%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.70%27%3E%EF%BD%BE%3C%2Ftext%3E%3Ctext%20x%3D%27314%27%20y%3D%27250%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.58%27%3E%EF%BD%B4%3C%2Ftext%3E%3Ctext%20x%3D%27314%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.47%27%3E%EF%BE%99%3C%2Ftext%3E%3Ctext%20x%3D%27314%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.37%27%3E%EF%BE%8B%3C%2Ftext%3E%3Ctext%20x%3D%27314%27%20y%3D%27199%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.27%27%3E%EF%BE%80%3C%2Ftext%3E%3Ctext%20x%3D%27314%27%20y%3D%27182%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.19%27%3E%EF%BD%B2%3C%2Ftext%3E%3Ctext%20x%3D%27314%27%20y%3D%27165%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.11%27%3E%EF%BE%8E%3C%2Ftext%3E%3Ctext%20x%3D%27314%27%20y%3D%27148%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.04%27%3E%EF%BE%9A%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate(664%200)%20scale(-1%201)%27%3E%3Ctext%20x%3D%27332%27%20y%3D%27131%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BD%BD%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%27114%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.75%27%3E1%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%2797%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.68%27%3E%EF%BD%B7%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%2780%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.61%27%3E%EF%BE%8E%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%2763%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.54%27%3E%EF%BE%84%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%2746%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.47%27%3E7%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%2729%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.41%27%3E%EF%BE%99%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%2712%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.35%27%3E%EF%BE%81%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%27454%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.29%27%3E%EF%BE%90%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.24%27%3E%EF%BE%87%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.19%27%3E%EF%BD%A5%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.14%27%3E%EF%BE%8F%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.09%27%3E1%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.05%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%27332%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E8%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27350%27%20y%3D%2729%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BD%B1%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%2712%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.76%27%3E%EF%BE%81%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27454%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.70%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.64%27%3E%EF%BE%93%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.58%27%3E%EF%BE%86%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.53%27%3E%EF%BD%B4%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.47%27%3E%EF%BD%A5%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.42%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.37%27%3E%EF%BE%88%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.32%27%3E%EF%BE%91%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.27%27%3E%EF%BE%8F%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.23%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.19%27%3E%EF%BE%92%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%EF%BE%8A%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.11%27%3E%EF%BE%86%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E5%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.04%27%3E%EF%BE%93%3C%2Ftext%3E%3Ctext%20x%3D%27350%27%20y%3D%27199%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E9%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27368%27%20y%3D%2712%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.38%27%3E%EF%BE%89%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27454%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.35%27%3E%EF%BD%B1%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27437%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.32%27%3E%EF%BE%9A%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.29%27%3E%EF%BE%8B%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BE%87%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.23%27%3E%EF%BE%81%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.20%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.17%27%3E%EF%BE%98%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%EF%BE%82%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.12%27%3E%EF%BD%B3%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.10%27%3E%EF%BD%B9%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.08%27%3E0%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BE%8E%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.04%27%3E%EF%BE%84%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E%EF%BE%92%3C%2Ftext%3E%3Ctext%20x%3D%27368%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.01%27%3E%3A%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate(772%200)%20scale(-1%201)%27%3E%3Ctext%20x%3D%27386%27%20y%3D%27284%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BD%B6%3C%2Ftext%3E%3Ctext%20x%3D%27386%27%20y%3D%27267%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.64%27%3E%EF%BD%B3%3C%2Ftext%3E%3Ctext%20x%3D%27386%27%20y%3D%27250%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.47%27%3E%EF%BE%86%3C%2Ftext%3E%3Ctext%20x%3D%27386%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.32%27%3E9%3C%2Ftext%3E%3Ctext%20x%3D%27386%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.19%27%3E4%3C%2Ftext%3E%3Ctext%20x%3D%27386%27%20y%3D%27199%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E%EF%BD%BA%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27404%27%20y%3D%27454%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%8E%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27437%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.76%27%3E%EF%BD%BA%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27420%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.71%27%3E%EF%BE%9A%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.65%27%3E%EF%BE%9B%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.60%27%3E%EF%BD%BC%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.54%27%3E%EF%BE%82%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.49%27%3E%EF%BD%B9%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.44%27%3E%EF%BD%BF%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.39%27%3E%EF%BD%BD%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.34%27%3E%EF%BD%BD%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.30%27%3E1%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BD%BD%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.21%27%3E%EF%BD%BA%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.17%27%3E0%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.14%27%3E5%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27199%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.10%27%3E%EF%BE%89%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27182%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E%EF%BE%87%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27165%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.04%27%3E%EF%BE%8A%3C%2Ftext%3E%3Ctext%20x%3D%27404%27%20y%3D%27148%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E1%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27422%27%20y%3D%2797%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E4%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%2780%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.76%27%3E%EF%BE%84%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%2763%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.71%27%3E%EF%BE%91%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%2746%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.65%27%3E2%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%2729%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.60%27%3E%EF%BD%B8%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%2712%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.54%27%3E%EF%BE%99%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27454%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.49%27%3E2%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.44%27%3E%EF%BE%8C%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.39%27%3E%EF%BD%B7%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.34%27%3E9%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.30%27%3E%EF%BE%92%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%3A%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.21%27%3E%EF%BE%8B%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.17%27%3E%EF%BD%BE%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.14%27%3E%EF%BE%90%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.10%27%3E%EF%BE%8D%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E%EF%BD%B7%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.04%27%3E8%3C%2Ftext%3E%3Ctext%20x%3D%27422%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E2%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate(880%200)%20scale(-1%201)%27%3E%3Ctext%20x%3D%27440%27%20y%3D%27352%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.38%27%3E%EF%BE%82%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27335%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.35%27%3E%EF%BE%81%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27318%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.33%27%3E%EF%BE%90%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.30%27%3E%EF%BE%93%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.28%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.25%27%3E%EF%BE%90%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27250%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.23%27%3E%EF%BE%8A%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27233%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.20%27%3E5%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27216%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.18%27%3E%EF%BE%9B%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27199%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.16%27%3E%EF%BD%B3%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27182%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.14%27%3E%EF%BE%8E%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27165%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.12%27%3E3%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27148%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.10%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27131%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.08%27%3E%EF%BE%8A%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%27114%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BD%B2%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%2797%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.05%27%3E%EF%BE%81%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%2780%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.03%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%2763%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.02%27%3E%EF%BE%83%3C%2Ftext%3E%3Ctext%20x%3D%27440%27%20y%3D%2746%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.01%27%3E%EF%BD%A5%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27458%27%20y%3D%27165%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E7%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%27148%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.74%27%3E%EF%BE%85%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%27131%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.65%27%3E%EF%BE%99%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%27114%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.58%27%3E%EF%BE%8B%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%2797%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.50%27%3E%EF%BE%8B%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%2780%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.43%27%3E%EF%BE%92%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%2763%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.36%27%3E%EF%BE%8C%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%2746%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.29%27%3E%EF%BD%B4%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%2729%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.23%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%2712%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.17%27%3E%EF%BE%8E%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%27454%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.11%27%3E%EF%BE%89%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%27437%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E%EF%BE%88%3C%2Ftext%3E%3Ctext%20x%3D%27458%27%20y%3D%27420%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.03%27%3E%EF%BE%93%3C%2Ftext%3E%3C%2Fg%3E%3Cg%3E%3Ctext%20x%3D%27476%27%20y%3D%27420%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BD%B5%3C%2Ftext%3E%3Ctext%20x%3D%27476%27%20y%3D%27403%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.67%27%3E%EF%BE%91%3C%2Ftext%3E%3Ctext%20x%3D%27476%27%20y%3D%27386%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.52%27%3E2%3C%2Ftext%3E%3Ctext%20x%3D%27476%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.39%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%27476%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.26%27%3E%EF%BE%8C%3C%2Ftext%3E%3Ctext%20x%3D%27476%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.15%27%3E%EF%BD%BB%3C%2Ftext%3E%3Ctext%20x%3D%27476%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.06%27%3E%EF%BE%92%3C%2Ftext%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate(988%200)%20scale(-1%201)%27%3E%3Ctext%20x%3D%27494%27%20y%3D%27454%27%20fill%3D%27%23dcffe1%27%20opacity%3D%270.82%27%3E%EF%BE%8D%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27437%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.73%27%3E%EF%BD%B1%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27420%27%20fill%3D%27%2381ed94%27%20opacity%3D%270.64%27%3E%EF%BD%BC%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27403%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.56%27%3E%EF%BD%BF%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27386%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.47%27%3E%EF%BD%B8%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27369%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.40%27%3E%EF%BD%BF%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27352%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.32%27%3E%EF%BE%83%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27335%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.25%27%3E%EF%BE%8C%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27318%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.19%27%3E%EF%BE%87%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27301%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.13%27%3E%EF%BE%8F%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27284%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.07%27%3E%EF%BD%B3%3C%2Ftext%3E%3Ctext%20x%3D%27494%27%20y%3D%27267%27%20fill%3D%27%2335a74f%27%20opacity%3D%270.03%27%3E8%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+}
+
+/* Standalone Windows 98 classic desktop, locked to dark appearance.
+   Classic silver surfaces, white workspace and native blue title bar.
+   References: docs/windows-time-machine.md. Keep native geometry and hit targets. */
+html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] {
+  color-scheme: light;
+  --qq-font-ui: "Fusion Pixel PC", SimSun, "宋体", "MS Sans Serif", Tahoma, sans-serif;
+  --qq-radius-control: 0px;
+  --qq-radius-card: 0px;
+  --qq-radius-action: 0px;
+  --qq-platform-composer-radius: 0px;
+  --w98-raised: inset -1px -1px #000, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+  --w98-sunken: inset 1px 1px #808080, inset -1px -1px #fff, inset 2px 2px #000, inset -2px -2px #dfdfdf;
+  --retro-title-material: #000080;
+  --retro-toolbar-material: #c0c0c0;
+  --retro-title-rim: inset 0 1px #fff;
+  --qq-night-title: #000080;
+  --qq-night-bar: #c0c0c0;
+  --qq-night-selected: #000080;
+  --qq-card-bar: #c0c0c0;
+  --qq-card-heading: #000;
+  --qq-card-border: #808080;
+  --qq-platform-sidebar: #c0c0c0;
+  --qq-surface-selected: #000080;
+  --qq-surface-hover: #dfdfdf;
+  --qq-shadow-popup: 2px 2px #000;
+  --ds-on-accent: #fff;
+  --ae-key: #c0c0c0;
+  --ae-key-ink: #000;
+  --ae-key-edge: #808080;
+  --ae-key-shadow: var(--w98-raised);
+  --ae-key-radius: 0px;
+  --color-codex-description: #404040 !important;
+}
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] :is(body, #root main.main-surface) {
+    background: #ffffff !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] :is(
+    #root aside.app-shell-left-panel, .dream-retro-toolbar, #codex-qq-skin-retro-profile,
+    .qq-skin-usage-footer, [data-app-shell-tab-row], [data-app-shell-header-toolbar],
+    #codex-qq-skin-profile-dialog, #codex-qq-skin-usage-panel, #codex-qq-skin-right-tray,
+    .qq-skin-reference-card, [data-pip-obstacle="thread-summary-panel"]:not(:empty),
+    [role="menu"], [role="listbox"], [data-radix-popper-content-wrapper] > div
+  ) {
+    background: #c0c0c0 !important;
+    color: #000 !important;
+    border: 1px solid #808080 !important;
+    border-radius: 0 !important;
+    box-shadow: var(--w98-raised) !important;
+    text-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] :is(
+    [class*="_ApplicationMenuTopBar_"], body > #root > div > .app-header-tint,
+    .dream-retro-titlebar, .qq-skin-usage-title, .qq-skin-details-title,
+    #codex-qq-skin-profile-dialog .qq-skin-profile-dialog-title
+  ) {
+    background: #000080 !important;
+    color: #fff !important;
+    border-radius: 0 !important;
+    border-color: #c0c0c0 !important;
+    box-shadow: inset 0 1px #fff !important;
+    text-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] :is(
+    [class*="_ApplicationMenuTopBar_"], .dream-retro-titlebar, .qq-skin-usage-title,
+    .qq-skin-details-title, .qq-skin-profile-dialog-title
+  ) :is(span, strong, small, svg) { color: inherit !important; }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] [class*="_ApplicationMenuTopBar_"] :is(button, a, [role="menuitem"]) {
+    color: #fff !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] :is(
+    .dream-retro-toolbar button, .qq-skin-usage-footer button, .qq-skin-usage-title button,
+    .qq-skin-profile-settings, .qq-skin-window-toggle,
+    #codex-qq-skin-profile-dialog footer > button, [data-app-shell-tab-controller] [role="tab"],
+    .qq-skin-home .group\/home-suggestions button,
+    [class*="_ComposerLayoutRoot_"] button.bg-composer-primary:not(:disabled):not([aria-disabled="true"])
+  ) {
+    background: #c0c0c0 !important;
+    color: #000 !important;
+    border: 1px solid #808080 !important;
+    border-radius: 0 !important;
+    box-shadow: var(--w98-raised) !important;
+    text-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] :is(
+    .dream-retro-toolbar button, .qq-skin-usage-footer button, .qq-skin-usage-title button,
+    .qq-skin-profile-settings, #codex-qq-skin-profile-dialog footer > button,
+    [class*="_ComposerLayoutRoot_"] button.bg-composer-primary
+  ):active:not(:disabled) { box-shadow: var(--w98-sunken) !important; }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] :focus-visible:not([contenteditable="true"]) {
+    outline: 1px dotted currentColor !important;
+    outline-offset: -4px !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] :is(
+    .composer-surface-chrome, [class*="_ComposerLayoutRoot_"],
+    #root main:is(.qq-skin-thread-frame,[data-qq-thread-frame]) .thread-scroll-container,
+    #codex-qq-skin-profile-dialog input, #codex-qq-skin-profile-dialog textarea,
+    #codex-qq-skin-profile-dialog select, #codex-qq-skin-profile-dialog .qq-skin-profile-dialog-body > main
+  ) {
+    background: #fff !important;
+    color: #000 !important;
+    border-radius: 0 !important;
+    border-color: #808080 !important;
+    box-shadow: var(--w98-sunken) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root :is(.qq-skin-section-bar, [class~="group/nav-section-title"]) {
+    background: #c0c0c0 !important;
+    color: #000 !important;
+    border-radius: 0 !important;
+    box-shadow: inset 0 1px #fff, inset 0 -1px #808080 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root aside [data-app-action-sidebar-thread-row]:hover {
+    background: #dfdfdf !important;
+    color: #000 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root aside [data-app-action-sidebar-thread-row][aria-current="page"],
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #codex-qq-skin-profile-dialog nav > button[aria-current="page"] {
+    background: #000080 !important;
+    color: #fff !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root aside [data-app-action-sidebar-thread-row][aria-current="page"] :is(span, svg) { color: #fff !important; }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] [data-user-message-bubble="true"] {
+    background: #dfdfdf !important;
+    color: #000 !important;
+    border: 1px solid #808080 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] :is(.qq-skin-usage-chart, .qq-skin-xp-history) {
+    background: #000 !important;
+    border-radius: 0 !important;
+    box-shadow: var(--w98-sunken) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] .qq-skin-xp-history polyline { stroke: #00ff00 !important; }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #codex-qq-skin-retro-shell::before,
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #codex-qq-skin-retro-shell::after {
+    background: #c0c0c0 !important;
+    box-shadow: var(--w98-raised) !important;
+  }
+}
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #codex-qq-skin-library-menu :is(button, div) {
+    color: #000 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #codex-qq-skin-library-menu button {
+    border-radius: 0 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #codex-qq-skin-library-menu button:is(:hover, :focus-visible, [aria-checked="true"]) {
+    background: #000080 !important;
+    color: #fff !important;
+  }
+}
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root aside :is([data-sidebar-navigation-root], [data-app-action-sidebar-scroll]) {
+    background: #c0c0c0 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root main .thread-scroll-container {
+    --ds-bg: #fff;
+    --ds-bg-rgb: 255 255 255;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] pre {
+    background: #1e2227 !important;
+    color: #f1f2f3 !important;
+    border-radius: 0 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] pre code {
+    background: transparent !important;
+  }
+}
+
+/* Windows 98 detail pass: system-sized pixel UI, flat white workspace,
+   Explorer tree wells, classic group boxes and an in-bounds performance trace. */
+html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] {
+  --qq-text-caption: 12px;
+  --qq-text-title: 12px;
+  --qq-text-body: 12px;
+  --qq-text-small: 12px;
+  --qq-night-glint: none;
+}
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root :is(
+    aside.app-shell-left-panel, [data-app-navigation-rail], .dream-retro-toolbar,
+    [class*="_ApplicationMenuTopBar_"], [data-app-shell-titlebar],
+    #codex-qq-skin-usage-panel, #codex-qq-skin-right-tray, #codex-qq-skin-retro-profile,
+    #codex-qq-skin-profile-dialog, #codex-qq-skin-toggle, #codex-qq-skin-library-menu
+  ) {
+    font-family: var(--qq-font-ui) !important;
+    font-size: 12px !important;
+    font-synthesis: none;
+    -webkit-font-smoothing: none;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root :is(
+    aside.app-shell-left-panel, .dream-retro-toolbar, [class*="_ApplicationMenuTopBar_"],
+    [data-app-shell-titlebar], #codex-qq-skin-usage-panel, #codex-qq-skin-profile-dialog,
+    #codex-qq-skin-right-tray, #codex-qq-skin-retro-profile
+  ) :is(button, a, input, select, textarea, strong, b, small, h2) {
+    font-family: var(--qq-font-ui) !important;
+    font-size: 12px !important;
+    letter-spacing: 0 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root main [data-turn-key],
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] [class*="_ComposerLayoutRoot_"] [contenteditable="true"] {
+    font-family: SimSun, "宋体", "MS Sans Serif", serif !important;
+    font-size: 14px !important;
+    line-height: 1.7 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root main :is(pre, code, kbd, samp) {
+    font-family: Consolas, "Courier New", monospace !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root main .thread-scroll-container [data-markdown-text-style="assistant-message"] {
+    font-family: inherit !important;
+  }
+  /* The old frame leaves 20px gutters outside the menu bar. Extend only
+     its paint; keep the native drag region and caption controls untouched. */
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"][data-codex-window-chrome="application-menu"] #root [class*="_ApplicationMenuTopBar_"] {
+    position: relative;
+    isolation: isolate;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"][data-codex-window-chrome="application-menu"] #root [class*="_ApplicationMenuTopBar_"]::before {
+    content: "";
+    position: absolute;
+    inset: 0 -32px;
+    z-index: -1;
+    background: #000080;
+    box-shadow: inset 0 1px #fff, inset 0 -1px #808080;
+    pointer-events: none;
+  }
+  /* Keep the native white caption glyphs on one continuous blue title bar. */
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"][data-dream-platform="windows"] #root [class*="_ApplicationMenuTopBar_"]::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: max(0px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw)));
+    height: env(titlebar-area-height, 0px);
+    background: #000080;
+    box-shadow: inset 0 1px #fff, inset 0 -1px #808080;
+    pointer-events: none;
+    z-index: 2147483000;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root :is(
+    .app-shell-main-content-top-fade, [class*="_MainContentTopFade_"],
+    [class*="_background_"][class*="_fade_"]
+  ) { background: none !important; }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root [class*="_background_"][class*="_surface_"] {
+    background: #fff !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root aside :is(
+    [data-sidebar-project-kind], [class~="group/nav-section"], [class*="_header_"]
+  ) {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-color: transparent !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root aside [data-app-action-sidebar-scroll] {
+    background: #fff !important;
+    box-shadow: var(--w98-sunken) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root aside :is([data-app-action-sidebar-project-row], [data-app-action-sidebar-thread-row]) {
+    background: transparent !important;
+    color: #000 !important;
+    border: 1px solid transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font: 400 12px/1.5 var(--qq-font-ui) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root aside :is([data-app-action-sidebar-project-row], [data-app-action-sidebar-thread-row]) :is(span, svg) {
+    color: inherit !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root aside [data-app-action-sidebar-project-row] svg {
+    color: #806000 !important;
+    fill: #ffdf70 !important;
+    stroke-width: 1;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root aside [data-app-action-sidebar-thread-row][aria-current="page"] {
+    background: #000080 !important;
+    color: #fff !important;
+    outline: 1px dotted #fff;
+    outline-offset: -3px;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root [data-app-navigation-rail] {
+    background: #c0c0c0 !important;
+    border-right: 1px solid #808080 !important;
+    box-shadow: inset -1px 0 #fff !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root [data-app-navigation-rail] button {
+    border-radius: 0 !important;
+    color: #000 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root [data-app-navigation-rail] button[aria-current="page"] {
+    background: #dfdfdf !important;
+    box-shadow: var(--w98-sunken) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root #codex-qq-skin-usage-panel .qq-skin-usage-chart {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 !important;
+    gap: 0;
+    border: 2px solid #808080 !important;
+    border-radius: 0 !important;
+    background: repeating-linear-gradient(0deg, transparent 0 11px, #164516 11px 12px), repeating-linear-gradient(90deg, transparent 0 15px, #164516 15px 16px), #000 !important;
+    box-shadow: inset 1px 1px #000, 1px 1px #fff !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root .qq-skin-usage-chart > i {
+    border: 0 !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root .qq-skin-usage-chart > i > span { visibility: hidden; }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] .qq-skin-xp-history {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: transparent !important;
+    box-shadow: none !important;
+    fill: none;
+    stroke: #00ff00;
+    stroke-width: 1;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] .qq-skin-xp-history polyline {
+    vector-effect: non-scaling-stroke;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root #codex-qq-skin-usage-panel .qq-skin-usage-metrics > div {
+    background: #c0c0c0 !important;
+    border: 1px solid #808080 !important;
+    border-radius: 0 !important;
+    box-shadow: 1px 1px #fff, inset 1px 1px #fff !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root #codex-qq-skin-usage-panel .qq-skin-usage-metrics b {
+    color: #000 !important;
+    font: 400 16px/1.5 "Fusion Pixel PC", Tahoma, sans-serif !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root #codex-qq-skin-usage-panel .qq-skin-level-progress {
+    border: 1px solid #808080 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: inset 1px 1px #000, 1px 1px #fff !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root #codex-qq-skin-usage-panel .qq-skin-level-progress > i {
+    background: repeating-linear-gradient(90deg, #000080 0 7px, #fff 7px 9px) !important;
+    border-radius: 0 !important;
+  }
+}
+@layer qq-reference {
+  /* Code blocks follow the native dark syntax palette. */
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root :is(
+    [class*="_CodeSurface_"], [data-code-block][class*="CodeSurface-"]
+  ) {
+    background: #1e2227 !important;
+    border-radius: 0 !important;
+    border: 1px solid #808080 !important;
+    box-shadow: var(--w98-sunken) !important;
+  }
+  html.codex-qq-skin[data-qq-palette="windows-98"][data-dream-shell="dark"] #root code:is(
+    [class*="_CodeContent_"], [class*="CodeContent-"]
+  ) {
+    background: transparent !important;
+    color: #f1f2f3 !important;
+    border-radius: 0 !important;
+    font-family: Consolas, "Courier New", monospace !important;
+  }
 }
