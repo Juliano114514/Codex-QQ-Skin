@@ -76,11 +76,16 @@ html.codex-qq-skin [data-app-shell-tab-controller] [role="tab"][aria-selected="t
    container. In the skin's pane layout that container is already the reading
    column, leaving only a narrow gutter. Keep the native scroller and actions,
    but size the table viewport against its actual Markdown parent. */
-html.codex-qq-skin [class*="_TableContainer_"][data-wide-block] {
+html.codex-qq-skin :is([class*="_TableContainer_"], [data-markdown-table])[data-wide-block] {
   --wide-block-width: 100%;
   width: 100%;
   max-width: 100%;
   margin-inline: 0;
+}
+
+/* A sticky code toolbar needs the same opaque paint as its themed block. */
+html.codex-qq-skin [data-code-block][class*="CodeSurface-"] > [class*="StickyActionBar-"] {
+  background: inherit;
 }
 
 /* One selected surface, painted by the native moving indicator. Preserve its
@@ -104,7 +109,7 @@ html.codex-qq-skin [data-qq-home-part~="mode-indicator"] {
 
 /* Mermaid uses the same native wide-block calculation as tables. Keep finished
    diagrams within the reading column; streaming placeholders retain native sizing. */
-html.codex-qq-skin [class*="_MermaidWideBlock_"]:not(:has([data-mermaid-streaming])) {
+html.codex-qq-skin :is([class*="_MermaidWideBlock_"], [class*="MermaidWideBlock-"]):not(:has([data-mermaid-streaming])) {
   --wide-block-width: 100%;
 }
 
@@ -119,6 +124,9 @@ html.codex-qq-skin :is([class*="_markdown"], [class*="markdown-body"]) {
   font-size: var(--qq-text-body);
   line-height: var(--qq-line-body);
   text-shadow: none !important;
+}
+html.codex-qq-skin .thread-scroll-container [data-markdown-text-style="assistant-message"] {
+  font-family: var(--qq-font-ui);
 }
 html.codex-qq-skin :is(.qq-skin-profile-presence-row, .qq-skin-usage-label, .qq-skin-usage-footer,
   .qq-skin-signature-marquee, .qq-skin-profile-token-info small,

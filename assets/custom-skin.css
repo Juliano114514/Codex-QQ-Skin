@@ -366,7 +366,7 @@ html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-
 }
 
 html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
-  main.main-surface:not(.dream-skin-home-shell) [class*="_markdown"] {
+  main.main-surface:not(.dream-skin-home-shell) :is([class*="_markdown"], [data-markdown-text-style="assistant-message"]) {
   color: var(--ds-text) !important;
   text-shadow:
     0 1px 2px rgb(var(--ds-bg-rgb) / .82),
@@ -374,7 +374,7 @@ html.codex-dream-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-
 }
 
 html.codex-dream-skin[data-dream-shell="light"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
-  main.main-surface:not(.dream-skin-home-shell) [class*="_markdown"] {
+  main.main-surface:not(.dream-skin-home-shell) :is([class*="_markdown"], [data-markdown-text-style="assistant-message"]) {
   text-shadow:
     0 1px 2px rgb(var(--ds-panel-rgb) / .92),
     0 0 10px rgb(var(--ds-panel-rgb) / .72);
@@ -807,12 +807,20 @@ html.codex-dream-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-ar
 .dream-skin-home .group\/home-suggestions button > span:last-child { align-items: center !important; text-align: center !important; }
 
 html.codex-dream-skin .composer-surface-chrome {
-  overflow: visible !important;
   border: 1px solid rgb(var(--ds-muted-rgb) / .18) !important;
   border-radius: 22px !important;
   background: rgb(var(--ds-panel-rgb) / .94) !important;
   box-shadow: 0 10px 28px rgb(var(--ds-bg-rgb) / .24) !important;
   backdrop-filter: blur(16px) saturate(108%) !important;
+}
+
+html.codex-dream-skin .composer-surface-chrome:not([data-composer-surface-variant]) {
+  overflow: visible !important;
+}
+
+html.codex-dream-skin .dream-skin-home[data-qq-home-part~="utility"]
+  [data-composer-surface-variant][data-composer-utility-bar-variant="home"] > [data-composer-body] {
+  background: transparent !important;
 }
 
 html.codex-dream-skin .composer-surface-chrome::before { content: none !important; }
@@ -978,22 +986,22 @@ html.codex-dream-skin[data-dream-shell="light"][data-dream-art-wide="true"]
 }
 
 html.codex-dream-skin .dream-skin-home-utility button,
-html.codex-dream-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]) {
+html.codex-dream-skin .composer-surface-chrome button:not([class~="bg-token-foreground"], .bg-composer-primary) {
   color: var(--ds-muted) !important;
 }
 
 html.codex-dream-skin .dream-skin-home-utility button svg,
-html.codex-dream-skin .composer-surface-chrome button svg {
+html.codex-dream-skin .composer-surface-chrome button:not(.bg-composer-primary) svg:not(.text-warning, .text-danger) {
   color: currentColor !important;
 }
 
 html.codex-dream-skin .dream-skin-home-utility button *,
-html.codex-dream-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]) * {
+html.codex-dream-skin .composer-surface-chrome button:not([class~="bg-token-foreground"], .bg-composer-primary) :not(.text-warning, .text-danger) {
   color: currentColor !important;
 }
 
 html.codex-dream-skin .dream-skin-home-utility button:hover,
-html.codex-dream-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]):hover {
+html.codex-dream-skin .composer-surface-chrome button:not([class~="bg-token-foreground"], .bg-composer-primary):not(:disabled, [aria-disabled="true"]):hover {
   color: var(--ds-text) !important;
   background: rgb(var(--ds-accent-rgb) / .10) !important;
 }
@@ -1085,10 +1093,15 @@ html.codex-dream-skin .ProseMirror {
   caret-color: var(--ds-accent) !important;
 }
 
-html.codex-dream-skin button[class~="bg-token-foreground"] {
+html.codex-dream-skin button[class~="bg-token-foreground"],
+html.codex-dream-skin .composer-surface-chrome button.bg-composer-primary {
   background: var(--ds-accent) !important;
   color: var(--ds-on-accent) !important;
   box-shadow: 0 5px 14px rgb(var(--ds-accent-rgb) / .20) !important;
+}
+
+html.codex-dream-skin .composer-surface-chrome button.bg-composer-primary svg {
+  color: inherit !important;
 }
 
 html.codex-dream-skin article,
@@ -1437,14 +1450,14 @@ html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface,
 html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface [role="main"],
 html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface article,
 html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface [data-turn-key],
-html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface [class*="_markdown"],
+html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface :is([class*="_markdown"], [data-markdown-text-style="assistant-message"]),
 html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface [class*="text-token"],
 html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface p,
 html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface li,
 html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface h1,
 html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface h2,
 html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface h3,
-html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface span {
+html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface span:where(:not([data-code-block] *)) {
   color: #eaf3ff !important;
   text-shadow: none !important;
 }
@@ -1469,7 +1482,8 @@ html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface article {
 }
 
 /* Fallback when a turn has no article wrapper — still give markdown a card. */
-html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface [class*="_markdown"]:not([data-turn-key] [class*="_markdown"]):not(article [class*="_markdown"]) {
+html.codex-dream-skin[data-qq-weather="neon-storm"] main.main-surface
+  :is([class*="_markdown"], [data-markdown-text-style="assistant-message"]):not(:is([data-turn-key], article) *) {
   background: rgb(16 22 36 / .94) !important;
   border: 1px solid rgb(78 195 255 / .30) !important;
   border-radius: 14px !important;

@@ -27,7 +27,7 @@ html.codex-qq-skin[data-qq-palette-family="media"] {
 
 html.codex-qq-skin[data-qq-palette-family="media"] body,
 html.codex-qq-skin[data-qq-palette-family="media"] aside.app-shell-left-panel,
-html.codex-qq-skin[data-qq-palette-family="media"] pre {
+html.codex-qq-skin[data-qq-palette-family="media"] :is(pre, [data-code-block][class*="CodeSurface-"]) {
   background: var(--ds-bg) !important;
   border-color: var(--ds-line) !important;
   box-shadow: none !important;
@@ -133,7 +133,7 @@ html.codex-qq-skin[data-qq-palette-family="media"] :is(.qq-skin-usage-level-main
 html.codex-qq-skin[data-qq-palette-family="media"] .qq-skin-usage-chart > i > span {
   background: var(--qq-night-selected) !important;
 }
-html.codex-qq-skin[data-qq-palette-family="media"] :not(pre) > code {
+html.codex-qq-skin[data-qq-palette-family="media"] :is(:not(pre) > code:not([data-code-block] code), [data-markdown-copy="inline-code"]) {
   background: var(--ds-panel-2);
   color: var(--ds-lime);
 }
@@ -424,7 +424,7 @@ html.codex-qq-skin[data-qq-palette-family="media"] :is(.qq-skin-usage-label, .qq
 html.codex-qq-skin[data-qq-palette-family="media"] [data-usage-status="error"] .qq-skin-usage-message {
   color: #ffb4ab !important;
 }
-html.codex-qq-skin[data-qq-palette-family="media"] :is(pre, :not(pre) > code) {
+html.codex-qq-skin[data-qq-palette-family="media"] :is(pre, code, [data-markdown-copy="inline-code"]) {
   font-family: var(--qq-font-mono);
 }
 html.codex-qq-skin[data-qq-palette-family="media"] :is(.qq-skin-home [data-feature="game-source"],
@@ -1512,7 +1512,7 @@ html.codex-qq-skin[data-qq-palette-family="media"][data-dream-shell] ::selection
     border-color: var(--ds-line) !important;
   }
   html.codex-qq-skin[data-qq-palette-family="media"][data-dream-shell] main.main-surface :is(
-    pre, :not(pre) > code, [data-markdown-copy="inline-code"]
+    pre, [data-code-block][class*="CodeSurface-"], :not(pre) > code:not([data-code-block] code), [data-markdown-copy="inline-code"]
   ) {
     background: var(--ds-panel-2) !important;
     border-color: var(--ds-line) !important;

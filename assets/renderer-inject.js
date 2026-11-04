@@ -31,6 +31,8 @@
     ? libraryThemes.filter((item) => item && typeof item.id === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(item.id))
     : [];
   const SHELL_ATTR = "data-dream-shell";
+  const COMPOSER_SURFACE_SELECTOR = '[data-composer-surface-variant], .composer-surface-chrome';
+  const HOME_COMPOSER_CONTENT_SELECTOR = `[data-feature="game-source"], ${COMPOSER_SURFACE_SELECTOR}`;
   const ART_ATTRS = [
     "data-dream-art-wide", "data-dream-art-safe", "data-dream-task-mode",
     "data-dream-art-safe-area", "data-dream-art-task-mode", "data-dream-art-aspect",
@@ -102,9 +104,9 @@
     if (home?.querySelector?.(":scope .home-banners")) return "banners";
     if (home?.children?.length >= 2) {
       const hasContentChild = [...home.children].some((child) =>
-        child.querySelector?.('[data-feature="game-source"], .composer-surface-chrome'));
+        child.querySelector?.(HOME_COMPOSER_CONTENT_SELECTOR));
       const firstIsContent = Boolean(
-        home.firstElementChild?.querySelector?.('[data-feature="game-source"], .composer-surface-chrome'),
+        home.firstElementChild?.querySelector?.(HOME_COMPOSER_CONTENT_SELECTOR),
       );
       if (hasContentChild && !firstIsContent) return "banners";
     }
@@ -117,7 +119,7 @@
     if (detectHomeLayoutKind(home) === "adaptive") return null;
     if (detectHomeLayoutKind(home) === "banners") {
       return [...home.children].find((child) =>
-        child.querySelector?.('[data-feature="game-source"], .composer-surface-chrome')) || null;
+        child.querySelector?.(HOME_COMPOSER_CONTENT_SELECTOR)) || null;
     }
     return home.firstElementChild || null;
   };
@@ -832,6 +834,12 @@
   let observedShellMain = null;
   let observedReferenceHost = null;
   let resizeObserver = null;
+  const observeReferenceHost = (host) => {
+    if (observedReferenceHost === host) return;
+    if (observedReferenceHost) resizeObserver?.unobserve(observedReferenceHost);
+    observedReferenceHost = host;
+    if (host) resizeObserver?.observe(host);
+  };
   let shellGeometry = null;
   let resizeSettleTimer = null;
   const cancelResizeSettle = () => {
@@ -911,19 +919,22 @@
       }
     };
 
-    const visibleButtons = () => [...document.querySelectorAll('button, [role="button"]')]
-      .filter((button) => !button.disabled && button.getAttribute?.("aria-disabled") !== "true" &&
-        button.getAttribute?.("aria-hidden") !== "true" &&
-        !button.closest?.('[inert], [hidden], [data-app-shell-active-page="false"], [id^="codex-qq-skin-"]') &&
-        (!button.getClientRects || button.getClientRects().length > 0));
+    const statusButtons = () => [...document.querySelectorAll('button, [role="button"]')];
+    const isVisibleButton = (button) => !button.disabled && button.getAttribute?.("aria-disabled") !== "true" &&
+      button.getAttribute?.("aria-hidden") !== "true" &&
+      !button.closest?.('[inert], [hidden], [data-app-shell-active-page="false"], [id^="codex-qq-skin-"]') &&
+      (!button.getClientRects || button.getClientRects().length > 0);
     const isStopButton = (button) => stopPattern.test(buttonLabel(button));
-    const findRunning = (buttons = visibleButtons()) => buttons.some(isStopButton);
-    const findApproval = (buttons = visibleButtons()) => {
+    // Check the label before reading geometry. Most controls in a chat
+    // cannot change sound status, even during streaming and window resize.
+    const findRunning = (buttons = statusButtons()) =>
+      buttons.some((button) => isStopButton(button) && isVisibleButton(button));
+    const findApproval = (buttons = statusButtons()) => {
       const action = buttons.find((button) => {
         const label = buttonLabel(button);
         if (!approvalActionPattern.test(label)) return false;
         const turn = button.closest?.('[data-turn-key], [data-testid*="approval" i]');
-        if (!turn) return false;
+        if (!turn || !isVisibleButton(button)) return false;
         if (!/^(run( command)?|continue|运行(命令)?|继续执行)$/i.test(label)) return true;
         return approvalContextPattern.test(normalize(turn.textContent));
       });
@@ -1103,11 +1114,11 @@
 
     const scan = ({ settling = false } = {}) => {
       const nextRoute = `${window.location?.pathname || ""}${window.location?.search || ""}${window.location?.hash || ""}`;
-      const buttons = visibleButtons();
+      const buttons = statusButtons();
       const running = findRunning(buttons);
       const approval = findApproval(buttons);
       const nextPage = document.querySelector('[data-app-shell-active-page="true"]');
-      const nextComposer = [...document.querySelectorAll('.composer-surface-chrome')]
+      const nextComposer = [...document.querySelectorAll(COMPOSER_SURFACE_SELECTOR)]
         .find(node => !node.getClientRects || node.getClientRects().length > 0) || null;
       if (!initialized || nextRoute !== routeKey || nextPage !== activePage || nextComposer !== activeComposer) {
         initialized = true;
@@ -2006,6 +2017,8 @@
   };
 
   const findLeftSidebarToggle = () => {
+    const trigger = findVisibleElement('button[data-app-shell-sidebar-trigger]');
+    if (trigger) return trigger;
     for (const button of document.querySelectorAll('button[aria-label]')) {
       const label = button.getAttribute("aria-label") || "";
       if (showSidebarLabel.test(label) || hideSidebarLabel.test(label)) return button;
@@ -3084,11 +3097,7 @@
     const host = overlay?.parentElement;
     const card = marker?.nextElementSibling?.querySelector(".overflow-hidden");
     const box = host?.getBoundingClientRect();
-    if (host !== observedReferenceHost) {
-      if (observedReferenceHost) resizeObserver?.unobserve(observedReferenceHost);
-      observedReferenceHost = host || null;
-      if (host) resizeObserver?.observe(host);
-    }
+    observeReferenceHost(host || null);
     const eligible = skinMode === "qq" && !settingsRoute && card &&
       marker.matches(':empty[aria-hidden="true"]') &&
       host?.querySelector('[data-pip-obstacle="thread-footer"]') &&
@@ -3546,7 +3555,7 @@
       .find(isActiveRouteElement);
     const shellMain = activeFooter?.closest("main") ||
       findVisibleElement('[data-pip-obstacle="app-shell-header"]')?.closest("main") ||
-      findVisibleElement("main.main-surface") || findVisibleElement("main");
+      findVisibleElement('main[data-app-shell-main-surface], main.main-surface') || findVisibleElement("main");
     // Older CSS-module shells predate the native semantic attribute. Mark
     // those once so styles never need a live class-substring ancestor query.
     if (shellMain?.matches('[class*="_MainContentSurface_"]') &&
@@ -3555,7 +3564,7 @@
     // hosts on shell mounts instead of matching through body with :has().
     const appRoot = document.getElementById('root');
     const layoutHost = shellMain && appRoot && [...appRoot.children].find((node) =>
-      node.contains(shellMain) && (node.matches('[class*="_Layout_"]') ||
+      node.contains(shellMain) && (node.matches('[data-app-shell-frame], [class*="_Layout_"]') ||
         [...node.children].some((child) => child.querySelector('aside.app-shell-left-panel'))));
     const browserHosts = new Set([...document.querySelectorAll('[data-browser-sidebar-webview]')].map((webview) => {
       const parent = webview.parentElement;
@@ -3588,7 +3597,8 @@
       if (!legacyLayers.includes(node)) node.removeAttribute('data-qq-main-layer');
     }
     for (const node of legacyLayers) setAttribute(node, 'data-qq-main-layer', 'true');
-    setAttribute(root, "data-qq-native-shell", shellMain?.matches('[class*="_MainContentSurface_"]') ? "true" : "false");
+    const nativePanelState = Boolean(shellMain?.matches('[data-app-shell-main-surface], [class*="_MainContentSurface_"]'));
+    setAttribute(root, "data-qq-native-shell", String(nativePanelState));
     setAttribute(root, "data-qq-quick-chat", document.querySelector('section[data-pip-obstacle="quick-chat"][data-state="open"]') ? "true" : "false");
     for (const candidate of document.querySelectorAll('[role="main"].qq-skin-home')) {
       if (candidate !== home) candidate.classList.remove("qq-skin-home");
@@ -3687,7 +3697,7 @@
     // Native desktop chrome already offsets the shell. Only reserve the remainder.
     const sidebarTop = document.querySelector("aside.app-shell-left-panel")?.getBoundingClientRect().top || 0;
     setStyleProperty(root, "--qq-native-shell-top", `${Math.max(0, sidebarTop)}px`);
-    const topBar = document.querySelector('[class*="_ApplicationMenuTopBar_"]');
+    const topBar = findVisibleElement('[class*="ApplicationMenuTopBar"]');
     const contentTop = Math.max(70, (topBar?.getBoundingClientRect().bottom || 36) + 34);
     setStyleProperty(root, "--qq-content-top", `${contentTop}px`);
     setStyleProperty(root, "--qq-toolbar-top", `${contentTop - 34}px`);
@@ -3716,8 +3726,10 @@
     const usageUi = ensureUsagePanel();
     const leftSidebarToggle = findLeftSidebarToggle();
     const leftSidebarLabel = leftSidebarToggle?.getAttribute("aria-label") || "";
-    let leftSidebarOpen = hideSidebarLabel.test(leftSidebarLabel) ||
-      (!leftSidebarToggle && Boolean(document.querySelector("aside.app-shell-left-panel")));
+    const leftSidebarExpanded = leftSidebarToggle?.getAttribute("aria-expanded");
+    let leftSidebarOpen = leftSidebarExpanded === "true" ||
+      (leftSidebarExpanded !== "false" && (hideSidebarLabel.test(leftSidebarLabel) ||
+        (!leftSidebarToggle && Boolean(document.querySelector("aside.app-shell-left-panel")))));
     const summaryToggle = findPinnedSummaryToggle();
     // LAYOUT changes when the segmented control switches modes. Derive these
     // values on every route pass instead of freezing the startup theme's
@@ -3742,7 +3754,6 @@
       !home && taskRoute && wideEnough;
     // Current Codex owns panel state. Respect close/open clicks and remembered
     // state instead of reopening controls remounted by React.
-    const nativePanelState = shellMain.matches('[class*="_MainContentSurface_"]');
     if (
       !nativePanelState && layoutBaseEligible && showSidebarLabel.test(leftSidebarLabel) &&
       !autoOpenedSidebarToggles.has(leftSidebarToggle) && typeof leftSidebarToggle.click === "function"
@@ -4471,8 +4482,6 @@
   };
 
   let sidebarSettleUntil = 0;
-  let sidebarGeometryPending = false;
-  let sidebarGeometryUntil = 0;
   const scheduler = { timeout: null, frame: null, root: false, route: false, layout: false };
   const flushScheduledEnsure = () => {
     if (scheduler.frame !== null && typeof cancelAnimationFrame === "function") {
@@ -4492,11 +4501,6 @@
     scheduler.root = false;
     scheduler.route = false;
     scheduler.layout = false;
-    if ((sidebarGeometryPending || Date.now() < sidebarGeometryUntil) && !pending.root && (pending.route || pending.layout)) {
-      pending.route = false;
-      pending.layout = true;
-    }
-    sidebarGeometryPending = false;
     ensure(pending);
   };
   const scheduleEnsure = ({ root = false, route = true, layout = false } = {}) => {
@@ -4520,7 +4524,7 @@
   // Text, syntax highlighting and virtualized rows are content updates, not
   // navigation. Only native shell mounts need a geometry/profile pass. Keep
   // footer mounts here, but let their stop/approval buttons use the status path.
-  const shellMountSelector = 'main, aside.app-shell-left-panel, [role="main"], [role="dialog"], [role="menu"], [role="listbox"], [data-pip-obstacle], [data-app-shell-tab-row], [data-browser-sidebar-webview], [data-app-action-sidebar-section-toggle], [data-feature="game-source"], [class~="group/home-composer-layout"], .home-banners';
+  const shellMountSelector = 'main, aside.app-shell-left-panel, [role="main"], [role="dialog"], [role="menu"], [role="listbox"], [data-pip-obstacle], [data-app-shell-tab-row], [data-app-shell-tab-controller="right"], [data-browser-sidebar-webview], [data-app-action-sidebar-section-toggle], [data-feature="game-source"], [class~="group/home-composer-layout"], .home-banners';
   const hasMatchingNode = (nodes, selector) => nodes.some((node) => node.nodeType === 1 &&
     (node.matches(selector) || node.querySelector(selector)));
   const hiddenRouteSelector = '[inert], [hidden], [data-app-shell-active-page="false"], [style*="display: none"]';
@@ -4535,14 +4539,12 @@
       if (target?.closest('[role="tooltip"], [data-app-shell-active-page="false"]')) continue;
       if (target?.matches('[data-app-shell-sidebar-trigger]')) {
         sidebarSettleUntil = Date.now() + 240;
-        sidebarGeometryUntil = Date.now() + 600;
-        sidebarGeometryPending = true;
         layout = true;
         continue;
       }
-      // Navigation rows and header controls cannot change task sound/route
-      // state. Their React remounts only require the cached shell geometry.
-      if (target?.closest('aside.app-shell-left-panel, [data-app-shell-application-menu-bar]')) {
+      // The outer app frame also carries the application-menu marker. Match
+      // the titlebar itself so chat/footer mounts still trigger a route pass.
+      if (target?.closest('aside.app-shell-left-panel, header[data-app-shell-application-menu-bar]')) {
         layout = true;
         continue;
       }
@@ -4592,20 +4594,14 @@
   };
   const routeInteractionHandler = (event) => {
     if (window[DISABLED_KEY] || isSkinNode(event.target) || event.target?.closest?.('.thread-scroll-container, [data-codex-composer="true"]')) return;
-    if (event.target?.closest?.('[data-app-shell-sidebar-trigger]')) {
-      sidebarSettleUntil = Date.now() + 240;
-      sidebarGeometryUntil = Date.now() + 600;
-      sidebarGeometryPending = true;
-    } else {
-      sidebarGeometryPending = false;
-      sidebarGeometryUntil = 0;
-    }
+    const sidebar = Boolean(event.target?.closest?.('[data-app-shell-sidebar-trigger]'));
+    if (sidebar) sidebarSettleUntil = Date.now() + 240;
     // Profile menus open on click — restyle quickly before the slower route settle.
     try { weatherMonitor.syncAudioUi?.(); } catch {}
     if (routeSettleTimer) clearTimeout(routeSettleTimer);
     routeSettleTimer = setTimeout(() => {
       routeSettleTimer = null;
-      scheduleEnsure({ route: true, layout: true });
+      scheduleEnsure({ route: !sidebar, layout: true });
     }, 120);
   };
   if (typeof ResizeObserver === "function") {

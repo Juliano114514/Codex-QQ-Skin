@@ -162,14 +162,14 @@ html.codex-qq-skin[data-dream-shell="dark"] [data-user-message-bubble="true"] {
   box-shadow: var(--qq-night-glint);
 }
 
-html.codex-qq-skin[data-dream-shell="dark"] pre {
+html.codex-qq-skin[data-dream-shell="dark"] :is(pre, [data-code-block][class*="CodeSurface-"]) {
   background: #13232f !important;
   border: 1px solid #35566b;
   border-radius: 4px;
   text-shadow: none;
 }
 
-html.codex-qq-skin[data-dream-shell="dark"] :not(pre) > code {
+html.codex-qq-skin[data-dream-shell="dark"] :is(:not(pre) > code:not([data-code-block] code), [data-markdown-copy="inline-code"]) {
   background: #244454;
   color: #a7e4ed;
   border-radius: 3px;

@@ -26,13 +26,18 @@ let staticPayloadAssets = null;
 // Native sidebar changes rewrite main.className. Attribute-substring matching
 // there invalidates every descendant rule even though this is the same page.
 const SHELL_SELECTOR = 'main:is(.main-surface,[data-app-shell-main-surface],[data-qq-native-main])';
-const COMPOSER_SELECTOR = ':is(.composer-surface-chrome,[data-qq-native-composer])';
+const NATIVE_SIDEBAR_TRIGGER_SELECTOR = '[data-app-shell-frame] button[data-app-shell-sidebar-trigger]';
+const NATIVE_COMPOSER_SELECTOR = ':is([data-composer-surface-variant],[data-qq-native-composer])';
+const COMPOSER_SELECTOR = ':is(.composer-surface-chrome,[data-composer-surface-variant],[data-qq-native-composer])';
 function adaptShellSelectors(source) {
   return source
     .replaceAll('main.main-surface', SHELL_SELECTOR)
     .replaceAll('header.app-header-tint', 'header:is(.app-header-tint,.draggable)')
     .replaceAll('.composer-surface-chrome', COMPOSER_SELECTOR)
-    .replaceAll('[class*="_ComposerLayoutRoot_"]', '[data-qq-native-composer]')
+    .replaceAll('[class*="_ComposerLayoutRoot_"]', NATIVE_COMPOSER_SELECTOR)
+    .replaceAll('[class*="_ComposerLayoutBody_"]', ':is([data-composer-body],[class*="_ComposerLayoutBody_"])')
+    .replaceAll('[class*="_ComposerLayoutAttachments_"]', ':is([data-composer-attachments],[class*="_ComposerLayoutAttachments_"])')
+    .replaceAll('[class*="_RichTextInput_"]', ':is([data-rich-text-layout],[class*="_RichTextInput_"])')
     // The newer marker is an empty PiP obstacle; its sibling owns the UI.
     .replaceAll('[data-pip-obstacle="thread-summary-panel"]',
       ':is([data-pip-obstacle="thread-summary-panel"]:not([aria-hidden="true"]),[data-pip-obstacle="thread-summary-panel"][aria-hidden="true"] + div)');
@@ -258,6 +263,7 @@ async function probeSession(session) {
     const markers = {
       shell: Boolean(document.querySelector('${SHELL_SELECTOR}')),
       sidebar: Boolean(document.querySelector('aside.app-shell-left-panel')),
+      sidebarTrigger: Boolean(document.querySelector('${NATIVE_SIDEBAR_TRIGGER_SELECTOR}')),
       composer: Boolean(document.querySelector('${COMPOSER_SELECTOR}')),
       main: Boolean(document.querySelector('[role="main"]')),
     };
@@ -265,7 +271,7 @@ async function probeSession(session) {
       title: document.title,
       href: location.href,
       markers,
-      codex: markers.shell && markers.sidebar,
+      codex: markers.shell && (markers.sidebar || markers.sidebarTrigger),
     };
   })()`);
 }
@@ -1084,6 +1090,7 @@ async function verifySession(session) {
       visible('.group\\\\/home-suggestions');
     const homeRoute = homeSignal?.closest('[role="main"]') ?? null;
     const home = visible('[role="main"].qq-skin-home, [role="main"].dream-skin-home');
+    const adaptiveHome = Boolean(home?.querySelector('[class~="group/home-composer-layout"]'));
     const suggestions = home?.querySelector('.group\\\\/home-suggestions') ?? null;
     const cardBoxes = suggestions ? [...suggestions.querySelectorAll('button')].map(box) : [];
     const visibleCards = cardBoxes.filter((item) => item?.visible);
@@ -1096,6 +1103,7 @@ async function verifySession(session) {
     const shell = box(visible('${SHELL_SELECTOR}'));
     const composer = box(visible('${COMPOSER_SELECTOR}'));
     const sidebar = box(visible('aside.app-shell-left-panel'));
+    const sidebarCollapsed = visible('${NATIVE_SIDEBAR_TRIGGER_SELECTOR}')?.getAttribute('aria-expanded') === 'false';
     const chrome = document.getElementById('codex-qq-skin-chrome');
     const usagePanelNode = document.getElementById('codex-qq-skin-usage-panel');
     const usageSnapshot = window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__;
@@ -1118,6 +1126,7 @@ async function verifySession(session) {
       shell,
       composer,
       sidebar,
+      sidebarCollapsed,
       usagePanel: box(usagePanelNode),
       usageMode: document.documentElement.getAttribute('data-qq-usage-mode'),
       usageStatus: usageSnapshot?.status ?? usagePanelNode?.dataset?.usageStatus ?? null,
@@ -1132,10 +1141,13 @@ async function verifySession(session) {
     const chromePass = result.skinMode === 'custom' || (result.chromePresent && result.chromePointerEvents === 'none');
     const basePass = result.installed && result.version === ${JSON.stringify(SKIN_VERSION)} &&
       result.stylePresent && chromePass &&
-      Boolean(result.shell?.visible) && Boolean(result.sidebar?.visible) && !result.documentOverflow.x;
+      Boolean(result.shell?.visible) && (Boolean(result.sidebar?.visible) || result.sidebarCollapsed) &&
+      !result.documentOverflow.x;
     // Project selector markup varies across Codex builds — soft requirement.
     const homePass = !result.homeRoute || (
-      result.homePresent && result.hero?.visible && result.hero.width >= 280 && result.hero.height >= 120
+      result.homePresent && (adaptiveHome
+        ? Boolean(result.composer?.visible)
+        : Boolean(result.hero?.visible && result.hero.width >= 280 && result.hero.height >= 120))
     );
     result.pass = Boolean(basePass && homePass);
     result.softNotes = {
@@ -1235,6 +1247,7 @@ async function runOneShot(options) {
 
 export function earlyPayloadFor(payload, revision) {
   return `(() => {
+    if (window.top && window.top !== window) return;
     const generationKey = "__CODEX_QQ_SKIN_EARLY_GENERATION__";
     const appliedKey = "__CODEX_QQ_SKIN_EARLY_APPLIED__";
     const generation = ${JSON.stringify(revision)};
@@ -1251,7 +1264,7 @@ export function earlyPayloadFor(payload, revision) {
       if (window[generationKey] !== generation) { stop(); return true; }
       if (!document.documentElement) return false;
       const shell = document.querySelector('${SHELL_SELECTOR}');
-      const sidebar = document.querySelector('aside.app-shell-left-panel');
+      const sidebar = document.querySelector('aside.app-shell-left-panel, ${NATIVE_SIDEBAR_TRIGGER_SELECTOR}');
       if (!shell || !sidebar) return false;
       stop();
       ${payload};
@@ -1321,10 +1334,11 @@ async function runWatch(options) {
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
 
-  const registerEarly = async (session, payload, revision) => {
+  const registerEarly = async (session, payload, revision, runImmediately = false) => {
     const result = await session.send("Page.addScriptToEvaluateOnNewDocument", {
       source: earlyPayloadFor(payload, revision),
-    });
+      ...(runImmediately ? { runImmediately: true } : {}),
+    }, 30000);
     return result.identifier ?? null;
   };
 
@@ -1513,14 +1527,20 @@ async function runWatch(options) {
             if (!rejected.has(target.id)) {
               console.error(`[qq-skin] rejected non-Codex app target ${target.id}`);
             }
-            rejected.set(target.id, { url: target.url, retryAt: Date.now() + 30000 });
+            // A fresh window can take several seconds to mount Codex after
+            // /index.html appears. Keep probing promptly during startup.
+            const now = Date.now();
+            const firstRejectedAt = rejection?.url === target.url ? rejection.firstRejectedAt : now;
+            const starting = new URL(target.url).pathname === "/index.html" && now - firstRejectedAt < 20000;
+            rejected.set(target.id, { url: target.url, firstRejectedAt, retryAt: now + (starting ? 1200 : 30000) });
             continue;
           }
           rejected.delete(target.id);
           record = { session, earlyScriptId: null, needsLoadFallback: false };
           try {
-            record.earlyScriptId = await registerEarly(session, current.payload, current.revision);
-            await session.evaluate(earlyPayloadFor(current.payload, current.revision));
+            // Apply in the current document and register for reloads in one
+            // transfer. Older CDP hosts still use the direct fallback below.
+            record.earlyScriptId = await registerEarly(session, current.payload, current.revision, true);
           } catch (error) {
             record.needsLoadFallback = true;
             console.error(`[qq-skin] early injection unavailable: ${error.message}`);

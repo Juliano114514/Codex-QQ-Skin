@@ -715,7 +715,7 @@ html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mod
 }
 
 html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
-  main.main-surface:not(.qq-skin-home-shell) [class*="_markdown"] {
+  main.main-surface:not(.qq-skin-home-shell) :is([class*="_markdown"], [data-markdown-text-style="assistant-message"]) {
   color: var(--ds-text) !important;
   text-shadow:
     0 1px 2px rgb(var(--ds-bg-rgb) / .82),
@@ -723,7 +723,7 @@ html.codex-qq-skin:is([data-dream-task-mode="ambient"], [data-dream-art-task-mod
 }
 
 html.codex-qq-skin[data-dream-shell="light"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
-  main.main-surface:not(.qq-skin-home-shell) [class*="_markdown"] {
+  main.main-surface:not(.qq-skin-home-shell) :is([class*="_markdown"], [data-markdown-text-style="assistant-message"]) {
   text-shadow:
     0 1px 2px rgb(var(--ds-panel-rgb) / .92),
     0 0 10px rgb(var(--ds-panel-rgb) / .72);
@@ -1618,7 +1618,7 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
 
 html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   main.main-surface:not(.qq-skin-home-shell)
-  [data-content-search-unit-key$=":assistant"] {
+  :is([data-content-search-unit-key$=":assistant"], [data-markdown-text-style="assistant-message"]) {
   margin-top: 12px !important;
   padding: 13px 2px 0 !important;
   border-top: 1px solid rgb(112 157 199 / .26) !important;
@@ -1627,8 +1627,8 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
 
 html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   main.main-surface:not(.qq-skin-home-shell)
-  [data-content-search-unit-key$=":assistant"] pre {
-  overflow: auto !important;
+  :is([data-content-search-unit-key$=":assistant"], [data-markdown-text-style="assistant-message"])
+  :is(pre, [data-code-block][class*="CodeSurface-"]) {
   border: 1px solid rgb(72 132 190 / .46) !important;
   border-radius: 7px !important;
   background: linear-gradient(180deg, #f2f8fe, #e3f0fb) !important;
@@ -1639,7 +1639,13 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
 }
 
 html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
-  main.main-surface:not(.qq-skin-home-shell) :not(pre) > code,
+  main.main-surface:not(.qq-skin-home-shell)
+  :is([data-content-search-unit-key$=":assistant"], [data-markdown-text-style="assistant-message"]) pre {
+  overflow: auto !important;
+}
+
+html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
+  main.main-surface:not(.qq-skin-home-shell) :not(pre) > code:not([data-code-block] code),
 html.codex-qq-skin[data-dream-shell="light"][data-dream-three-pane="true"]
   main.main-surface:not(.qq-skin-home-shell) [data-markdown-copy="inline-code"] {
   border: 1px solid rgb(85 140 190 / .30) !important;
@@ -2054,12 +2060,15 @@ html.codex-qq-skin:is([data-dream-art-safe="center"], [data-dream-art-safe-area=
 .qq-skin-home .group\/home-suggestions button > span:last-child { align-items: center !important; text-align: center !important; }
 
 html.codex-qq-skin .composer-surface-chrome {
-  overflow: visible !important;
   border: 1px solid rgb(var(--ds-muted-rgb) / .18) !important;
   border-radius: 22px !important;
   background: rgb(var(--ds-panel-rgb) / .94) !important;
   box-shadow: 0 10px 28px rgb(var(--ds-bg-rgb) / .24) !important;
   backdrop-filter: blur(16px) saturate(108%) !important;
+}
+
+html.codex-qq-skin .composer-surface-chrome:not([data-composer-surface-variant]) {
+  overflow: visible !important;
 }
 
 html.codex-qq-skin .composer-surface-chrome::before { content: none !important; }
@@ -2225,22 +2234,22 @@ html.codex-qq-skin[data-dream-shell="light"][data-dream-art-wide="true"]
 }
 
 html.codex-qq-skin .qq-skin-home-utility button,
-html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]) {
+html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"], .bg-composer-primary) {
   color: var(--ds-muted) !important;
 }
 
 html.codex-qq-skin .qq-skin-home-utility button svg,
-html.codex-qq-skin .composer-surface-chrome button svg {
+html.codex-qq-skin .composer-surface-chrome button:not(.bg-composer-primary) svg:not(.text-warning, .text-danger) {
   color: currentColor !important;
 }
 
 html.codex-qq-skin .qq-skin-home-utility button :is(span, svg),
-html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]) :is(span, svg) {
+html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"], .bg-composer-primary) :is(span, svg):not(.text-warning, .text-danger) {
   color: currentColor !important;
 }
 
 html.codex-qq-skin .qq-skin-home-utility button:hover,
-html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"]):hover {
+html.codex-qq-skin .composer-surface-chrome button:not([class~="bg-token-foreground"], .bg-composer-primary):not(:disabled, [aria-disabled="true"]):hover {
   color: var(--ds-text) !important;
   background: rgb(var(--ds-accent-rgb) / .10) !important;
 }
@@ -2332,10 +2341,15 @@ html.codex-qq-skin .ProseMirror {
   caret-color: var(--ds-accent) !important;
 }
 
-html.codex-qq-skin button[class~="bg-token-foreground"] {
+html.codex-qq-skin button[class~="bg-token-foreground"],
+html.codex-qq-skin .composer-surface-chrome button.bg-composer-primary {
   background: var(--ds-accent) !important;
   color: var(--ds-on-accent) !important;
   box-shadow: 0 5px 14px rgb(var(--ds-accent-rgb) / .20) !important;
+}
+
+html.codex-qq-skin .composer-surface-chrome button.bg-composer-primary svg {
+  color: inherit !important;
 }
 
 html.codex-qq-skin article,
@@ -3020,6 +3034,22 @@ html.codex-qq-skin .qq-skin-home-utility[data-composer-rail]
   background: transparent !important;
 }
 
+/* The attached rail overlaps the editor's top edge. Paint the shared frame
+   on the surface, while the native editor body still handles its own layout. */
+@layer qq-reference {
+  html.codex-qq-skin .qq-skin-home[data-qq-home-part~="utility"]
+    [data-composer-surface-variant][data-composer-utility-bar-variant="home"] {
+    border-start-start-radius: 0 !important;
+    border-start-end-radius: 0 !important;
+  }
+  html.codex-qq-skin .qq-skin-home[data-qq-home-part~="utility"]
+    [data-composer-surface-variant][data-composer-utility-bar-variant="home"] > [data-composer-body] {
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+}
+
 /* Let the adaptive home composer reserve its own space, including banners,
    attachment previews and the expanded editor. Use scrolling on short windows. */
 html.codex-qq-skin[data-qq-home-layout="adaptive"] .qq-skin-home {
@@ -3187,7 +3217,12 @@ html.codex-qq-skin .qq-skin-profile-host {
   position: relative;
   min-width: 0;
 }
-html.codex-qq-skin .qq-skin-profile-thread { min-width: 0; }
+html.codex-qq-skin .qq-skin-profile-thread {
+  min-width: 0;
+  /* The dock already reserves its own column. Center the transcript and
+     composer within the remaining space even when native navigation shifts. */
+  --thread-content-x: 0px !important;
+}
 html.codex-qq-skin .qq-skin-profile-thread [style*="--thread-wide-block-inline-shift"] {
   --thread-wide-block-inline-shift: 0px !important;
   transform: none !important;
