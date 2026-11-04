@@ -701,7 +701,7 @@ export function sanitizeUsageSnapshot(value) {
       })) : [],
     };
   }
-  snapshot.chart = Array.isArray(value?.chart) ? value.chart.slice(-7).map((item) => ({
+  snapshot.chart = Array.isArray(value?.chart) ? value.chart.slice(-30).map((item) => ({
     date: /^\d{4}-\d{2}-\d{2}$/.test(String(item?.date || "")) ? item.date : "",
     totalTokens: finiteCount(item?.totalTokens),
   })) : [];

@@ -910,11 +910,10 @@ html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summ
   right: var(--dream-right-panel-right, 20px);
   bottom: var(--dream-right-tray-inset, 14px);
   width: min(var(--dream-summary-panel-width, 300px), calc(100vw - 74px));
-  --qq-usage-chart-gap: 6px;
-  height: min(calc(420px + var(--qq-usage-chart-growth, 0px)), var(--qq-growth-available-height, calc(100vh - 90px)));
+  max-height: var(--qq-growth-available-height, calc(100vh - 90px));
   z-index: 43;
   display: grid;
-  grid-template-rows: 34px 64px 76px 58px minmax(48px, 1fr) 24px auto auto 28px;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid rgb(64 122 187 / .66);
   border-radius: 8px;
@@ -1106,8 +1105,9 @@ html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summ
 }
 
 .qq-skin-usage-chart {
-  min-height: 36px;
-  margin-top: var(--qq-usage-chart-gap, 6px);
+  position: relative;
+  min-width: 0;
+  height: 86px;
   display: flex;
   align-items: end;
   gap: 5px;
@@ -1117,6 +1117,7 @@ html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summ
 }
 
 .qq-skin-usage-chart > i {
+  min-width: 0;
   flex: 1 1 0;
   height: 100%;
   display: flex;
@@ -1132,6 +1133,51 @@ html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summ
   border-radius: 3px 3px 1px 1px;
   background: linear-gradient(180deg, #62baf1, #2e78bd);
   box-shadow: inset 0 1px rgb(255 255 255 / .48);
+}
+
+@layer qq-reference {
+  html.codex-qq-skin[data-qq-palette][data-dream-shell] #root #codex-qq-skin-usage-panel .qq-skin-usage-chart[data-usage-chart-days="30"] {
+    gap: 2px !important;
+  }
+}
+
+.qq-skin-usage-chart-range {
+  display: flex;
+  gap: 1px;
+  padding: 1px;
+  border: 1px solid var(--ds-line);
+  border-radius: var(--qq-radius-control, 3px);
+  background: var(--ds-panel);
+  color: var(--ds-text);
+}
+
+#codex-qq-skin-usage-panel .qq-skin-usage-chart-range > button {
+  min-width: 36px;
+  height: 26px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#codex-qq-skin-usage-panel .qq-skin-usage-chart-range > button:is(:hover, [aria-pressed="true"]) {
+  background: var(--ds-panel-2);
+  color: var(--ds-accent);
+}
+
+#codex-qq-skin-usage-panel .qq-skin-usage-chart-range > button[aria-pressed="true"] {
+  font-weight: 700;
+  box-shadow: inset 0 -2px var(--ds-accent);
+}
+
+#codex-qq-skin-usage-panel .qq-skin-usage-chart-range > button:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: -2px;
 }
 
 .qq-skin-usage-activity {
@@ -1211,7 +1257,6 @@ html.codex-qq-skin:is([data-qq-settings="true"], [data-qq-quick-chat="true"]) :i
     min-height: 330px !important;
   }
 
-  .qq-skin-usage-breakdown { visibility: hidden; padding: 0; }
 }
 
 /* Let the blue tray show through around Output/Source instead of opaque shells. */
@@ -2842,7 +2887,6 @@ html.codex-qq-skin[data-dream-platform="windows"] .dream-retro-titlebar strong {
   bottom: auto !important;
 }
 #codex-qq-skin-usage-panel .qq-skin-window-title { cursor: ns-resize; }
-.qq-skin-usage-footer { grid-row: 9; }
 
 /* Empty native PiP markers must not paint a second frame behind the card. */
 html.codex-qq-skin[data-dream-three-pane="true"] [data-pip-obstacle='thread-summary-panel']:empty[aria-hidden="true"] {
@@ -3192,7 +3236,7 @@ html.codex-qq-skin #codex-qq-skin-usage-panel.qq-skin-growth-docked {
   inset: auto !important;
   transform: none !important;
   width: 100% !important;
-  height: calc(420px + var(--qq-usage-chart-growth, 0px)) !important;
+  height: auto !important;
   max-height: none !important;
   flex: none !important;
   border: 1px solid var(--qq-card-border);
@@ -3554,21 +3598,82 @@ html.codex-qq-skin :is(.qq-skin-details-title, .qq-skin-growth-docked .qq-skin-u
   #codex-qq-skin-profile-dialog input { max-width: calc(100% - 55px); }
 }
 
-/* Two compact, readable progress rows share the card's content edges. */
-#codex-qq-skin-usage-panel .qq-skin-profile-progress { display: grid; gap: 4px; padding: 4px 12px 8px; }
+.qq-skin-profile-body { min-width: 0; overflow-y: auto; scrollbar-width: thin; }
+.qq-skin-growth-docked .qq-skin-profile-body { overflow: visible; }
+#codex-qq-skin-usage-panel .qq-skin-profile-progress { display: grid; gap: 5px; padding: 8px 12px 12px; }
+.qq-skin-profile-progress > div:not(.qq-skin-level-progress) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  column-gap: 6px;
+  color: var(--ds-text);
+  font-size: 11px;
+}
+.qq-skin-profile-progress > div:nth-child(3) { margin-top: 4px; }
 #codex-qq-skin-usage-panel .qq-skin-profile-progress .qq-skin-level-progress { margin: 0; height: 6px; }
-#codex-qq-skin-usage-panel .qq-skin-profile-progress small { display: block; min-width: 0; text-align: right; color: var(--ds-muted); font-size: 10px; line-height: 16px; font-variant-numeric: tabular-nums; }
-#codex-qq-skin-usage-panel .qq-skin-profile-progress .qq-skin-quota-progress { margin-top: 4px; }
+#codex-qq-skin-usage-panel .qq-skin-profile-progress small { color: var(--ds-muted); font-size: 11px; line-height: 16px; font-variant-numeric: tabular-nums; }
 #codex-qq-skin-usage-panel .qq-skin-usage-metrics { padding: 4px 12px 8px; gap: 6px; }
-#codex-qq-skin-usage-panel .qq-skin-usage-metrics > div { padding: 6px 2px; }
+#codex-qq-skin-usage-panel .qq-skin-usage-metrics > div { gap: 3px; padding: 6px 2px; }
+#codex-qq-skin-usage-panel .qq-skin-usage-metrics span { font-size: 11px; }
 #codex-qq-skin-usage-panel .qq-skin-profile-avatar-button { overflow: hidden; border-radius: var(--qq-radius-control); }
 #codex-qq-skin-usage-panel .qq-skin-profile-avatar-button img { width: 100%; height: 100%; object-fit: cover; }
-#codex-qq-skin-usage-panel .qq-skin-profile-identity > button { max-width: 65%; }
+#codex-qq-skin-usage-panel .qq-skin-profile-identity > button { max-width: 65%; font-size: 14px; }
+#codex-qq-skin-usage-panel .qq-skin-profile-presence-row { font-size: 11px; }
+.qq-skin-usage-chart-header, .qq-skin-usage-chart-dates {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-inline: 12px;
+}
+.qq-skin-usage-chart-header { padding-block: 6px; color: var(--ds-text); font-size: 12px; }
+.qq-skin-usage-chart-dates { padding: 4px 0 8px; color: var(--ds-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 #codex-qq-skin-usage-panel .qq-skin-usage-chart { margin-inline: 12px; }
-#codex-qq-skin-usage-panel :is(.qq-skin-usage-activity, .qq-skin-usage-breakdown) { padding-inline: 12px; line-height: 1.6; }
-
-#codex-qq-skin-usage-panel .qq-skin-usage-message { grid-row: 8; }
-#codex-qq-skin-usage-panel .qq-skin-usage-footer { grid-row: 9; }
-#codex-qq-skin-usage-panel .qq-skin-usage-breakdown { display: flex; flex-direction: column; gap: 0; white-space: normal; padding-block: 8px; font-size: 10px; }
+.qq-skin-usage-details { margin: 0 12px 8px; border-top: 1px solid var(--ds-line); }
+.qq-skin-usage-details > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 2px;
+  cursor: pointer;
+  color: var(--ds-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+.qq-skin-usage-details > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 3px;
+  border: solid currentColor;
+  border-width: 0 1px 1px 0;
+  transform: rotate(45deg);
+}
+.qq-skin-usage-details[open] > summary::after { transform: rotate(225deg); }
+.qq-skin-usage-details > summary:focus-visible { outline: 2px solid var(--ds-accent); }
+#codex-qq-skin-usage-panel .qq-skin-usage-detail-group {
+  padding: 8px 2px;
+  border-top: 1px solid var(--ds-line);
+  white-space: normal;
+  color: var(--ds-muted);
+  font: 12px/1.5 var(--qq-font-ui);
+}
+.qq-skin-usage-detail-heading { margin-bottom: 4px; color: var(--ds-text); font-weight: 700; }
+.qq-skin-usage-detail-group dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 3px 12px;
+  margin: 0;
+}
+.qq-skin-usage-detail-group dd {
+  margin: 0;
+  text-align: end;
+  color: var(--ds-text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 #codex-qq-skin-usage-panel .qq-skin-usage-title { justify-content: flex-start; gap: 6px; }
 #codex-qq-skin-usage-panel .qq-skin-profile-settings { margin-left: auto; }

@@ -2936,7 +2936,6 @@ html.codex-qq-skin[data-qq-palette="millennium-pc"][data-dream-shell="dark"] {
     border-radius: 7px 7px 2px 2px !important;
     box-shadow: inset 1px 0 #8cb4ff, 2px 3px 5px #17386540 !important;
     color: #000000 !important;
-    grid-template-rows: 30px 60px 78px 56px minmax(64px, 1fr) 24px auto auto 28px;
     font-family: var(--qq-font-ui) !important;
   }
   html.codex-qq-skin[data-qq-palette="windows-xp"][data-dream-shell="light"] #root #codex-qq-skin-usage-panel .qq-skin-usage-title {
@@ -3010,21 +3009,13 @@ html.codex-qq-skin[data-qq-palette="millennium-pc"][data-dream-shell="dark"] {
   }
   html.codex-qq-skin[data-qq-palette="windows-xp"][data-dream-shell="light"] #root #codex-qq-skin-usage-panel .qq-skin-usage-chart {
     position: relative;
-    margin: calc(14px + var(--qq-usage-chart-gap, 6px)) 8px 0 !important;
+    margin: 0 12px !important;
     padding: 0 !important;
     gap: 0;
     border: 1px solid #808080 !important;
     border-radius: 0 !important;
     background: repeating-linear-gradient(0deg, transparent 0 11px, #164516 11px 12px), repeating-linear-gradient(90deg, transparent 0 15px, #164516 15px 16px), #000000 !important;
     box-shadow: -1px -1px #aca899, 1px 1px #ffffff !important;
-  }
-  html.codex-qq-skin[data-qq-palette="windows-xp"][data-dream-shell="light"] #root #codex-qq-skin-usage-panel .qq-skin-usage-chart::before {
-    content: "Token 使用记录 · 近7天";
-    position: absolute;
-    top: -18px;
-    left: 0;
-    color: #000000;
-    font: 11px/16px var(--qq-font-ui);
   }
   html.codex-qq-skin[data-qq-palette="windows-xp"][data-dream-shell="light"] #root .qq-skin-usage-chart > i {
     border: 0 !important;

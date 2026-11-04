@@ -21,6 +21,7 @@
   const QQ_APPEARANCE_STORAGE_KEY = "codex-qq-skin-appearance";
   const LIBRARY_SWITCH_KEY = "codex-qq-skin-library-switch";
   const USAGE_REFRESH_KEY = "codex-qq-skin-usage-refresh";
+  const USAGE_CHART_DAYS_KEY = "codex-qq-skin-usage-chart-days";
   const PROFILE_STORAGE_KEY = "codex-qq-skin-profile-v1";
   const PROFILE_DIALOG_ID = "codex-qq-skin-profile-dialog";
   const PROFILE_DOCK_ID = "codex-qq-skin-profile-dock";
@@ -827,6 +828,8 @@
 
   let chromeParts = null;
   let usageParts = null;
+  let usageChartDays = 7;
+  try { if (window.localStorage?.getItem(USAGE_CHART_DAYS_KEY) === "30") usageChartDays = 30; } catch {}
   let usageSnapshot = window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ && typeof window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__ === "object"
     ? window.__CODEX_QQ_SKIN_USAGE_SNAPSHOT__
     : { schemaVersion: 1, status: "loading", scope: "device" };
@@ -2229,7 +2232,7 @@
     for (let y = 0; y < rows; y += 1) {
       for (let x = 0; x < columns; x += 1) context.fillRect(left + x * pitch, top + y * pitch, dot, dot);
     }
-    const chart = Array.isArray(usageSnapshot?.chart) ? usageSnapshot.chart.slice(-7) : [];
+    const chart = Array.isArray(usageSnapshot?.chart) ? usageSnapshot.chart.slice(-usageChartDays) : [];
     const maximum = Math.max(1, ...chart.map(visibleUsageTokens));
     context.fillStyle = ink;
     for (const pixel of lcdHistoryPixels(chart, maximum, columns, rows)) {
@@ -2576,28 +2579,6 @@
     input.focus(); input.select();
   };
 
-  // Expand the actual chart by 20%, retaining each theme's grid and intrinsic
-  // text rows. Re-measure only when its theme, width or status content changes.
-  const syncUsageChartSize = () => {
-    const parts = usageParts;
-    const panel = parts?.panel;
-    if (!panel?.isConnected || !parts.chart?.offsetHeight || panel.classList.contains("qq-skin-window-collapsed")) return;
-    const key = [THEME.id, resolvedShell(), panel.clientWidth, window.innerHeight,
-      panel.classList.contains("qq-skin-growth-docked"), parts.breakdown?.textContent, parts.message?.textContent].join("|");
-    if (parts.chartSizeKey === key) return;
-    parts.chartSizeKey = key;
-    setStyleProperty(panel, "--qq-usage-chart-growth", "0px");
-    setStyleProperty(panel, "--qq-usage-chart-gap", "0px");
-    const style = getComputedStyle(parts.chart);
-    const edges = style.boxSizing === "border-box" ? 0 : [style.paddingTop, style.paddingBottom,
-      style.borderTopWidth, style.borderBottomWidth].reduce((sum, value) => sum + (parseFloat(value) || 0), 0);
-    const height = parseFloat(style.height) + edges;
-    if (Number.isFinite(height) && height > 0) {
-      setStyleProperty(panel, "--qq-usage-chart-growth", `${(height * .2 + 6).toFixed(3)}px`);
-    }
-    setStyleProperty(panel, "--qq-usage-chart-gap", "6px");
-  };
-
   const renderUsageSnapshot = () => {
     const parts = usageParts;
     if (!parts?.panel) return;
@@ -2605,7 +2586,8 @@
     const xpHistory = skinMode === "qq" && qqAppearance === "windows-xp";
     const lcdHistory = skinMode === "qq" && qqAppearance === "millennium-pc";
     const historyStyle = xpHistory ? "xp" : lcdHistory ? `lcd-${resolvedShell()}` : "bars";
-    if (parts.hasRendered && parts.renderedSnapshot === usageSnapshot && parts.renderedHistoryStyle === historyStyle) return;
+    if (parts.hasRendered && parts.renderedSnapshot === usageSnapshot && parts.renderedHistoryStyle === historyStyle
+      && parts.renderedChartDays === usageChartDays) return;
     renderQuotaProgress();
     const snapshot = usageSnapshot && typeof usageSnapshot === "object" ? usageSnapshot : { status: "error" };
     const status = ["loading", "indexing", "empty", "ready", "error"].includes(snapshot.status)
@@ -2613,27 +2595,47 @@
     if (parts.panel.dataset) parts.panel.dataset.usageStatus = status;
     setAttribute(document.documentElement, "data-qq-usage-state", status);
 
+    const chart = Array.isArray(snapshot.chart) ? snapshot.chart.slice(-usageChartDays) : [];
     const totals = snapshot.totals || {};
     const lifetime = totals.lifetime || {};
     const growth = profileProgress();
     setTextContent(parts.today, formatTokenCount(visibleUsageTokens(totals.today)));
-    setTextContent(parts.week, formatTokenCount(visibleUsageTokens(totals.week)));
+    const rangeTokens = usageChartDays === 30
+      ? chart.reduce((total, item) => total + visibleUsageTokens(item), 0)
+      : visibleUsageTokens(totals.week);
+    setTextContent(parts.week, formatTokenCount(rangeTokens));
+    setTextContent(parts.weekLabel, `近 ${usageChartDays} 天`);
     setTextContent(parts.lifetime, formatTokenCount(visibleUsageTokens(lifetime)));
     setAttribute(parts.progressFill.parentElement, "title", growth.tooltip);
     setAttribute(parts.progressFill.parentElement, "aria-valuenow", String(growth.percent));
     setTextContent(parts.progressText, `${formatGrowthDays(growth.earned)}天 / ${formatGrowthDays(growth.span)}天`);
     setStyleProperty(parts.progressFill, "width", `${clamp(Math.round(Number(growth.percent) || 0), 0, 100)}%`);
-    setTextContent(parts.activity,
-      `活跃 ${Math.max(0, Number(snapshot.activity?.activeDays) || 0)} 天 · 连续 ${Math.max(0, Number(snapshot.activity?.streakDays) || 0)} 天`);
-    setTextContent(parts.todayActivity,
-      `今日活跃度 ${formatTokenCount(visibleUsageTokens(totals.today))} / ${formatTokenCount(snapshot.growth?.dailyTokenTarget || 10_000)}，已加速 ${formatGrowthDays(snapshot.growth?.todayBonus)} 天`);
-    setTextContent(parts.breakdown,
-      `输入 ${formatTokenCount(lifetime.inputTokens)} · 输出 ${formatTokenCount(lifetime.outputTokens)} · 推理 ${formatTokenCount(lifetime.reasoningOutputTokens)} · 缓存 ${formatTokenCount(lifetime.cachedInputTokens)}`);
+    const todayTokens = visibleUsageTokens(totals.today);
+    const dailyTarget = snapshot.growth?.dailyTokenTarget || 10_000;
+    const bonus = formatGrowthDays(snapshot.growth?.todayBonus);
+    const details = {
+      active: `${Math.max(0, Number(snapshot.activity?.activeDays) || 0)} 天`,
+      streak: `${Math.max(0, Number(snapshot.activity?.streakDays) || 0)} 天`,
+      today: formatTokenCount(todayTokens),
+      target: todayTokens >= dailyTarget ? "已达最高档" : formatTokenCount(dailyTarget),
+      bonus: `${bonus === "0" ? "" : "+"}${bonus} 天`,
+      input: formatTokenCount(lifetime.inputTokens),
+      output: formatTokenCount(lifetime.outputTokens),
+      reasoning: formatTokenCount(lifetime.reasoningOutputTokens),
+      cached: formatTokenCount(lifetime.cachedInputTokens),
+    };
+    for (const [key, value] of Object.entries(details)) setTextContent(parts.details[key], value);
 
     if (parts.chart) {
-      const chart = Array.isArray(snapshot.chart) ? snapshot.chart.slice(-7) : [];
+      setTextContent(parts.chartStart, String(chart[0]?.date || "").slice(5));
+      setTextContent(parts.chartEnd, String(chart.at(-1)?.date || "").slice(5));
+      setAttribute(parts.chart, "aria-label", `近 ${usageChartDays} 天 token 趋势`);
+      setAttribute(parts.chart, "data-usage-chart-days", String(usageChartDays));
+      for (const button of parts.chartRangeButtons) {
+        setAttribute(button, "aria-pressed", String(Number(button.dataset.usageChartDays) === usageChartDays));
+      }
       const maximum = Math.max(1, ...chart.map(visibleUsageTokens));
-      const count = chart.length || 7;
+      const count = chart.length || usageChartDays;
       const bars = [...parts.chart.children].filter(node => node.tagName === "I");
       while (bars.length > count) bars.pop().remove();
       while (bars.length < count) {
@@ -2650,7 +2652,7 @@
         setAttribute(bar.firstElementChild, "data-qq-chart-latest", String(index === count - 1));
         setAttribute(bar, "title", item ? `${String(item.date || "").slice(5)} · ${formatTokenCount(value)} token` : "");
       });
-      // All histories use the same seven samples and daily hover values.
+      // All histories use the selected daily samples and hover values.
       // XP keeps its vector trace; the PC LCD is rasterized below at 1:1.
       let history = parts.chart.querySelector(".qq-skin-xp-history");
       if (xpHistory && chart.length) {
@@ -2702,7 +2704,7 @@
     parts.hasRendered = true;
     parts.renderedSnapshot = usageSnapshot;
     parts.renderedHistoryStyle = historyStyle;
-    syncUsageChartSize();
+    parts.renderedChartDays = usageChartDays;
   };
 
   const setUsageSnapshot = (snapshot) => {
@@ -2730,6 +2732,7 @@
       panel.setAttribute("aria-label", "个人资料");
       panel.innerHTML = `
         <div class="qq-skin-usage-title"><span>个人资料</span><button class="qq-skin-profile-settings" type="button" aria-label="个人资料设置" title="个人资料设置">⚙</button></div>
+        <div class="qq-skin-profile-body">
         <div class="qq-skin-usage-level">
           <button class="qq-skin-profile-avatar-button" type="button" aria-label="更换头像"><img data-profile-field="avatar" alt="个人头像" width="40" height="40" draggable="false"></button>
           <div class="qq-skin-usage-level-main">
@@ -2738,21 +2741,55 @@
           </div>
         </div>
         <div class="qq-skin-profile-progress">
+          <div><span>等级进度</span><small data-usage-progress="level"></small></div>
           <div class="qq-skin-level-progress" role="progressbar" aria-label="等级进度" aria-valuemin="0" aria-valuemax="100"><i></i></div>
-          <small data-usage-progress="level"></small>
+          <div><span>Codex 额度</span><small data-usage-progress="quota"></small></div>
           <div class="qq-skin-level-progress qq-skin-quota-progress" role="progressbar" aria-label="Codex 剩余额度" aria-valuemin="0" aria-valuemax="100"><i></i></div>
-          <small data-usage-progress="quota"></small>
         </div>
         <div class="qq-skin-usage-metrics">
           <div><b data-usage-metric="today">0</b><span>今日 Token</span></div>
           <div><b data-usage-metric="week">0</b><span>近 7 天</span></div>
           <div><b data-usage-metric="lifetime">0</b><span>历史累计</span></div>
         </div>
-        <div class="qq-skin-usage-chart" aria-label="近七天 token 趋势"></div>
-        <div class="qq-skin-usage-activity"></div>
-        <div class="qq-skin-usage-breakdown"><div data-usage-today-activity></div><div data-usage-token-breakdown></div></div>
+        <div class="qq-skin-usage-chart-header">
+          <b>Token 趋势</b>
+          <div class="qq-skin-usage-chart-range" role="group" aria-label="趋势图时间范围">
+            <button type="button" data-usage-chart-days="7" aria-pressed="true">7 天</button>
+            <button type="button" data-usage-chart-days="30" aria-pressed="false">30 天</button>
+          </div>
+        </div>
+        <div class="qq-skin-usage-chart" role="img" aria-label="近 7 天 token 趋势"></div>
+        <div class="qq-skin-usage-chart-dates" aria-hidden="true"><span></span><span></span></div>
+        <details class="qq-skin-usage-details">
+          <summary>用量明细</summary>
+          <div class="qq-skin-usage-detail-group qq-skin-usage-activity">
+            <div class="qq-skin-usage-detail-heading">活跃记录</div>
+            <dl>
+              <dt>累计活跃</dt><dd data-usage-detail="active"></dd>
+              <dt>连续活跃</dt><dd data-usage-detail="streak"></dd>
+            </dl>
+          </div>
+          <div class="qq-skin-usage-detail-group qq-skin-usage-breakdown">
+            <div class="qq-skin-usage-detail-heading">今日成长</div>
+            <dl>
+              <dt>Token 用量</dt><dd data-usage-detail="today"></dd>
+              <dt>下一档用量门槛</dt><dd data-usage-detail="target"></dd>
+              <dt>额外成长</dt><dd data-usage-detail="bonus"></dd>
+            </dl>
+          </div>
+          <div class="qq-skin-usage-detail-group qq-skin-usage-breakdown">
+            <div class="qq-skin-usage-detail-heading">累计 Token</div>
+            <dl>
+              <dt>输入</dt><dd data-usage-detail="input"></dd>
+              <dt>输出</dt><dd data-usage-detail="output"></dd>
+              <dt>推理输出</dt><dd data-usage-detail="reasoning"></dd>
+              <dt>缓存输入</dt><dd data-usage-detail="cached"></dd>
+            </dl>
+          </div>
+        </details>
         <div class="qq-skin-usage-message"></div>
-        <div class="qq-skin-usage-footer"><span></span><button type="button" data-usage-action="refresh">刷新</button></div>`;
+        <div class="qq-skin-usage-footer"><span></span><button type="button" data-usage-action="refresh">刷新</button></div>
+        </div>`;
       document.body.appendChild(panel);
       panel.querySelector(".qq-skin-profile-settings").addEventListener("click", () => openProfileDialog());
       panel.querySelector('[data-profile-field="name"]').addEventListener("click", () => openProfileDialog());
@@ -2766,11 +2803,14 @@
         progressFill: panel.querySelector(".qq-skin-level-progress i"),
         today: panel.querySelector('[data-usage-metric="today"]'),
         week: panel.querySelector('[data-usage-metric="week"]'),
+        weekLabel: panel.querySelector('[data-usage-metric="week"] + span'),
         lifetime: panel.querySelector('[data-usage-metric="lifetime"]'),
         chart: panel.querySelector(".qq-skin-usage-chart"),
-        activity: panel.querySelector(".qq-skin-usage-activity"),
-        todayActivity: panel.querySelector("[data-usage-today-activity]"),
-        breakdown: panel.querySelector("[data-usage-token-breakdown]"),
+        chartStart: panel.querySelector(".qq-skin-usage-chart-dates > :first-child"),
+        chartEnd: panel.querySelector(".qq-skin-usage-chart-dates > :last-child"),
+        chartRangeButtons: panel.querySelectorAll(".qq-skin-usage-chart-range button"),
+        details: Object.fromEntries([...panel.querySelectorAll("[data-usage-detail]")]
+          .map(node => [node.dataset.usageDetail, node])),
         message: panel.querySelector(".qq-skin-usage-message"),
         updated: panel.querySelector(".qq-skin-usage-footer span"),
         refreshButton: panel.querySelector('[data-usage-action="refresh"]'),
@@ -2778,6 +2818,17 @@
         quotaFill: panel.querySelector(".qq-skin-quota-progress i"),
         quotaText: panel.querySelector('[data-usage-progress="quota"]'),
       };
+      for (const button of usageParts.chartRangeButtons) {
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const days = Number(button.dataset.usageChartDays);
+          if (![7, 30].includes(days) || days === usageChartDays) return;
+          usageChartDays = days;
+          try { window.localStorage?.setItem(USAGE_CHART_DAYS_KEY, String(days)); } catch {}
+          renderUsageSnapshot();
+        });
+      }
       usageParts.refreshButton?.addEventListener?.("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -2905,6 +2956,8 @@
   let profileDockOpen = true;
   let dockSummaryToggle = null;
   let dockedNativeSummary = null;
+  let dockedSummaryCard = null;
+  const suspendedDockAttributes = new Map();
   let dockSummaryObserver = null;
   try { profileDockOpen = window.localStorage?.getItem(PROFILE_DOCK_STORAGE_KEY) !== "false"; } catch {}
   const setProfileDockOpen = (open) => {
@@ -2919,22 +2972,51 @@
     event.stopPropagation();
     setProfileDockOpen(!profileDockOpen);
   };
+  const restoreDockAttributes = () => {
+    for (const [node, attributes] of suspendedDockAttributes) {
+      for (const [name, value] of attributes) {
+        if (!node.hasAttribute(name)) node.setAttribute(name, value);
+      }
+    }
+    suspendedDockAttributes.clear();
+  };
   const syncDockAccessibility = () => {
     const dock = document.getElementById(PROFILE_DOCK_ID);
     if (!dockedNativeSummary || !dock) return;
     const open = dock.dataset.open === "true";
     dockedNativeSummary.toggleAttribute("inert", !open);
     setAttribute(dockedNativeSummary, "aria-hidden", String(!open));
+    if (!open) {
+      restoreDockAttributes();
+      return;
+    }
+    // The native floating panel also disables an inner wrapper when unpinned.
+    // Its descendants are interactive while we use that wrapper as a dock.
+    for (let node = dockedSummaryCard?.parentElement; node && node !== dockedNativeSummary; node = node.parentElement) {
+      for (const name of ["inert", "aria-hidden"]) {
+        const value = node.getAttribute(name);
+        if (value === null || (name === "aria-hidden" && value !== "true")) continue;
+        if (!suspendedDockAttributes.has(node)) suspendedDockAttributes.set(node, new Map());
+        suspendedDockAttributes.get(node).set(name, value);
+        node.removeAttribute(name);
+      }
+    }
   };
   const releaseNativeSummary = () => {
     dockSummaryObserver?.disconnect();
     dockSummaryObserver = null;
+    restoreDockAttributes();
+    dockedSummaryCard = null;
     if (dockedNativeSummary) {
       // Restore the native accessibility state when the skin/route changes.
       const nativeOpen = Boolean(dockedNativeSummary.querySelector("[data-pip-obstacle='thread-summary-panel']"));
       dockedNativeSummary.toggleAttribute("inert", !nativeOpen);
       setAttribute(dockedNativeSummary, "aria-hidden", String(!nativeOpen));
       dockedNativeSummary.querySelectorAll(".qq-skin-dock-motion").forEach(node => node.classList.remove("qq-skin-dock-motion"));
+      dockedNativeSummary.querySelectorAll(".qq-skin-dock-stack, .qq-skin-dock-card, .qq-skin-details-collapsed").forEach(node => {
+        node.classList.remove("qq-skin-dock-stack", "qq-skin-dock-card", "qq-skin-details-collapsed");
+      });
+      dockedNativeSummary.querySelector(".qq-skin-details-title")?.remove();
       dockedNativeSummary.classList.remove("qq-skin-profile-summary");
     }
     dockedNativeSummary = null;
@@ -2991,6 +3073,7 @@
       host.appendChild(dock);
     }
     host.classList.toggle("qq-skin-profile-host", true);
+    observeReferenceHost(host);
     thread.classList.toggle("qq-skin-profile-thread", true);
     panel.classList.toggle("qq-skin-growth-docked", true);
     const canFit = host.clientWidth >= 760;
@@ -3012,18 +3095,22 @@
       nativeToggle.click();
       nativeToggle.addEventListener("click", onSummaryToggle, true);
     }
-    const card = [...host.children].filter(node => node !== thread && node !== dock)
-      .map(node => node.querySelector('[data-summary-panel-variant="summary"]')).find(Boolean);
-    let summary = card;
+    const card = canFit ? [...host.children].filter(node => node !== thread && node !== dock)
+      .map(node => node.querySelector('[data-summary-panel-variant="summary"]')).find(Boolean) : null;
+    let summary = card || null;
     while (summary && summary.parentElement !== host) summary = summary.parentElement;
     if (dockedNativeSummary !== summary) {
       releaseNativeSummary();
-      dockedNativeSummary = summary || null;
+      dockedNativeSummary = summary;
       if (summary) {
         summary.classList.add("qq-skin-profile-summary");
         dockSummaryObserver = new MutationObserver(syncDockAccessibility);
-        dockSummaryObserver.observe(summary, { attributes: true, attributeFilter: ["inert", "aria-hidden"] });
+        dockSummaryObserver.observe(summary, { subtree: true, attributes: true, attributeFilter: ["inert", "aria-hidden"] });
       }
+    }
+    if (dockedSummaryCard !== card) {
+      restoreDockAttributes();
+      dockedSummaryCard = card;
     }
     syncDockAccessibility();
     if (card && open) {
@@ -3938,7 +4025,6 @@
       weatherMonitor.ensure();
     }
     if (weatherMonitor.active) weatherMonitor.setStatus(soundMonitor.status);
-    syncUsageChartSize();
     const elapsed = now() - startedAt;
     metrics.ensureTotalMs += elapsed;
     metrics.ensureMaxMs = Math.max(metrics.ensureMaxMs, elapsed);

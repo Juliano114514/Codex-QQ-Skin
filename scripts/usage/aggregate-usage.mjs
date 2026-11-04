@@ -86,10 +86,10 @@ export function aggregateUsage({ buckets = [], sessions = [], heartbeatDates = [
   const today = daily.get(todayKey) || emptyTotals();
   const week = emptyTotals();
   const chart = [];
-  for (let offset = -6; offset <= 0; offset += 1) {
+  for (let offset = -29; offset <= 0; offset += 1) {
     const key = shiftDateKey(todayKey, offset);
     const totals = daily.get(key) || emptyTotals();
-    addTotals(week, totals);
+    if (offset >= -6) addTotals(week, totals);
     chart.push({ date: key, totalTokens: totals.totalTokens });
   }
   const lifetime = emptyTotals();
