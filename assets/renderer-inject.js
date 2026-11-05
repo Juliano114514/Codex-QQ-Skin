@@ -4155,29 +4155,41 @@
     }
   };
 
-  let appearanceWriterPromise = null;
-  const resolveAppearanceWriter = () => {
-    if (appearanceWriterPromise) return appearanceWriterPromise;
-    appearanceWriterPromise = (async () => {
-      // Newer Codex versions replaced set-setting with the shared Settings RPC.
-      // Resolve the loaded module and its writer without pinning build hashes or
-      // minified export names. Older versions keep using the fetch route below.
-      const sharedModule = [...document.querySelectorAll('link[rel="modulepreload"][href]')]
-        .map(node => new URL(node.href, window.location.href))
-        .find(url => url.protocol === window.location.protocol && url.host === window.location.host
-          && /^\/assets\/app-shared-[\w-]+\.js$/.test(url.pathname) && !url.search && !url.hash);
-      if (!sharedModule) return null;
-      const exports = await import(sharedModule.href);
-      for (const value of Object.values(exports)) {
-        if (typeof value !== "function") continue;
-        try {
-          const source = Function.prototype.toString.call(value);
-          if (/\.settings\.write\(/.test(source) && source.includes("Settings are unavailable on this host")) return value;
-        } catch { /* Some exported RPC proxies cannot be inspected as functions. */ }
-      }
-      return null;
-    })().catch(() => null);
-    return appearanceWriterPromise;
+  let appearanceWriter = null;
+  const isSettingsWriter = (value) => {
+    if (typeof value !== "function") return false;
+    const source = Function.prototype.toString.call(value);
+    return /\.settings\.write\(/.test(source) && source.includes("Settings are unavailable on this host");
+  };
+  const resolveAppearanceWriter = async () => {
+    if (appearanceWriter) return appearanceWriter;
+    // Codex exposes the Settings RPC either as a shared ESM export or through
+    // the module cache of its bundled entry point.
+    const modules = document.querySelectorAll('link[rel="modulepreload"][href], script[type="module"][src]');
+    for (const node of modules) {
+      const url = new URL(node.href || node.src, window.location.href);
+      if (url.protocol !== window.location.protocol || url.host !== window.location.host ||
+          url.username || url.password || url.search || url.hash) continue;
+      const isShared = /^\/assets\/app-shared-[\w-]+\.js$/.test(url.pathname);
+      const isEntry = node.tagName === "SCRIPT" && /^\/assets\/\d+\.[a-f0-9]+\.js$/.test(url.pathname);
+      if (!isShared && !isEntry) continue;
+      try {
+        const exports = await import(url.href);
+        if (isShared) {
+          appearanceWriter = Object.values(exports).find(isSettingsWriter);
+        } else {
+          const runtime = exports.__webpack_require__;
+          for (const [id, factory] of Object.entries(runtime?.m || {})) {
+            const loaded = runtime.c?.[id];
+            if (!loaded || !isSettingsWriter(factory)) continue;
+            appearanceWriter = Object.values(loaded.exports || {}).find(isSettingsWriter);
+            if (appearanceWriter) break;
+          }
+        }
+        if (appearanceWriter) return appearanceWriter;
+      } catch { /* Continue looking if a candidate is unavailable. */ }
+    }
+    return null;
   };
 
   const selectAppearance = async (appearance, { fromTheme = false } = {}) => {
