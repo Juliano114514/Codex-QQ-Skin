@@ -1,7 +1,8 @@
 # 2.10.0 更新
 
-**实测兼容版本** · Windows Codex Desktop `26.1029.7803.0`（Microsoft Store / MSIX）。
+**实测兼容版本** · Windows Codex Desktop `26.1103.4239.0`（Microsoft Store / MSIX）。
 
+- 适配更新后的窗口容器、CSS 模块类名与 ChatGPT 首页，修复窗口裁切、顶部模式切换遮挡和建议项样式。
 - 移除大黄蜂、霓虹雨夜预设、安装器入口及雨夜特效；升级时清理旧预设，当前使用旧预设时回退经典 QQ。保留自定义皮肤生成与导入。
 
 - 恢复新版首页和聊天输入框样式，适配 Markdown、代码块和表格。修正左栏、原生右栏及「详细信息」栏开合时的聊天布局。
@@ -51,7 +52,7 @@ Windows 实测覆盖新窗口、侧栏开合、窗口化和最大化。版本记
 
 # fork之后的更新日志
 
-| 当前实测 Codex 版本 | 26.1029.7803.0（Windows Microsoft Store / MSIX） |
+| 当前实测 Codex 版本 | 26.1103.4239.0（Windows Microsoft Store / MSIX） |
 | --- | --- |
 
 ## 安装与新版 Codex 兼容

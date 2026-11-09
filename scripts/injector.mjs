@@ -40,7 +40,14 @@ function adaptShellSelectors(source) {
     .replaceAll('[class*="_RichTextInput_"]', ':is([data-rich-text-layout],[class*="_RichTextInput_"])')
     // The newer marker is an empty PiP obstacle; its sibling owns the UI.
     .replaceAll('[data-pip-obstacle="thread-summary-panel"]',
-      ':is([data-pip-obstacle="thread-summary-panel"]:not([aria-hidden="true"]),[data-pip-obstacle="thread-summary-panel"][aria-hidden="true"] + div)');
+      ':is([data-pip-obstacle="thread-summary-panel"]:not([aria-hidden="true"]),[data-pip-obstacle="thread-summary-panel"][aria-hidden="true"] + div)')
+    // New builds emit Name-hash instead of _Name_hash. Keep both module
+    // formats across the renderer and every palette, without pinning a hash.
+    .replace(/\[class\*=(['"])_([A-Za-z][A-Za-z0-9]*)_\1\]/g,
+      (_, quote, name) => `:is([class*="_${name}_"],[class^="${name}-"],[class*=" ${name}-"])`)
+    // Chat suggestions include native chips and dismiss buttons. The legacy
+    // work-card sizing must not override their hidden/display states.
+    .replaceAll('.group\\/home-suggestions', '.group\\/home-suggestions:not([data-qq-home-part~="chat-suggestions"])');
 }
 
 async function persistActiveMode(themeDir, mode, themeId = null) {

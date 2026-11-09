@@ -226,7 +226,7 @@ html.codex-qq-skin body > [data-qq-browser-layer="true"] {
 /* Codex prepends invisible portal nodes under #root. Match the real layout
    with or without a mounted sidebar so its width and height stay inside the
    root's reserved status-strip area. */
-html.codex-qq-skin body > #root > [data-qq-shell-layout="true"] {
+html.codex-qq-skin body > #root [data-qq-shell-layout="true"] {
   width: 100% !important;
   height: 100% !important;
   min-width: 0 !important;
@@ -3006,6 +3006,10 @@ html.codex-qq-skin [data-app-shell-application-menu-bar][data-pip-obstacle="app-
   background: var(--ds-panel) !important;
   color: var(--ds-text) !important;
   border-bottom: 1px solid var(--ds-line) !important;
+}
+
+html.codex-qq-skin [data-app-shell-titlebar] > [data-qq-header-center="true"] {
+  top: inherit !important;
 }
 
 html.codex-qq-skin[data-codex-window-chrome="application-menu"] aside.app-shell-left-panel,

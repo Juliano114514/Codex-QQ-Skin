@@ -141,6 +141,11 @@
         mark(stack.children[1], "second-composer");
       }
       for (const banner of home.querySelectorAll('.home-banners')) mark(banner.parentElement, "banner-row");
+      if (!home.querySelector('[data-feature="game-source"]')) {
+        for (const suggestions of home.querySelectorAll('[class~="group/home-suggestions"]')) {
+          mark(suggestions, "chat-suggestions");
+        }
+      }
       for (const indicator of home.querySelectorAll('[class~="@container/home-mode-toggle"] [class*="_indicator_"]')) {
         mark(indicator, "mode-indicator");
       }
@@ -1522,12 +1527,27 @@
           queue.push(fiber.child, fiber.sibling);
         }
       }
-      // Codex uses a scoped key for SSE and the original key for polling.
-      // Ignore other rate-limit queries (such as image generation) and use
-      // the freshest account snapshot without reading or storing its identity.
-      const query = nativeUsageClient?.getQueryCache().findAll({ queryKey: ["rate-limit-status"] })
-        .filter(item => Array.isArray(item.queryKey) && (item.queryKey.length === 1 ||
-          (item.queryKey.length === 3 && item.isActive?.())))
+      const cache = nativeUsageClient?.getQueryCache();
+      // Newer push queries have no active React observer. Resolve their account
+      // from the mounted native account check instead of treating them as stale.
+      // Keep these opaque keys in memory only; never persist account identities.
+      const accounts = cache?.findAll({ queryKey: ["usage-settings", "accounts-check"] })
+        .filter(item => item.isActive?.() && item.queryKey.length === 5 &&
+          typeof item.queryKey[3] === "string" && typeof item.queryKey[4] === "string") || [];
+      const account = accounts[0]?.queryKey;
+      if (accounts.some(item => item.queryKey[3] !== account[3] || item.queryKey[4] !== account[4])) return null;
+      // Scoped quota keys are [name, user, account]; account-check keys end in
+      // [account, user]. Exclude image-generation and other specialized queries.
+      const query = cache?.findAll({ queryKey: ["rate-limit-status"] })
+        .filter(item => {
+          const key = item.queryKey;
+          if (!Array.isArray(key)) return false;
+          if (key.length === 1) return !account ||
+            (item.state?.data?.user_id === account[4] && item.state?.data?.account_id === account[3]);
+          return key.length === 3 && (account
+            ? key[1] === account[4] && key[2] === account[3]
+            : item.isActive?.());
+        })
         .filter(item => item.state?.data?.rate_limit)
         .sort((left, right) => (right.state.dataUpdatedAt || 0) - (left.state.dataUpdatedAt || 0))[0];
       const rate = query?.state.data.rate_limit;
@@ -2854,7 +2874,7 @@
     metrics.routePasses += 1;
     const root = document.documentElement;
     if (!root) return;
-    for (const composer of document.querySelectorAll('[class*=_ComposerLayoutRoot_]')) {
+    for (const composer of document.querySelectorAll('[class*="_ComposerLayoutRoot_"]')) {
       setAttribute(composer, 'data-qq-native-composer', 'true');
     }
     shell ||= root.getAttribute(SHELL_ATTR) || resolvedShell();
@@ -2872,9 +2892,9 @@
     // The outer layout and portaled webviews have stable ownership. Mark their
     // hosts on shell mounts instead of matching through body with :has().
     const appRoot = document.getElementById('root');
-    const layoutHost = shellMain && appRoot && [...appRoot.children].find((node) =>
+    const layoutHost = shellMain?.closest('[data-app-shell-frame]') || (shellMain && appRoot && [...appRoot.children].find((node) =>
       node.contains(shellMain) && (node.matches('[data-app-shell-frame], [class*="_Layout_"]') ||
-        [...node.children].some((child) => child.querySelector('aside.app-shell-left-panel'))));
+        [...node.children].some((child) => child.querySelector('aside.app-shell-left-panel')))));
     const browserHosts = new Set([...document.querySelectorAll('[data-browser-sidebar-webview]')].map((webview) => {
       const parent = webview.parentElement;
       if (parent?.parentElement === document.body) return parent;
@@ -2895,7 +2915,7 @@
     const home = homeIndicator?.closest('[role="main"]') ||
       [...document.querySelectorAll('[role="main"]')].find((candidate) =>
         isVisibleElement(candidate) &&
-        candidate.querySelector('[data-feature="game-source"]') &&
+        candidate.querySelector(HOME_COMPOSER_CONTENT_SELECTOR) &&
         candidate.querySelector('[data-testid="home-icon"], [class~="group/home-suggestions"], [class~="group/home-composer-layout"]')) || null;
     // Root :has() selectors invalidated thousands of descendants during native
     // scroll updates. Route markers change only when the matching UI changes.
@@ -3008,6 +3028,13 @@
     // variables on the header, so changing them cannot invalidate the whole app.
     const nativeHeader = findVisibleElement('[data-app-shell-application-menu-bar][data-pip-obstacle="app-shell-header"]') ||
       shellMain.querySelector('header.app-header-tint');
+    // The home mode switch now lives in a fixed row inside the fixed header.
+    // It must share the header's skin offset instead of its native top inset.
+    const headerCenter = nativeHeader?.querySelector('[class~="@container/home-mode-toggle"]')?.parentElement;
+    for (const node of document.querySelectorAll('[data-qq-header-center]')) {
+      if (node !== headerCenter) node.removeAttribute('data-qq-header-center');
+    }
+    if (headerCenter?.parentElement === nativeHeader) setAttribute(headerCenter, 'data-qq-header-center', 'true');
     if (nativeHeader) {
       setStyleProperty(nativeHeader, "--qq-native-header-left", `${nativeHeaderBox.left}px`);
       setStyleProperty(nativeHeader, "--qq-native-header-right", `${Math.max(0, window.innerWidth - nativeHeaderBox.right)}px`);
@@ -3247,7 +3274,7 @@
     clearProfileDock();
     clearReferenceLayout();
     document.getElementById(MEDIA_STYLE_ID)?.remove();
-    for (const name of ['data-qq-home-part', 'data-qq-shell-layout', 'data-qq-browser-layer', 'data-qq-sidebar-part', 'data-qq-main-layer', 'data-qq-thread-frame', 'data-qq-native-main', 'data-qq-native-composer']) {
+    for (const name of ['data-qq-home-part', 'data-qq-shell-layout', 'data-qq-browser-layer', 'data-qq-sidebar-part', 'data-qq-main-layer', 'data-qq-thread-frame', 'data-qq-native-main', 'data-qq-native-composer', 'data-qq-header-center']) {
       document.querySelectorAll(`[${name}]`).forEach((node) => node.removeAttribute(name));
     }
     document.querySelectorAll(".qq-skin-thread-frame").forEach((node) => node.classList.remove("qq-skin-thread-frame"));
