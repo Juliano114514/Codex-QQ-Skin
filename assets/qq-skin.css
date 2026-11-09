@@ -3604,6 +3604,87 @@ html.codex-qq-skin :is(.qq-skin-details-title, .qq-skin-growth-docked .qq-skin-u
 
 .qq-skin-profile-body { min-width: 0; overflow-y: auto; scrollbar-width: thin; }
 .qq-skin-growth-docked .qq-skin-profile-body { overflow: visible; }
+.qq-skin-workday-card {
+  display: none;
+  flex: none;
+  width: 100%;
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--qq-card-border, var(--ds-line));
+  border-radius: 2px;
+  background: var(--ds-panel);
+  color: var(--ds-text);
+  font: 12px/1.5 var(--qq-font-ui, sans-serif);
+  font-variant-numeric: tabular-nums;
+  -webkit-app-region: no-drag;
+}
+.qq-skin-workday-card.qq-skin-workday-docked { display: block; }
+.qq-skin-workday-card.qq-skin-window-collapsed > .qq-skin-workday-body { display: none; }
+.qq-skin-workday-body { padding: 8px 10px; }
+.qq-skin-workday-card *, .qq-skin-workday-card *::before { box-sizing: border-box; }
+.qq-skin-workday-card [hidden] { display: none !important; }
+.qq-skin-workday-heading { display: flex; align-items: center; gap: 6px; padding-inline: 10px; min-height: 33px; }
+.qq-skin-workday-heading > b { font-size: inherit; }
+.qq-skin-workday-card button {
+  min-height: 27px;
+  padding: 3px 9px;
+  border: 1px solid var(--ds-line);
+  border-radius: var(--qq-radius-control, 3px);
+  background: var(--ds-panel);
+  color: var(--ds-text);
+  font: inherit;
+  cursor: pointer;
+}
+.qq-skin-workday-card button:hover { border-color: var(--ds-accent); }
+.qq-skin-workday-heading > [data-workday="settings"] { margin-left: auto; padding: 0 4px; min-height: 22px; font-size: 11px; }
+.qq-skin-workday-timer { display: grid; grid-template-columns: 28px minmax(0, 1fr) 60px; align-items: baseline; gap: 8px; }
+.qq-skin-workday-timer > span, .qq-skin-workday-income > span { font-size: 12px; color: var(--ds-muted); }
+.qq-skin-workday-timer > strong { grid-column: 2; font-size: 24px; font-weight: 600; line-height: 28px; color: var(--ds-accent); }
+.qq-skin-workday-timer > button { grid-column: 3; min-width: 0; min-height: 24px; padding: 2px 7px; font-size: 11px; background: var(--ds-panel-2); }
+.qq-skin-workday-water { display: grid; grid-template-columns: 28px minmax(0, 1fr) 60px; align-items: center; gap: 8px; margin-top: 6px; color: var(--ds-muted); }
+.qq-skin-workday-water > span { font-size: 12px; line-height: 18px; }
+.qq-skin-workday-water > button { min-height: 24px; padding: 2px 7px; font-size: 11px; background: var(--ds-panel-2); }
+.qq-skin-workday-income { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 8px; margin-top: 6px; }
+.qq-skin-workday-income > strong { justify-self: start; width: max-content; min-width: 0; max-width: 100%; font-size: 12px; font-weight: 400; line-height: 18px; color: transparent; background: #000; white-space: nowrap; overflow: hidden; user-select: none; }
+.qq-skin-workday-income > strong:hover { color: #fff; }
+.qq-skin-workday-progress { height: 4px; margin-top: 8px; background: var(--ds-line); border-radius: 2px; overflow: hidden; }
+.qq-skin-workday-progress > i { display: block; height: 100%; background: var(--ds-accent); }
+.qq-skin-workday-card p { margin: 7px 0 0; color: var(--ds-muted); font-size: 10px; overflow-wrap: anywhere; }
+.qq-skin-workday-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.qq-skin-workday-actions > button:first-child { flex: 1; border-color: var(--ds-accent); }
+.qq-skin-workday-editor { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--ds-line); }
+.qq-skin-workday-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.qq-skin-workday-fields > label { display: grid; gap: 3px; min-width: 0; font-size: 10px; }
+.qq-skin-workday-wide { grid-column: 1 / -1; }
+.qq-skin-workday-card input {
+  min-width: 0;
+  width: 100%;
+  height: 29px;
+  padding: 3px 5px;
+  border: 1px solid var(--ds-line);
+  border-radius: var(--qq-radius-control, 3px);
+  background: var(--ds-bg);
+  color: var(--ds-text);
+  font: inherit;
+  color-scheme: inherit;
+}
+.qq-skin-workday-timer > input {
+  grid-column: 2;
+  width: 100%;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.qq-skin-workday-timer > input::-webkit-datetime-edit { padding: 0; }
+.qq-skin-workday-timer > input::-webkit-calendar-picker-indicator { width: 14px; height: 14px; padding: 0; opacity: .6; }
+.qq-skin-workday-card :is(button, input):focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+.qq-skin-workday-card .qq-skin-workday-message:empty { display: none; }
+.qq-skin-workday-card .qq-skin-workday-message { color: var(--ds-text); }
 #codex-qq-skin-usage-panel .qq-skin-profile-progress { display: grid; gap: 5px; padding: 8px 12px 12px; }
 .qq-skin-profile-progress > div:not(.qq-skin-level-progress) {
   display: flex;

@@ -6,6 +6,7 @@
   const CHROME_ID = "codex-qq-skin-chrome";
   const COMPANION_ID = "codex-qq-skin-companion";
   const USAGE_PANEL_ID = "codex-qq-skin-usage-panel";
+  const WORKDAY_PANEL_ID = "codex-qq-skin-workday-panel";
   const USAGE_TOGGLE_ID = "codex-qq-skin-usage-toggle";
   const HOME_PET_ID = "codex-qq-skin-home-pet";
   const RIGHT_TRAY_ID = "codex-qq-skin-right-tray";
@@ -26,6 +27,7 @@
   const PROFILE_DIALOG_ID = "codex-qq-skin-profile-dialog";
   const PROFILE_DOCK_ID = "codex-qq-skin-profile-dock";
   const PROFILE_DOCK_STORAGE_KEY = "codex-qq-skin-profile-dock-open";
+  const WORKDAY_STORAGE_KEY = "codex-qq-skin-workday-v1";
   const NATIVE_APPEARANCE_STATE_KEY = "__CODEX_QQ_SKIN_NATIVE_APPEARANCE__";
   const LIBRARY_THEMES = Array.isArray(libraryThemes)
     ? libraryThemes.filter((item) => item && typeof item.id === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(item.id))
@@ -299,6 +301,7 @@
   document.getElementById(LIBRARY_MENU_ID)?.remove();
   document.getElementById(COMPANION_ID)?.remove();
   document.getElementById(USAGE_PANEL_ID)?.remove();
+  document.getElementById(WORKDAY_PANEL_ID)?.remove();
   document.getElementById(USAGE_TOGGLE_ID)?.remove();
   document.getElementById(HOME_PET_ID)?.remove();
   document.getElementById(RIGHT_TRAY_ID)?.remove();
@@ -1637,7 +1640,276 @@
     for (const entry of entries) updateSignatureMarquee(entry.target);
   });
   let observedProfileMarquee = null;
+  const workdayCard = (() => {
+    const HOUR = 3600000;
+    const defaults = { workHours: 9, overtimeHours: 3, monthlySalary: 0, workDays: 20, overtimePay: 150, waterMinutes: 60 };
+    const numberInRange = (value, fallback, min, max) =>
+      typeof value === "number" && Number.isFinite(value) && value >= min && value <= max ? value : fallback;
+    const normalize = (value) => {
+      const input = value?.settings;
+      const settings = {
+        workHours: numberInRange(input?.workHours, defaults.workHours, 0.25, 24),
+        overtimeHours: numberInRange(input?.overtimeHours, defaults.overtimeHours, 0, 24),
+        monthlySalary: numberInRange(input?.monthlySalary, 0, 0, 100000000),
+        workDays: numberInRange(input?.workDays, defaults.workDays, 1, 31),
+        overtimePay: numberInRange(input?.overtimePay, defaults.overtimePay, 0, 1000000),
+        waterMinutes: numberInRange(input?.waterMinutes, defaults.waterMinutes, 1, 1440),
+      };
+      if (settings.workHours + settings.overtimeHours > 24) settings.overtimeHours = 24 - settings.workHours;
+      const start = value?.session?.startedAt;
+      const stop = value?.session?.stoppedAt;
+      const session = Number.isSafeInteger(start) && start > 0 && start <= Date.now()
+        ? { startedAt: start, stoppedAt: Number.isSafeInteger(stop) && stop >= start && stop <= Date.now() ? stop : null }
+        : null;
+      const waterStart = value?.waterStartedAt;
+      const waterStartedAt = Number.isSafeInteger(waterStart) && waterStart > 0 && waterStart <= Date.now() ? waterStart : Date.now();
+      return { settings, session, waterStartedAt };
+    };
+    let waterNeedsStart = false;
+    const read = () => {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(WORKDAY_STORAGE_KEY)); } catch {}
+      const next = normalize(saved);
+      waterNeedsStart = saved?.waterStartedAt !== next.waterStartedAt;
+      return next;
+    };
+    let state = read();
+    let card = null;
+    let parts = null;
+    let timer = null;
+    let pendingStart = Date.now();
+    const localDate = (time) => {
+      const date = new Date(time);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    };
+    const localInput = (time) => {
+      const date = new Date(time);
+      return `${localDate(time)}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+    };
+    const clock = (milliseconds) => {
+      const minutes = Math.max(0, Math.ceil(milliseconds / 60000));
+      return [Math.floor(minutes / 60), minutes % 60]
+        .map(value => String(value).padStart(2, "0")).join(":");
+    };
+    const money = (amount) => `¥${amount.toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const snapshot = (now = Date.now()) => {
+      const { settings, session } = state;
+      const workMs = settings.workHours * HOUR;
+      const overtimeMs = settings.overtimeHours * HOUR;
+      const totalMs = workMs + overtimeMs;
+      const end = session ? session.startedAt + totalMs : 0;
+      // A night shift belongs to its start date, and remains visible through
+      // the day it ends. Normal shifts reset at the next local midnight.
+      const expiry = new Date(session ? Math.min(session.stoppedAt ?? end, end) : now);
+      expiry.setHours(24, 0, 0, 0);
+      const current = session && now < expiry.getTime() ? session : null;
+      const elapsed = current ? Math.max(0, Math.min((current.stoppedAt ?? now) - current.startedAt, totalMs)) : 0;
+      const running = Boolean(current && current.stoppedAt === null && elapsed < totalMs);
+      const incomeElapsed = running ? Math.floor(elapsed / 60000) * 60000 : elapsed;
+      const base = settings.monthlySalary / settings.workDays * Math.min(incomeElapsed / workMs, 1);
+      const bonus = overtimeMs > 0 && elapsed >= totalMs ? settings.overtimePay : 0;
+      return { settings, current, workMs, overtimeMs, totalMs, end, elapsed, base, bonus, running };
+    };
+    const message = (text) => setTextContent(parts?.message, text);
+    const save = (next) => {
+      const merged = { ...state, ...next };
+      if (merged.settings.waterMinutes !== state.settings.waterMinutes) merged.waterStartedAt = Date.now();
+      try { localStorage.setItem(WORKDAY_STORAGE_KEY, JSON.stringify(merged)); }
+      catch { message("保存失败，请重试。"); return false; }
+      state = merged;
+      waterNeedsStart = false;
+      render();
+      return true;
+    };
+    const render = () => {
+      if (!card?.isConnected) return;
+      const view = snapshot();
+      const { current, elapsed, workMs, overtimeMs, totalMs, base, bonus, running } = view;
+      const phase = !current ? "idle" : !running ? "done" : elapsed < workMs ? "work" : "overtime";
+      if (card.qqWorkdaySession !== current?.startedAt) message("");
+      card.qqWorkdaySession = current?.startedAt;
+      setAttribute(card, "data-workday-phase", phase);
+      setTextContent(parts.countdownLabel, !current ? "上班" : phase === "overtime" ? "加班" : "下班");
+      parts.startTime.hidden = Boolean(current);
+      parts.countdown.hidden = !current;
+      if (Date.now() - pendingStart >= 24 * HOUR) pendingStart = Date.now();
+      const startTime = localInput(pendingStart).slice(11, 16);
+      if (document.activeElement !== parts.startTime && parts.startTime.value !== startTime) parts.startTime.value = startTime;
+      setTextContent(parts.countdown, clock(running ? (phase === "overtime" ? totalMs : workMs) - elapsed : 0));
+      const waterSeconds = Math.max(0, Math.ceil((view.settings.waterMinutes * 60000 - (Date.now() - state.waterStartedAt)) / 1000));
+      setTextContent(parts.waterTime, [Math.floor(waterSeconds / 60), waterSeconds % 60]
+        .map(value => String(value).padStart(2, "0")).join(":"));
+      setTextContent(parts.income, money(base + bonus));
+      setTextContent(parts.primary, running ? "下班" : "上班");
+      const overtimeStage = overtimeMs > 0 && elapsed >= workMs;
+      const stageMs = overtimeStage ? overtimeMs : workMs;
+      const stageElapsed = overtimeStage ? elapsed - workMs : elapsed;
+      const progress = Math.min(100, stageElapsed / stageMs * 100);
+      setStyleProperty(parts.progress, "width", `${progress}%`);
+      setAttribute(parts.progress.parentElement, "aria-valuenow", String(Math.round(progress)));
+      setAttribute(parts.progress.parentElement, "aria-label", overtimeStage ? "加班进度" : "上班进度");
+      if (!parts.editor.hidden && parts.formSession !== current?.startedAt) populateEditor();
+    };
+    const populateEditor = () => {
+      const { settings, current } = snapshot();
+      for (const name of Object.keys(defaults)) parts.form.elements[name].value = settings[name] || (name === "monthlySalary" ? "" : 0);
+      parts.form.elements.startedAt.value = localInput(current?.startedAt ?? pendingStart);
+      parts.formSession = current?.startedAt;
+    };
+    const openEditor = (focusName = "monthlySalary") => {
+      if (parts.editor.hidden) populateEditor();
+      parts.editor.hidden = false;
+      setAttribute(parts.settings, "aria-expanded", "true");
+      parts.form.elements[focusName]?.focus();
+    };
+    const closeEditor = () => {
+      parts.editor.hidden = true;
+      setAttribute(parts.settings, "aria-expanded", "false");
+    };
+    const readForm = (restarting = false) => {
+      for (const input of parts.form.querySelectorAll("input")) input.setCustomValidity("");
+      const settings = Object.fromEntries(Object.keys(defaults).map(name => [name, Number(parts.form.elements[name].value)]));
+      if (settings.workHours + settings.overtimeHours > 24) {
+        parts.form.elements.overtimeHours.setCustomValidity("上班与加班时长合计不能超过 24 小时。");
+      }
+      const input = parts.form.elements.startedAt;
+      const startedAt = input.value ? new Date(input.value).getTime() : null;
+      const { current } = snapshot();
+      if (input.value && (!Number.isFinite(startedAt) || startedAt <= 0 || startedAt > Date.now())) {
+        input.setCustomValidity("请选择当前或更早的实际上班时间。");
+      } else if (startedAt !== null && startedAt !== current?.startedAt && Date.now() - startedAt >= 24 * HOUR) {
+        input.setCustomValidity("上班时间需在最近 24 小时内。");
+      } else if (!restarting && current && startedAt === null) {
+        input.setCustomValidity("请保留或修正本次打卡的上班时间。");
+      } else if (!restarting && current?.stoppedAt && startedAt > current.stoppedAt) {
+        input.setCustomValidity("上班时间不能晚于已记录的下班时间。");
+      }
+      if (!parts.form.reportValidity()) return null;
+      return { settings, startedAt };
+    };
+    const start = (settings, startedAt = Date.now()) => {
+      const now = Date.now();
+      if (now - startedAt >= 24 * HOUR) {
+        message("上班时间需在最近 24 小时内，请修正后重新打卡。"); return false;
+      }
+      if (!save({ settings, session: { startedAt, stoppedAt: null } })) return false;
+      closeEditor();
+      message("");
+      return true;
+    };
+    const onStorage = (event) => {
+      if (event.key !== WORKDAY_STORAGE_KEY && event.key !== null) return;
+      state = read();
+      render();
+    };
+    const onVisible = () => { if (document.visibilityState !== "hidden") render(); };
+    const cleanup = () => {
+      if (timer !== null) clearInterval(timer);
+      timer = null;
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onVisible);
+      card?.remove();
+      card = null;
+      parts = null;
+    };
+    const park = () => {
+      if (!card) return;
+      card.classList.remove("qq-skin-workday-docked", "qq-skin-growth-docked");
+      if (card.parentElement !== document.body) document.body.appendChild(card);
+    };
+    const placeBefore = (profilePanel) => {
+      const list = profilePanel.parentElement;
+      if (!card?.isConnected || !list || list === document.body) { park(); return; }
+      if (card.parentElement !== list || card.nextElementSibling !== profilePanel) list.insertBefore(card, profilePanel);
+      card.classList.add("qq-skin-workday-docked", "qq-skin-growth-docked");
+    };
+    const mount = () => {
+      if (card?.isConnected) { render(); return; }
+      cleanup();
+      state = read();
+      card = document.createElement("section");
+      card.id = WORKDAY_PANEL_ID;
+      card.className = "qq-skin-workday-card";
+      card.setAttribute("aria-label", "上班状态");
+      card.innerHTML = `
+        <div class="qq-skin-workday-heading qq-skin-usage-title"><b>上班状态</b><button type="button" data-workday="settings" aria-label="工资和打卡设置" aria-expanded="false" aria-controls="qq-workday-editor">⚙</button></div>
+        <div class="qq-skin-workday-body">
+        <div class="qq-skin-workday-timer"><span data-workday="countdownLabel"></span><input data-workday="startTime" type="time" aria-label="上班时间"><strong data-workday="countdown" role="timer" aria-live="off" hidden></strong><button type="button" data-workday="primary">上班</button></div>
+        <div class="qq-skin-workday-water"><span>喝水</span><span data-workday="waterTime" role="timer" aria-live="off"></span><button type="button" data-workday="waterReset">我已喝水</button></div>
+        <div class="qq-skin-workday-income"><span>已赚</span><strong data-workday="income"></strong></div>
+        <div class="qq-skin-workday-progress" role="progressbar" aria-label="今日工作进度" aria-valuemin="0" aria-valuemax="100"><i data-workday="progress"></i></div>
+        <form id="qq-workday-editor" class="qq-skin-workday-editor" hidden novalidate>
+          <div class="qq-skin-workday-fields">
+            <label>上班时长（小时）<input name="workHours" type="number" min="0.25" max="24" step="0.25" required></label>
+            <label>加班时长（小时）<input name="overtimeHours" type="number" min="0" max="24" step="0.25" required></label>
+            <label>月工资（元）<input name="monthlySalary" type="number" min="0.01" max="100000000" step="0.01" placeholder="请输入月工资" required></label>
+            <label>月工作天数<input name="workDays" type="number" min="1" max="31" step="0.5" required></label>
+            <label class="qq-skin-workday-wide">加班费（元）<input name="overtimePay" type="number" min="0" max="1000000" step="0.01" required></label>
+            <label class="qq-skin-workday-wide">喝水间隔（分钟）<input name="waterMinutes" type="number" min="1" max="1440" step="1" required></label>
+            <label class="qq-skin-workday-wide">实际上班时间<input name="startedAt" type="datetime-local" step="1"></label>
+          </div>
+          <div class="qq-skin-workday-actions"><button type="submit">保存设置</button><button type="button" data-workday="cancel">收起</button></div>
+        </form>
+        <p class="qq-skin-workday-message" data-workday="message" role="status"></p>
+        </div>`;
+      document.body.appendChild(card);
+      ensureFloatingPanel(card, ".qq-skin-workday-heading");
+      parts = Object.fromEntries([...card.querySelectorAll("[data-workday]")].map(node => [node.dataset.workday, node]));
+      parts.form = parts.editor = card.querySelector("form");
+      parts.settings.addEventListener("click", () => {
+        if (parts.editor.hidden) openEditor(state.settings.monthlySalary ? "workHours" : "monthlySalary");
+        else closeEditor();
+      });
+      parts.waterReset.addEventListener("click", () => {
+        if (save({ waterStartedAt: Date.now() })) message("");
+      });
+      parts.startTime.addEventListener("change", () => {
+        if (!parts.startTime.value) { render(); return; }
+        const [hours, minutes] = parts.startTime.value.split(":").map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        if (date.getTime() > Date.now()) date.setDate(date.getDate() - 1);
+        pendingStart = date.getTime();
+        if (!parts.editor.hidden) parts.form.elements.startedAt.value = localInput(pendingStart);
+        render();
+      });
+      parts.cancel.addEventListener("click", () => { closeEditor(); parts.settings.focus(); });
+      parts.form.addEventListener("input", event => event.target.setCustomValidity?.(""));
+      parts.primary.addEventListener("click", () => {
+        const { current, running } = snapshot();
+        if (current && running) {
+          if (save({ ...state, session: { ...current, stoppedAt: Date.now() } })) message("");
+        } else if (!parts.editor.hidden) {
+          const draft = readForm(true);
+          if (draft) start(draft.settings, draft.startedAt ?? Date.now());
+        } else if (!state.settings.monthlySalary) {
+          openEditor();
+        } else start(state.settings, current ? Date.now() : pendingStart);
+      });
+      parts.form.addEventListener("submit", event => {
+        event.preventDefault();
+        const draft = readForm();
+        if (!draft) return;
+        const { current } = snapshot();
+        if (save({ settings: draft.settings, session: current ? { ...current, startedAt: draft.startedAt } : null })) {
+          if (!current && draft.startedAt !== null) pendingStart = draft.startedAt;
+          closeEditor();
+          message("");
+          render();
+        }
+      });
+      render();
+      if (waterNeedsStart) save({});
+      timer = setInterval(() => {
+        if (document.visibilityState !== "hidden" && !window[DISABLED_KEY] && skinMode === "qq") render();
+      }, 1000);
+      window.addEventListener("storage", onStorage);
+      document.addEventListener("visibilitychange", onVisible);
+    };
+    return { mount, cleanup, park, placeBefore };
+  })();
   const profileCleanup = () => {
+    workdayCard.cleanup();
     profileResizeObserver.disconnect();
     lcdResizeObserver.disconnect();
     observedLCDPanel = null;
@@ -2038,6 +2310,7 @@
       panel.querySelector(".qq-skin-profile-avatar-button").addEventListener("click", () => openProfileDialog("avatar"));
       usageParts = null;
     }
+    workdayCard.mount();
     ensureFloatingPanel(panel, ".qq-skin-usage-title");
     if (!usageParts || usageParts.panel !== panel) {
       usageParts = {
@@ -2264,6 +2537,7 @@
     dockedNativeSummary = null;
   };
   const clearProfileDock = () => {
+    workdayCard.park();
     releaseNativeSummary();
     dockSummaryToggle?.removeEventListener("click", onSummaryToggle, true);
     dockSummaryToggle = null;
@@ -2300,7 +2574,7 @@
       clearProfileDock();
       dock = document.createElement("aside");
       dock.id = PROFILE_DOCK_ID;
-      dock.setAttribute("aria-label", "摘要与个人资料侧栏");
+      dock.setAttribute("aria-label", "摘要、上班状态、个人资料与 QQ 秀侧栏");
       const toggle = document.createElement("button");
       toggle.type = "button";
       toggle.className = "qq-skin-profile-dock-tab";
@@ -2368,11 +2642,12 @@
       ensureSummaryTitle(card);
       if (panel.parentElement !== list) list.appendChild(panel);
     } else if (panel.parentElement !== content) content.appendChild(panel);
+    workdayCard.placeBefore(panel);
     const toggle = dock.firstElementChild;
     if (toggle.disabled !== !canFit) toggle.disabled = !canFit;
     setAttribute(toggle, "aria-expanded", String(open));
     setAttribute(toggle, "aria-label", `${open ? "收起" : "展开"}详细信息侧栏`);
-    setAttribute(toggle, "title", canFit ? `${open ? "收起" : "展开"}摘要与个人资料`
+    setAttribute(toggle, "title", canFit ? `${open ? "收起" : "展开"}摘要、上班状态、个人资料与 QQ 秀`
       : "加宽窗口或收起左侧栏后可展开详细信息");
     return true;
   };
@@ -2405,6 +2680,7 @@
     sync();
   };
   const clearReferenceLayout = () => {
+    workdayCard.park();
     setAttribute(document.documentElement, "data-qq-reference-layout", "false");
     const growth = document.getElementById(USAGE_PANEL_ID);
     if (growth?.classList.contains("qq-skin-growth-docked")) document.body.appendChild(growth);
@@ -2448,6 +2724,7 @@
     ensureSummaryTitle(card);
     const list = overlay.firstElementChild;
     if (panel.parentElement !== list) list.appendChild(panel);
+    workdayCard.placeBefore(panel);
 
   };
 
