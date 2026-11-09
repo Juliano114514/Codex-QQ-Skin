@@ -1,9 +1,17 @@
-# 2.10.0 更新
+# 2.11.0 更新
 
 **实测兼容版本** · Windows Codex Desktop `26.1103.4239.0`（Microsoft Store / MSIX）。
 
-- 适配更新后的窗口容器、CSS 模块类名与 ChatGPT 首页，修复窗口裁切、顶部模式切换遮挡和建议项样式。
-- 移除大黄蜂、霓虹雨夜预设、安装器入口及雨夜特效；升级时清理旧预设，当前使用旧预设时回退经典 QQ。保留自定义皮肤生成与导入。
+- 新增上班状态卡片：下班与加班倒计时、收入黑幕显示，以及可设置间隔的喝水倒计时。
+- 新增 AI 娘 QQ 秀卡片，支持预设角色、分层混搭和本机资源导入。
+- 适配新版窗口容器、首页与 CSS 模块名称，修正账号额度缓存读取。
+- 移除大黄蜂、霓虹雨夜内置预设与雨夜特效，保留自定义皮肤生成与导入。
+
+详细变更见 [CHANGELOG](CHANGELOG.md)。
+
+## 2.10.0 更新
+
+**实测兼容版本** · Windows Codex Desktop `26.1029.7803.0`（Microsoft Store / MSIX）。
 
 - 恢复新版首页和聊天输入框样式，适配 Markdown、代码块和表格。修正左栏、原生右栏及「详细信息」栏开合时的聊天布局。
 - 改善新窗口的自动注入与验证，减少提示音状态扫描中对无关控件的布局读取。
@@ -111,7 +119,7 @@ Windows 实测覆盖新窗口、侧栏开合、窗口化和最大化。版本记
 - 卡片展示本机总用量，缓存输入参与成长。fork、子 Agent 继承历史和重复 Token 事件会去重。
 - 当前日志没有稳定账号 ID，因此这里明确显示“本机统计 / 本机 Codex 等级”，不是 OpenAI 官方账单或账号云端等级。
 
-## 当前源码版本 2.10.0
+## 当前源码版本 2.11.0
 
 本版聊天适配、资料卡片和主题更新见文首。下载区列出已发布的安装包。
 
@@ -348,10 +356,10 @@ npm test
 npm run build:app
 ```
 
-`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。2.10.0 源码对应以下构建产物：
+`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。2.11.0 源码对应以下构建产物：
 
 - macOS：`Codex QQ Skin.app.zip`（可在本机 Mac 用 `npm run build:app` 生成）
-- Windows：`ChatGPT QQ Skin Setup 2.10.0.exe`（由 Windows CI 或 Windows 电脑构建）
+- Windows：`ChatGPT QQ Skin Setup 2.11.0.exe`（由 Windows CI 或 Windows 电脑构建）
 
 请只从本仓库的 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载。设置 `DEVELOPER_ID_APPLICATION` 环境变量后会使用对应证书签名；公开分发前还需使用 Apple 公证服务处理最终 ZIP/DMG。
 
