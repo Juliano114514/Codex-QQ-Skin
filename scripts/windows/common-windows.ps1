@@ -397,6 +397,24 @@ function Start-Injector {
 function Seed-BundledTheme {
   Initialize-StateRoot
   $presetRoot = Join-Path $script:ProjectRoot 'presets'
+  # Retired bundled packs must not survive an upgrade in the saved library.
+  $retiredIds = @('preset-bumblebee', 'preset-neon-storm')
+  $themeManifest = Join-Path $script:ThemeDir 'theme.json'
+  $resetTheme = $false
+  if (Test-Path -LiteralPath $themeManifest -PathType Leaf) {
+    $activeTheme = Get-Content -LiteralPath $themeManifest -Raw | ConvertFrom-Json
+    $idProperty = $activeTheme.PSObject.Properties['id']
+    $resetTheme = $null -ne $idProperty -and $retiredIds -contains $idProperty.Value
+  }
+  foreach ($id in $retiredIds) {
+    $retiredPath = Join-Path $script:ThemesRoot $id
+    if (-not (Test-Path -LiteralPath $retiredPath)) { continue }
+    $resolved = (Resolve-Path -LiteralPath $retiredPath).Path
+    if ([IO.Path]::GetDirectoryName($resolved) -ne (Resolve-Path -LiteralPath $script:ThemesRoot).Path) {
+      Stop-WithError 'Retired theme path escapes the saved theme library.'
+    }
+    Remove-Item -LiteralPath $resolved -Recurse -Force
+  }
   Get-ChildItem -LiteralPath $presetRoot -Directory -Filter 'preset-*' | ForEach-Object {
     if (-not (Test-Path -LiteralPath (Join-Path $_.FullName 'theme.json') -PathType Leaf)) { return }
     $libraryPreset = Join-Path $script:ThemesRoot $_.Name
@@ -404,8 +422,14 @@ function Seed-BundledTheme {
     Copy-Item -LiteralPath $_.FullName -Destination $libraryPreset -Recurse
   }
   $preset = Join-Path $presetRoot 'preset-classic-codex'
-  if (-not (Test-Path -LiteralPath (Join-Path $script:ThemeDir 'theme.json'))) {
-    if (Test-Path -LiteralPath $script:ThemeDir) { Remove-Item -LiteralPath $script:ThemeDir -Recurse -Force }
+  if ($resetTheme -or -not (Test-Path -LiteralPath $themeManifest)) {
+    if (Test-Path -LiteralPath $script:ThemeDir) {
+      $resolved = (Resolve-Path -LiteralPath $script:ThemeDir).Path
+      if ([IO.Path]::GetDirectoryName($resolved) -ne (Resolve-Path -LiteralPath $script:StateRoot).Path) {
+        Stop-WithError 'Active theme path escapes the skin state directory.'
+      }
+      Remove-Item -LiteralPath $resolved -Recurse -Force
+    }
     Copy-Item -LiteralPath $preset -Destination $script:ThemeDir -Recurse
   }
 }

@@ -73,6 +73,14 @@ seed_bundled_presets() {
   local themes_root="$STATE_ROOT/themes"
   /bin/mkdir -p "$themes_root"
   local src id dest entry
+  # Remove retired built-ins from older installs without touching custom packs.
+  for id in preset-bumblebee preset-neon-storm; do
+    /bin/rm -rf "$themes_root/$id"
+  done
+  if [ -f "$THEME_DIR/theme.json" ] && /usr/bin/grep -Eq '"id"[[:space:]]*:[[:space:]]*"(preset-bumblebee|preset-neon-storm)"' "$THEME_DIR/theme.json"; then
+    /bin/rm -rf "$THEME_DIR"
+    /bin/cp -R "$presets_root/preset-classic-codex" "$THEME_DIR"
+  fi
   for src in "$presets_root"/preset-*/; do
     [ -d "$src" ] || continue
     [ -f "${src}theme.json" ] || continue

@@ -1049,7 +1049,7 @@ assert.equal(shellFollow.attributes.get("data-dream-shell"), "light");
 
 const deepThemeFixture = createFixture({
   schemaVersion: 2,
-  id: "deep-bumblebee",
+  id: "deep-fixture",
   kind: "deep-custom",
   appearance: "light",
   art: { safeArea: "center", taskMode: "ambient" },

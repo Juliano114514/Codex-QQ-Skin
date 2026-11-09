@@ -167,11 +167,9 @@ fi
   seed_bundled_presets
   [ -f "$themes/preset-classic-codex/theme.json" ] || exit 1
   [ -f "$themes/preset-classic-codex/background.jpg" ] || exit 1
-  [ -f "$themes/preset-bumblebee/theme.json" ] || exit 1
-  [ -f "$themes/preset-neon-storm/theme.json" ] || exit 1
   [ -f "$themes/custom-keepme/theme.json" ] || exit 1
   seeded="$(/usr/bin/find "$themes" -maxdepth 1 -type d -name "preset-*" | /usr/bin/wc -l | /usr/bin/tr -d " ")"
-  [ "$seeded" -ge 3 ] || exit 1
+  [ "$seeded" -ge 1 ] || exit 1
 ' _ "$ROOT"
 
 # Theme switches stage files and publish theme.json last, preserving a complete

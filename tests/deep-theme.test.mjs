@@ -8,7 +8,6 @@ import { loadDeepThemeDirectory } from "../scripts/deep-theme-core.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "scripts", "deep-theme.mjs");
-const preset = path.join(root, "presets", "preset-bumblebee");
 const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "codex-deep-theme-test-"));
 
 function run(...args) {
@@ -18,21 +17,29 @@ function run(...args) {
 }
 
 try {
+  // Neutral fixture keeps format checks independent of optional bundled skins.
+  const preset = path.join(temporary, "fixture");
+  await fs.mkdir(preset);
+  const assets = { background: "background.png", foregroundRight: "foreground-right.png", watermark: "watermark.png", brandEmblem: "brand-emblem.png" };
+  for (const filename of Object.values(assets)) {
+    await fs.copyFile(path.join(root, "assets", "qq-avatar.png"), path.join(preset, filename));
+  }
+  await fs.writeFile(path.join(preset, "theme.json"), JSON.stringify({ schemaVersion: 2, kind: "deep-custom", id: "deep-fixture", assets }));
   const loaded = await loadDeepThemeDirectory(preset);
   assert.equal(loaded.theme.schemaVersion, 2);
   assert.equal(loaded.theme.kind, "deep-custom");
-  assert.equal(loaded.assets.foregroundRight.metadata.width, 1024);
+  assert.equal(loaded.assets.foregroundRight.metadata.width, 160);
 
-  const packageOne = path.join(temporary, "bumblebee-one.codexskin");
-  const packageTwo = path.join(temporary, "bumblebee-two.codexskin");
+  const packageOne = path.join(temporary, "fixture-one.codexskin");
+  const packageTwo = path.join(temporary, "fixture-two.codexskin");
   run("export", "--theme-dir", preset, "--out", packageOne);
   run("export", "--theme-dir", preset, "--out", packageTwo);
   assert.deepEqual(await fs.readFile(packageOne), await fs.readFile(packageTwo), "Exports must be deterministic");
 
   const state = path.join(temporary, "state");
   const imported = run("import", "--package", packageOne, "--state-root", state);
-  assert.equal(imported.id, "preset-bumblebee");
-  const installed = await loadDeepThemeDirectory(path.join(state, "themes", "preset-bumblebee"));
+  assert.equal(imported.id, "deep-fixture");
+  const installed = await loadDeepThemeDirectory(path.join(state, "themes", "deep-fixture"));
   assert.equal(installed.totalBytes, loaded.totalBytes);
 
   const undeclared = path.join(temporary, "undeclared");
@@ -61,7 +68,7 @@ try {
   await fs.writeFile(manifest, `${JSON.stringify(loaded.theme, null, 2)}\n`);
   const created = path.join(temporary, "created");
   run("create", "--manifest", manifest, "--assets-dir", sourceAssets, "--out", created);
-  assert.equal((await loadDeepThemeDirectory(created)).theme.id, "preset-bumblebee");
+  assert.equal((await loadDeepThemeDirectory(created)).theme.id, "deep-fixture");
 } finally {
   await fs.rm(temporary, { recursive: true, force: true });
 }
