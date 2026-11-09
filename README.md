@@ -98,6 +98,9 @@ Windows 实测覆盖新窗口、侧栏开合、窗口化和最大化。版本记
 
 ## Codex 成长中心
 
+- 新增独立「QQ 秀」卡片：左侧为 AI 娘展示框，右侧为垂直滚动的预设与部件设置栏，两者同一行排布。支持 GPT、DeepSeek、Claude、Grok、千问、Gemini、GLM 七套预设，以及场景、光环、背饰、发型、鞋袜、裙装、上装、表情、头饰、手持、闪光 11 类混搭；本机自动保存，支持还原预设、独立折叠和减少动态偏好。卡片沿用当前皮肤配色，并适配各美学主题的材质。
+- 本地美术资源导入：`node scripts/qqshow-assets.mjs --import "D:/LLM-show/LLM-chan-asset/public/assets-classic"`，然后重新加载皮肤。资源随本地安装的 assets 目录加载，无需启动原项目或访问远程服务。导入文件 `assets/qqshow.local.json` 保留来源署名并已加入 Git 忽略；源码下载不包含这份本地美术包。详见 [QQ 秀接入说明](docs/qqshow.md)。
+
 - 右侧栏按「摘要信息 → 上班状态 → 个人资料」排列，三张卡片分别收起。「上班状态」独立显示下班倒计时与今日收入，可设置上班时长、加班时长、月工资、月工作天数和加班费。默认正常上班 9 小时、加班 3 小时、每月 20 天、加班费 150 元，月工资自行填写。
 - 卡片显示时间、喝水倒计时、已赚金额和进度条。喝水默认 60 分钟，齿轮内可设置间隔，点击「我已喝水」重新计时。未上班时显示首次加载的时间，可直接点击修改；点击「上班」开始 HH:MM 正常工时倒计时，结束后自动切换「加班」倒计时。已赚金额每分钟更新，下班时结算，加班满时长一次计入，未满不计。数据本地保存，支持重启恢复与跨零点夜班。
 - 交互参考 [salary-clock](https://github.com/XiaoZ-0218/salary-clock) 和 [realtime-salary-calculator](https://github.com/Youks7/realtime-salary-calculator)，采用项目现有原生 JavaScript 独立实现，无新增依赖。

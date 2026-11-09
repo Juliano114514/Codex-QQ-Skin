@@ -7,6 +7,7 @@
   const COMPANION_ID = "codex-qq-skin-companion";
   const USAGE_PANEL_ID = "codex-qq-skin-usage-panel";
   const WORKDAY_PANEL_ID = "codex-qq-skin-workday-panel";
+  const QQSHOW_PANEL_ID = "codex-qq-skin-qqshow-panel";
   const USAGE_TOGGLE_ID = "codex-qq-skin-usage-toggle";
   const HOME_PET_ID = "codex-qq-skin-home-pet";
   const RIGHT_TRAY_ID = "codex-qq-skin-right-tray";
@@ -28,6 +29,7 @@
   const PROFILE_DOCK_ID = "codex-qq-skin-profile-dock";
   const PROFILE_DOCK_STORAGE_KEY = "codex-qq-skin-profile-dock-open";
   const WORKDAY_STORAGE_KEY = "codex-qq-skin-workday-v1";
+  const QQSHOW_STORAGE_KEY = "codex-qq-skin-qqshow-v1";
   const NATIVE_APPEARANCE_STATE_KEY = "__CODEX_QQ_SKIN_NATIVE_APPEARANCE__";
   const LIBRARY_THEMES = Array.isArray(libraryThemes)
     ? libraryThemes.filter((item) => item && typeof item.id === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(item.id))
@@ -302,6 +304,7 @@
   document.getElementById(COMPANION_ID)?.remove();
   document.getElementById(USAGE_PANEL_ID)?.remove();
   document.getElementById(WORKDAY_PANEL_ID)?.remove();
+  document.getElementById(QQSHOW_PANEL_ID)?.remove();
   document.getElementById(USAGE_TOGGLE_ID)?.remove();
   document.getElementById(HOME_PET_ID)?.remove();
   document.getElementById(RIGHT_TRAY_ID)?.remove();
@@ -1908,7 +1911,192 @@
     };
     return { mount, cleanup, park, placeBefore };
   })();
+  const qqShowCard = (() => {
+    const catalog = QQ_THEME.qqShow;
+    const ready = Boolean(catalog?.characters?.length && catalog.slots?.length && catalog.items?.length);
+    const items = new Map((catalog?.items || []).map(item => [item.id, item]));
+    const characters = catalog?.characters || [];
+    let card = null;
+    let state = null;
+    let parts = null;
+    const presetFor = id => characters.find(character => character.id === id) || characters[0];
+    const normalize = raw => {
+      const character = presetFor(raw?.characterId);
+      const selection = Object.fromEntries(catalog.slots.map(slot => {
+        const id = raw?.selection?.[slot.id];
+        return [slot.id, items.get(id)?.slot === slot.id ? id
+          : slot.optional && id === null ? null : character.preset[slot.id] ?? null];
+      }));
+      return { characterId: character.id, selection };
+    };
+    const read = () => {
+      try { return normalize(JSON.parse(window.localStorage?.getItem(QQSHOW_STORAGE_KEY) || "null")); }
+      catch { return normalize(null); }
+    };
+    const characterName = character => character?.id === "gpt" ? "ChatGPT" : character?.name || "原版";
+    const ownerName = item => characterName(characters.find(character => character.id === item.characterId));
+    const render = () => {
+      if (!ready || !parts) return;
+      const character = presetFor(state.characterId);
+      const matching = characters.find(candidate => catalog.slots.every(slot =>
+        (candidate.preset[slot.id] ?? null) === state.selection[slot.id]));
+      parts.preset.value = matching?.id || "custom";
+      for (const slot of catalog.slots) {
+        const select = parts.selects.get(slot.id);
+        select.value = state.selection[slot.id] ?? "";
+        const selected = select.selectedOptions[0];
+        select.title = selected?.textContent || slot.label;
+      }
+      const layers = catalog.slots.flatMap(slot => {
+        const item = items.get(state.selection[slot.id]);
+        if (!item) return [];
+        return (item.layers?.length ? item.layers : [item]).map(layer => ({
+          src: layer.src, animatedSrc: layer.animatedSrc, z: layer.z ?? slot.z, slot: slot.id,
+        }));
+      }).sort((a, b) => a.z - b.z);
+      const fragment = document.createDocumentFragment();
+      for (const layer of layers) {
+        const src = catalog.images[layer.src];
+        if (typeof src !== "string" || !/^data:image\/(?:png|gif);base64,/.test(src)) continue;
+        const image = document.createElement("img");
+        image.src = src;
+        image.alt = "";
+        image.draggable = false;
+        image.width = catalog.canvas.width;
+        image.height = catalog.canvas.height;
+        image.addEventListener("error", () => { if (parts) parts.message.textContent = "部分部件加载失败，请重新导入 QQ 秀资源。"; });
+        let node = image;
+        const animated = catalog.images[layer.animatedSrc];
+        if (animated?.startsWith("data:image/gif;base64,")) {
+          node = document.createElement("picture");
+          const source = document.createElement("source");
+          source.media = "(prefers-reduced-motion: no-preference)";
+          source.type = "image/gif";
+          source.srcset = animated;
+          node.append(source, image);
+        } else if (layer.slot === "effect" && src.startsWith("data:image/png;base64,")) {
+          node.classList.add("qq-skin-qqshow-effect");
+        }
+        node.style.zIndex = String(layer.z);
+        fragment.appendChild(node);
+      }
+      parts.doll.replaceChildren(fragment);
+      parts.doll.setAttribute("aria-label", `${characterName(matching || character)} QQ 秀`);
+      parts.name.textContent = characterName(matching || character);
+      parts.name.title = parts.name.textContent;
+      parts.message.textContent = "";
+    };
+    const save = () => {
+      render();
+      try { window.localStorage?.setItem(QQSHOW_STORAGE_KEY, JSON.stringify(state)); }
+      catch { parts.message.textContent = "当前搭配已显示，本机存储不可用，重启后无法保留。"; }
+    };
+    const onStorage = event => {
+      if (ready && (event.key === QQSHOW_STORAGE_KEY || event.key === null)) { state = read(); render(); }
+    };
+    const cleanup = () => {
+      window.removeEventListener("storage", onStorage);
+      card?.remove();
+      card = null;
+      parts = null;
+    };
+    const park = () => {
+      if (!card) return;
+      card.classList.remove("qq-skin-qqshow-docked", "qq-skin-growth-docked");
+      if (card.parentElement !== document.body) document.body.appendChild(card);
+    };
+    const placeAfter = profilePanel => {
+      const list = profilePanel.parentElement;
+      if (!card?.isConnected || !list || list === document.body) { park(); return; }
+      if (card.parentElement !== list || profilePanel.nextElementSibling !== card) profilePanel.after(card);
+      card.classList.add("qq-skin-qqshow-docked", "qq-skin-growth-docked");
+    };
+    const mount = () => {
+      if (card?.isConnected) return;
+      cleanup();
+      card = document.createElement("section");
+      card.id = QQSHOW_PANEL_ID;
+      card.className = "qq-skin-qqshow-card";
+      card.setAttribute("aria-label", "QQ 秀");
+      // Catalog labels and storage values are assigned as text/value below.
+      card.innerHTML = `
+        <div class="qq-skin-qqshow-heading qq-skin-usage-title"><b>QQ 秀</b><button type="button" data-qqshow-reset aria-label="还原当前角色" title="还原当前角色">还原</button></div>
+        <div class="qq-skin-qqshow-body">
+          <div class="qq-skin-qqshow-layout">
+            <figure class="qq-skin-qqshow-display">
+              <div class="qq-skin-qqshow-stage"><div class="qq-skin-qqshow-doll" role="img"></div></div>
+              <figcaption><b data-qqshow-name></b></figcaption>
+            </figure>
+            <div class="qq-skin-qqshow-settings">
+              <div class="qq-skin-qqshow-controls" role="group" aria-label="角色与部件" tabindex="0"></div>
+            </div>
+          </div>
+          <p class="qq-skin-qqshow-message" role="status"></p>
+        </div>`;
+      document.body.appendChild(card);
+      ensureFloatingPanel(card, ".qq-skin-qqshow-heading");
+      parts = { doll: card.querySelector(".qq-skin-qqshow-doll"), name: card.querySelector("[data-qqshow-name]"),
+        controls: card.querySelector(".qq-skin-qqshow-controls"),
+        message: card.querySelector(".qq-skin-qqshow-message"), selects: new Map() };
+      const reset = card.querySelector("[data-qqshow-reset]");
+      if (!ready) {
+        card.querySelector(".qq-skin-qqshow-layout").hidden = true;
+        reset.hidden = true;
+        parts.message.textContent = "QQ 秀资源尚未导入。请按项目说明导入 AI 娘资源后重新加载皮肤。";
+        return;
+      }
+      const addSelect = (label, id) => {
+        const field = document.createElement("label");
+        field.className = "qq-skin-qqshow-field";
+        const title = document.createElement("span");
+        title.textContent = label;
+        const select = document.createElement("select");
+        select.setAttribute("aria-label", `QQ 秀${label}`);
+        select.dataset.qqshowSlot = id;
+        field.append(title, select);
+        parts.controls.appendChild(field);
+        select.addEventListener("focus", () => field.scrollIntoView({ block: "nearest", inline: "nearest" }));
+        return select;
+      };
+      const option = (select, value, text, disabled = false) => {
+        const node = document.createElement("option");
+        node.value = value;
+        node.textContent = text;
+        node.disabled = disabled;
+        select.appendChild(node);
+      };
+      parts.preset = addSelect("角色", "preset");
+      option(parts.preset, "custom", "混搭", true);
+      for (const character of characters) option(parts.preset, character.id, characterName(character));
+      parts.preset.addEventListener("change", () => {
+        const character = presetFor(parts.preset.value);
+        state = normalize({ characterId: character.id, selection: character.preset });
+        save();
+      });
+      for (const slot of catalog.slots) {
+        const select = addSelect(slot.label, slot.id);
+        if (slot.optional) option(select, "", "不使用");
+        for (const item of catalog.items.filter(item => item.slot === slot.id)) {
+          option(select, item.id, ownerName(item));
+        }
+        parts.selects.set(slot.id, select);
+        select.addEventListener("change", () => {
+          state.selection[slot.id] = select.value || null;
+          save();
+        });
+      }
+      reset.addEventListener("click", () => {
+        state = normalize({ characterId: state.characterId, selection: presetFor(state.characterId).preset });
+        save();
+      });
+      state = read();
+      render();
+      window.addEventListener("storage", onStorage);
+    };
+    return { mount, cleanup, park, placeAfter };
+  })();
   const profileCleanup = () => {
+    qqShowCard.cleanup();
     workdayCard.cleanup();
     profileResizeObserver.disconnect();
     lcdResizeObserver.disconnect();
@@ -2311,6 +2499,7 @@
       usageParts = null;
     }
     workdayCard.mount();
+    qqShowCard.mount();
     ensureFloatingPanel(panel, ".qq-skin-usage-title");
     if (!usageParts || usageParts.panel !== panel) {
       usageParts = {
@@ -2537,6 +2726,7 @@
     dockedNativeSummary = null;
   };
   const clearProfileDock = () => {
+    qqShowCard.park();
     workdayCard.park();
     releaseNativeSummary();
     dockSummaryToggle?.removeEventListener("click", onSummaryToggle, true);
@@ -2643,6 +2833,7 @@
       if (panel.parentElement !== list) list.appendChild(panel);
     } else if (panel.parentElement !== content) content.appendChild(panel);
     workdayCard.placeBefore(panel);
+    qqShowCard.placeAfter(panel);
     const toggle = dock.firstElementChild;
     if (toggle.disabled !== !canFit) toggle.disabled = !canFit;
     setAttribute(toggle, "aria-expanded", String(open));
@@ -2680,6 +2871,7 @@
     sync();
   };
   const clearReferenceLayout = () => {
+    qqShowCard.park();
     workdayCard.park();
     setAttribute(document.documentElement, "data-qq-reference-layout", "false");
     const growth = document.getElementById(USAGE_PANEL_ID);
@@ -2725,6 +2917,7 @@
     const list = overlay.firstElementChild;
     if (panel.parentElement !== list) list.appendChild(panel);
     workdayCard.placeBefore(panel);
+    qqShowCard.placeAfter(panel);
 
   };
 

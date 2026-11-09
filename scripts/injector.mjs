@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import os from "node:os";
 import { readImageMetadata } from "./image-metadata.mjs";
+import { loadQQShowAssets } from "./qqshow-assets.mjs";
 import { loadDeepThemeDirectory, mimeForExtension } from "./deep-theme-core.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
@@ -554,7 +555,8 @@ async function loadStaticPayloadAssets() {
   const cacheHit = Boolean(staticPayloadAssets);
   if (!staticPayloadAssets) {
     staticPayloadAssets = Promise.all([
-      fs.readFile(path.join(root, "assets", "qq-skin.css"), "utf8").then(adaptShellSelectors),
+      Promise.all(["qq-skin.css", "qqshow.css"].map(file => fs.readFile(path.join(root, "assets", file), "utf8")))
+        .then(parts => adaptShellSelectors(parts.join("\n"))),
       fs.readFile(path.join(root, "assets", "custom-skin.css"), "utf8").then(adaptShellSelectors),
       fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8").then(adaptShellSelectors),
       fs.readFile(path.join(root, "assets", "portal-hero.png")),
@@ -570,7 +572,7 @@ async function loadStaticPayloadAssets() {
         const kind = name === "king" ? "crown" : name;
         return `.qq-skin-level-icons i[data-kind="${kind}"] { background-image: url("data:image/png;base64,${image.toString("base64")}"); }`;
       })),
-      fs.readFile(path.join(root, "assets", "qq-avatars.json"), "utf8"),
+      Promise.all([fs.readFile(path.join(root, "assets", "qq-avatars.json"), "utf8"), loadQQShowAssets()]),
       fs.readFile(path.join(root, "assets", "qq-ui.css"), "utf8").then(adaptShellSelectors),
       fs.readFile(path.join(root, "assets", "theme-iqiyi.json"), "utf8"),
       fs.readFile(path.join(root, "assets", "themes-media.json"), "utf8"),
@@ -599,9 +601,10 @@ async function loadStaticPayloadAssets() {
       throw error;
     });
   }
-  const [baseCss, customCss, template, qqArt, qqThemeJson, pet, retroFrame, qqAvatar, coughAudio, darkCss, darkThemeJson, levelIconCss, avatarJson, uiCss, iqiyiThemeJson, mediaThemesJson, appearancesJson, mediaCss] = await staticPayloadAssets;
+  const [baseCss, customCss, template, qqArt, qqThemeJson, pet, retroFrame, qqAvatar, coughAudio, darkCss, darkThemeJson, levelIconCss, profileAssets, uiCss, iqiyiThemeJson, mediaThemesJson, appearancesJson, mediaCss] = await staticPayloadAssets;
   const qqTheme = JSON.parse(qqThemeJson);
-  qqTheme.avatarLibrary = JSON.parse(avatarJson);
+  qqTheme.avatarLibrary = JSON.parse(profileAssets[0]);
+  qqTheme.qqShow = profileAssets[1];
   qqTheme.notificationAudio = Object.fromEntries(await Promise.all(
     [["approval", "action-required.wav"], ["completed", "task-completed.wav"]].map(async ([event, file]) => {
       const bytes = await fs.readFile(path.join(root, "assets", "audio", file));
@@ -1302,7 +1305,7 @@ function watchPayloadSources(themeDir, onDirty) {
           (!name || name === "qq-skin.css" || name === "custom-skin.css" || name === "renderer-inject.js" ||
             name === "portal-hero.png" || name === "windows-xp-meadow.jpg" || name === "millennium-ivory-abs.jpg" || name === "theme.json" || name === "theme-dark.json" || name === "theme-iqiyi.json" || name === "themes-media.json" || name === "theme-appearances.json" || name === "qq-media.css" || name === "qq-aesthetics.css" || name === "qq-dark.css" || name === "qq-ui.css" ||
             name === "codex-pet.png" || name === "retro-window-frame.png" ||
-            name === "qq-avatar.png" || name === "qq-avatars.json" || name === "level-icons" || name === "audio");
+            name === "qq-avatar.png" || name === "qq-avatars.json" || name === "qqshow.css" || name === "qqshow.local.json" || name === "level-icons" || name === "audio");
         if (kind === "static" && !staticChanged) return;
         onDirty({ staticChanged });
       });

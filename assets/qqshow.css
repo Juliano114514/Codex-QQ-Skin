@@ -1,0 +1,125 @@
+/* QQ show uses the same palette and title metrics as the existing dock cards. */
+.qq-skin-qqshow-card {
+  box-sizing: border-box;
+  display: none;
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--qq-card-border, var(--ds-line));
+  border-radius: var(--qq-radius-card, 3px);
+  background: var(--ds-panel);
+  color: var(--ds-text);
+  font: 12px/1.5 var(--qq-font-ui, sans-serif);
+  -webkit-app-region: no-drag;
+}
+.qq-skin-qqshow-card.qq-skin-qqshow-docked { display: block; }
+.qq-skin-qqshow-card *, .qq-skin-qqshow-card *::before { box-sizing: border-box; }
+.qq-skin-qqshow-card [hidden], .qq-skin-qqshow-card.qq-skin-window-collapsed > .qq-skin-qqshow-body { display: none !important; }
+.qq-skin-qqshow-heading { display: flex; align-items: center; gap: 6px; padding-inline: 10px; min-height: 33px; }
+.qq-skin-qqshow-heading > b { font-size: inherit; }
+.qq-skin-qqshow-heading > [data-qqshow-reset] { margin-left: auto; font-size: 11px; }
+.qq-skin-qqshow-body { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+.qq-skin-qqshow-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(76px, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+.qq-skin-qqshow-display { min-width: 0; margin: 0; align-self: start; }
+.qq-skin-qqshow-stage {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 5px;
+  overflow: hidden;
+  border: 1px solid var(--ds-line);
+  border-radius: var(--qq-radius-control, 3px);
+  background: radial-gradient(ellipse at 50% 25%, rgb(var(--ds-accent-rgb) / .12), transparent 75%), var(--ds-panel-2);
+  box-shadow: inset 0 1px 4px rgb(0 0 0 / .12);
+}
+.qq-skin-qqshow-doll {
+  position: relative;
+  isolation: isolate;
+  width: 140px;
+  max-width: 100%;
+  aspect-ratio: 140 / 226;
+  overflow: hidden;
+  background: repeating-conic-gradient(var(--ds-panel) 0% 25%, var(--ds-panel-2) 0% 50%) 0 0 / 12px 12px;
+  image-rendering: pixelated;
+}
+.qq-skin-qqshow-doll > :is(img, picture), .qq-skin-qqshow-doll > picture > img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+/* Same eight opacity phases as LLM-show's classic GIF export (240ms each). */
+@keyframes qq-show-sparkle {
+  0%, 50%, 100% { opacity: .35; }
+  12.5%, 37.5% { opacity: .65; }
+  25% { opacity: 1; }
+  62.5%, 87.5% { opacity: .5; }
+  75% { opacity: .8; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .qq-skin-qqshow-effect { animation: qq-show-sparkle 1.92s steps(1, end) infinite; }
+  .qq-skin-qqshow-card.qq-skin-window-collapsed .qq-skin-qqshow-effect { animation-play-state: paused; }
+}
+.qq-skin-qqshow-display figcaption { display: grid; gap: 1px; margin-top: 7px; min-width: 0; text-align: center; }
+.qq-skin-qqshow-display figcaption > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qq-skin-qqshow-display figcaption > b { font-size: 11px; font-weight: 600; }
+.qq-skin-qqshow-settings { position: relative; min-width: 0; min-height: 0; }
+.qq-skin-qqshow-controls {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  padding: 2px 4px 2px 2px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ds-line) var(--ds-panel-2);
+}
+.qq-skin-qqshow-controls::-webkit-scrollbar { width: 5px; }
+.qq-skin-qqshow-controls::-webkit-scrollbar-thumb { background: var(--ds-line); border-radius: 6px; }
+.qq-skin-qqshow-controls::-webkit-scrollbar-track { background: var(--ds-panel-2); }
+.qq-skin-qqshow-field { display: grid; flex: none; gap: 3px; min-width: 0; }
+.qq-skin-qqshow-field > span { color: var(--ds-muted); font-size: 11px; }
+.qq-skin-qqshow-card select, .qq-skin-qqshow-card button {
+  min-width: 0;
+  border: 1px solid var(--ds-line);
+  border-radius: var(--qq-radius-control, 3px);
+  background: var(--ds-panel);
+  color: var(--ds-text);
+  font: inherit;
+  color-scheme: inherit;
+}
+.qq-skin-qqshow-card select { width: 100%; height: 28px; padding: 3px 2px; font-size: 11px; text-overflow: ellipsis; cursor: pointer; }
+.qq-skin-qqshow-card button { min-height: 23px; padding: 1px 7px; cursor: pointer; }
+.qq-skin-qqshow-card :is(button, select):hover { border-color: var(--ds-accent); }
+.qq-skin-qqshow-card :is(button, select, .qq-skin-qqshow-controls):focus-visible { outline: 2px solid var(--ds-accent); outline-offset: -2px; }
+.qq-skin-qqshow-card p { margin: 0; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.qq-skin-qqshow-card .qq-skin-qqshow-message:empty { display: none; }
+.qq-skin-qqshow-message { color: var(--ds-text); }
+
+/* Preserve each aesthetic's material while keeping the artwork unfiltered. */
+html[data-qq-palette="windows-xp"] .qq-skin-qqshow-card { border-radius: 6px 6px 2px 2px; }
+html[data-qq-palette="windows-xp"] .qq-skin-qqshow-stage { border-color: #7f9db9; background: #eef4fc; box-shadow: inset 1px 1px #fff; }
+html[data-qq-palette="windows-98"] .qq-skin-qqshow-card { border-radius: 0; box-shadow: inset 1px 1px #fff, 1px 1px #404040; }
+html[data-qq-palette="windows-98"] .qq-skin-qqshow-stage { border-radius: 0; border: 2px inset #ddd; background: #c0c0c0; }
+html[data-qq-palette="matrix"] .qq-skin-qqshow-stage { border-radius: 0; box-shadow: inset 0 0 18px rgb(var(--ds-accent-rgb) / .12); }
+html[data-qq-palette="millennium-pc"] .qq-skin-qqshow-stage { border: 3px solid var(--ds-line); border-radius: 12px; box-shadow: inset 0 2px 8px rgb(0 0 0 / .4), 0 1px rgb(255 255 255 / .3); }
+html[data-qq-palette="skeuomorphism"] .qq-skin-qqshow-display { padding: 6px; border: 1px solid var(--ds-line); border-radius: 4px; box-shadow: 0 2px 4px rgb(0 0 0 / .15); }
+html[data-qq-palette="frutiger-aero"] .qq-skin-qqshow-stage { background: linear-gradient(145deg, rgb(255 255 255 / .22), transparent 55%), var(--ds-panel-2); box-shadow: inset 0 1px rgb(255 255 255 / .5), 0 2px 6px rgb(0 0 0 / .12); }
+html[data-qq-palette="neumorphism"] .qq-skin-qqshow-stage { border-color: transparent; border-radius: 14px; box-shadow: inset 4px 4px 9px rgb(0 0 0 / .12), inset -3px -3px 8px rgb(255 255 255 / .14); }
