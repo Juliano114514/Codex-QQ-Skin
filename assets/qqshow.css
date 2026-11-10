@@ -18,7 +18,11 @@
 .qq-skin-qqshow-card [hidden], .qq-skin-qqshow-card.qq-skin-window-collapsed > .qq-skin-qqshow-body { display: none !important; }
 .qq-skin-qqshow-heading { display: flex; align-items: center; gap: 6px; padding-inline: 10px; min-height: 33px; }
 .qq-skin-qqshow-heading > b { font-size: inherit; }
-.qq-skin-qqshow-heading > [data-qqshow-reset] { margin-left: auto; font-size: 11px; }
+.qq-skin-qqshow-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; font-size: 11px; }
+.qq-skin-qqshow-style-switch { display: inline-flex; align-items: center; gap: 1px; white-space: nowrap; }
+.qq-skin-qqshow-style-switch > span { color: var(--ds-muted); }
+.qq-skin-qqshow-card .qq-skin-qqshow-style-switch > button { padding-inline: 4px; border-color: transparent; background: transparent; }
+.qq-skin-qqshow-card .qq-skin-qqshow-style-switch > button[aria-pressed="true"] { color: var(--ds-accent); border-color: var(--ds-line); background: var(--ds-panel-2); font-weight: 600; }
 .qq-skin-qqshow-body { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
 .qq-skin-qqshow-layout {
   display: grid;
@@ -60,6 +64,8 @@
   pointer-events: none;
   image-rendering: pixelated;
 }
+.qq-skin-qqshow-card[data-qqshow-style="fashion"] .qq-skin-qqshow-doll,
+.qq-skin-qqshow-card[data-qqshow-style="fashion"] .qq-skin-qqshow-doll img { image-rendering: auto; }
 /* Same eight opacity phases as LLM-show's classic GIF export (240ms each). */
 @keyframes qq-show-sparkle {
   0%, 50%, 100% { opacity: .35; }

@@ -1912,43 +1912,60 @@
     return { mount, cleanup, park, placeBefore };
   })();
   const qqShowCard = (() => {
-    const catalog = QQ_THEME.qqShow;
-    const ready = Boolean(catalog?.characters?.length && catalog.slots?.length && catalog.items?.length);
-    const items = new Map((catalog?.items || []).map(item => [item.id, item]));
-    const characters = catalog?.characters || [];
+    const catalogs = (QQ_THEME.qqShow?.styles || (QQ_THEME.qqShow ? [{ ...QQ_THEME.qqShow, id: "classic", name: "经典" }] : []))
+      .filter(style => style.characters?.length && style.slots?.length && style.items?.length);
+    const ready = catalogs.length > 0;
+    let catalog = catalogs[0];
+    let items = new Map();
+    let characters = [];
     let card = null;
     let state = null;
     let parts = null;
     const presetFor = id => characters.find(character => character.id === id) || characters[0];
-    const normalize = raw => {
-      const character = presetFor(raw?.characterId);
-      const selection = Object.fromEntries(catalog.slots.map(slot => {
+    const normalize = (raw, style = catalog) => {
+      const character = style.characters.find(character => character.id === raw?.characterId) || style.characters[0];
+      const selection = Object.fromEntries(style.slots.map(slot => {
         const id = raw?.selection?.[slot.id];
-        return [slot.id, items.get(id)?.slot === slot.id ? id
+        return [slot.id, style.items.some(item => item.id === id && item.slot === slot.id) ? id
           : slot.optional && id === null ? null : character.preset[slot.id] ?? null];
       }));
       return { characterId: character.id, selection };
     };
     const read = () => {
-      try { return normalize(JSON.parse(window.localStorage?.getItem(QQSHOW_STORAGE_KEY) || "null")); }
-      catch { return normalize(null); }
+      let raw;
+      try { raw = JSON.parse(window.localStorage?.getItem(QQSHOW_STORAGE_KEY) || "null"); } catch {}
+      return { styleId: catalogs.find(style => style.id === raw?.styleId)?.id || catalogs[0].id,
+        styles: Object.fromEntries(catalogs.map(style => [style.id,
+          normalize(raw?.styles?.[style.id] || (!raw?.styles && style.id === "classic" ? raw : null), style)])) };
     };
     const characterName = character => character?.id === "gpt" ? "ChatGPT" : character?.name || "原版";
     const ownerName = item => characterName(characters.find(character => character.id === item.characterId));
     const render = () => {
       if (!ready || !parts) return;
-      const character = presetFor(state.characterId);
+      if (parts.styleId !== state.styleId) {
+        catalog = catalogs.find(style => style.id === state.styleId);
+        items = new Map(catalog.items.map(item => [item.id, item]));
+        characters = catalog.characters;
+        parts.buildControls();
+        parts.styleId = state.styleId;
+      }
+      const outfit = state.styles[state.styleId];
+      card.dataset.qqshowStyle = state.styleId;
+      for (const button of parts.styleSwitch.querySelectorAll("[data-qqshow-style]")) {
+        button.setAttribute("aria-pressed", String(button.dataset.qqshowStyle === state.styleId));
+      }
+      const character = presetFor(outfit.characterId);
       const matching = characters.find(candidate => catalog.slots.every(slot =>
-        (candidate.preset[slot.id] ?? null) === state.selection[slot.id]));
+        (candidate.preset[slot.id] ?? null) === outfit.selection[slot.id]));
       parts.preset.value = matching?.id || "custom";
       for (const slot of catalog.slots) {
         const select = parts.selects.get(slot.id);
-        select.value = state.selection[slot.id] ?? "";
+        select.value = outfit.selection[slot.id] ?? "";
         const selected = select.selectedOptions[0];
         select.title = selected?.textContent || slot.label;
       }
-      const layers = catalog.slots.flatMap(slot => {
-        const item = items.get(state.selection[slot.id]);
+      const layers = matching?.scene ? [{ ...matching.scene, z: 0 }] : catalog.slots.flatMap(slot => {
+        const item = items.get(outfit.selection[slot.id]);
         if (!item) return [];
         return (item.layers?.length ? item.layers : [item]).map(layer => ({
           src: layer.src, animatedSrc: layer.animatedSrc, z: layer.z ?? slot.z, slot: slot.id,
@@ -1974,14 +1991,14 @@
           source.type = "image/gif";
           source.srcset = animated;
           node.append(source, image);
-        } else if (layer.slot === "effect" && src.startsWith("data:image/png;base64,")) {
+        } else if (catalogs.length === 1 && layer.slot === "effect" && src.startsWith("data:image/png;base64,")) {
           node.classList.add("qq-skin-qqshow-effect");
         }
         node.style.zIndex = String(layer.z);
         fragment.appendChild(node);
       }
       parts.doll.replaceChildren(fragment);
-      parts.doll.setAttribute("aria-label", `${characterName(matching || character)} QQ 秀`);
+      parts.doll.setAttribute("aria-label", `${characterName(matching || character)} ${catalog.name} QQ 秀`);
       parts.name.textContent = characterName(matching || character);
       parts.name.title = parts.name.textContent;
       parts.message.textContent = "";
@@ -2020,7 +2037,11 @@
       card.setAttribute("aria-label", "QQ 秀");
       // Catalog labels and storage values are assigned as text/value below.
       card.innerHTML = `
-        <div class="qq-skin-qqshow-heading qq-skin-usage-title"><b>QQ 秀</b><button type="button" data-qqshow-reset aria-label="还原当前角色" title="还原当前角色">还原</button></div>
+        <div class="qq-skin-qqshow-heading qq-skin-usage-title"><b>QQ 秀</b><div class="qq-skin-qqshow-actions">
+          <div class="qq-skin-qqshow-style-switch" role="group" aria-label="QQ 秀风格">
+            <button type="button" data-qqshow-style="classic" aria-pressed="true">经典</button><span aria-hidden="true">|</span><button type="button" data-qqshow-style="fashion" aria-pressed="false">时尚</button>
+          </div><button type="button" data-qqshow-reset aria-label="还原当前角色" title="还原当前角色">还原</button>
+        </div></div>
         <div class="qq-skin-qqshow-body">
           <div class="qq-skin-qqshow-layout">
             <figure class="qq-skin-qqshow-display">
@@ -2037,56 +2058,72 @@
       ensureFloatingPanel(card, ".qq-skin-qqshow-heading");
       parts = { doll: card.querySelector(".qq-skin-qqshow-doll"), name: card.querySelector("[data-qqshow-name]"),
         controls: card.querySelector(".qq-skin-qqshow-controls"),
+        styleSwitch: card.querySelector(".qq-skin-qqshow-style-switch"),
         message: card.querySelector(".qq-skin-qqshow-message"), selects: new Map() };
       const reset = card.querySelector("[data-qqshow-reset]");
       if (!ready) {
         card.querySelector(".qq-skin-qqshow-layout").hidden = true;
         reset.hidden = true;
+        parts.styleSwitch.hidden = true;
         parts.message.textContent = "QQ 秀资源尚未导入。请按项目说明导入 AI 娘资源后重新加载皮肤。";
         return;
       }
-      const addSelect = (label, id) => {
-        const field = document.createElement("label");
-        field.className = "qq-skin-qqshow-field";
-        const title = document.createElement("span");
-        title.textContent = label;
-        const select = document.createElement("select");
-        select.setAttribute("aria-label", `QQ 秀${label}`);
-        select.dataset.qqshowSlot = id;
-        field.append(title, select);
-        parts.controls.appendChild(field);
-        select.addEventListener("focus", () => field.scrollIntoView({ block: "nearest", inline: "nearest" }));
-        return select;
-      };
-      const option = (select, value, text, disabled = false) => {
-        const node = document.createElement("option");
-        node.value = value;
-        node.textContent = text;
-        node.disabled = disabled;
-        select.appendChild(node);
-      };
-      parts.preset = addSelect("角色", "preset");
-      option(parts.preset, "custom", "混搭", true);
-      for (const character of characters) option(parts.preset, character.id, characterName(character));
-      parts.preset.addEventListener("change", () => {
-        const character = presetFor(parts.preset.value);
-        state = normalize({ characterId: character.id, selection: character.preset });
-        save();
-      });
-      for (const slot of catalog.slots) {
-        const select = addSelect(slot.label, slot.id);
-        if (slot.optional) option(select, "", "不使用");
-        for (const item of catalog.items.filter(item => item.slot === slot.id)) {
-          option(select, item.id, ownerName(item));
-        }
-        parts.selects.set(slot.id, select);
-        select.addEventListener("change", () => {
-          state.selection[slot.id] = select.value || null;
+      parts.styleSwitch.hidden = catalogs.length < 2;
+      for (const button of parts.styleSwitch.querySelectorAll("[data-qqshow-style]")) {
+        button.addEventListener("click", () => {
+          const id = button.dataset.qqshowStyle;
+          if (id === state.styleId || !catalogs.some(style => style.id === id)) return;
+          state.styleId = id;
           save();
         });
       }
+      parts.buildControls = () => {
+        parts.controls.replaceChildren();
+        parts.selects.clear();
+        const addSelect = (label, id) => {
+          const field = document.createElement("label");
+          field.className = "qq-skin-qqshow-field";
+          const title = document.createElement("span");
+          title.textContent = label;
+          const select = document.createElement("select");
+          select.setAttribute("aria-label", `QQ 秀${label}`);
+          select.dataset.qqshowSlot = id;
+          field.append(title, select);
+          parts.controls.appendChild(field);
+          select.addEventListener("focus", () => field.scrollIntoView({ block: "nearest", inline: "nearest" }));
+          return select;
+        };
+        const option = (select, value, text, disabled = false) => {
+          const node = document.createElement("option");
+          node.value = value;
+          node.textContent = text;
+          node.disabled = disabled;
+          select.appendChild(node);
+        };
+        parts.preset = addSelect("角色", "preset");
+        option(parts.preset, "custom", "混搭", true);
+        for (const character of characters) option(parts.preset, character.id, characterName(character));
+        parts.preset.addEventListener("change", () => {
+          const character = presetFor(parts.preset.value);
+          state.styles[state.styleId] = normalize({ characterId: character.id, selection: character.preset });
+          save();
+        });
+        for (const slot of catalog.slots) {
+          const select = addSelect(slot.label, slot.id);
+          if (slot.optional) option(select, "", "不使用");
+          for (const item of catalog.items.filter(item => item.slot === slot.id)) {
+            option(select, item.id, ownerName(item));
+          }
+          parts.selects.set(slot.id, select);
+          select.addEventListener("change", () => {
+            state.styles[state.styleId].selection[slot.id] = select.value || null;
+            save();
+          });
+        }
+      };
       reset.addEventListener("click", () => {
-        state = normalize({ characterId: state.characterId, selection: presetFor(state.characterId).preset });
+        const characterId = state.styles[state.styleId].characterId;
+        state.styles[state.styleId] = normalize({ characterId, selection: presetFor(characterId).preset });
         save();
       });
       state = read();
