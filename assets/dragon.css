@@ -10,6 +10,7 @@
 .qq-skin-dragon-toggle:focus-visible { outline: 2px solid var(--ds-accent, #8461b0); outline-offset: -2px; }
 .qq-skin-dragon-rail-tab { width: 28px; padding: 12px 5px; border-radius: 0 0 4px 4px; writing-mode: vertical-rl; letter-spacing: 2px; font: 600 13px/18px var(--qq-font-ui, system-ui); }
 .qq-skin-dragon-toolbar-button { height: 22px; padding: 0 9px; border-radius: 7px; white-space: nowrap; font: 650 11px/22px system-ui; }
+.qq-skin-dragon-separator { flex: 0 0 1px; width: 1px; height: 12px; margin: 0 7px; background: var(--ds-line, #9ca0a6); opacity: .75; align-self: center; }
 .qq-skin-workday-dialog {
   --ds-panel: #fff; --ds-panel-2: #f5f1fa; --ds-text: #443552; --ds-muted: #79659a; --ds-line: #dfd1ec; --ds-accent: #8461b0;
   width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px);

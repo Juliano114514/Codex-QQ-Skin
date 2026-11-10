@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $manifest = Join-Path $SourceRoot 'scripts\dragon\runtime-files.json'
 $source = Join-Path $SourceRoot 'vendor\gpt-niang'
-$files = @(Get-Content -LiteralPath $manifest -Raw -Encoding UTF8 | ConvertFrom-Json)
+$files = @(Get-Content -LiteralPath $manifest -Raw -Encoding UTF8 | ConvertFrom-Json | ForEach-Object { $_ })
 if (!$files.Count) { throw 'The dragon runtime manifest is empty.' }
 foreach ($file in $files) {
   if ($file -isnot [string] -or [IO.Path]::IsPathRooted($file) -or $file -match '(^|[\\/])\.\.([\\/]|$)') {

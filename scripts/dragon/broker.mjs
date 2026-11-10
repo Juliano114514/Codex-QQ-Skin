@@ -87,11 +87,13 @@ export class DragonBroker {
     this.pendingRequests = 0;
     this.abortController = new AbortController();
     this.timer = null;
+    this.restartTimer = null;
+    this.restartAttempts = 0;
   }
   syncTimer() {
     clearInterval(this.timer);
     this.timer = null;
-    if (this.closed || !this.enabled || !this.childReady) return;
+    if (this.closed || !this.childReady) return;
     this.timer = setInterval(() => {
       try {
         this.remind();
@@ -214,13 +216,14 @@ export class DragonBroker {
     finally { this.monitorStarting = false; }
   }
   async start() {
-    if (this.enabled) this.launch();
+    this.launch();
     this.publish();
   }
   async launch() {
     try {
       if (this.stoppingChild) await this.stoppingChild;
-      if (this.closed || !this.enabled || this.child) return;
+      if (this.closed || this.child) return;
+      clearTimeout(this.restartTimer);
       const entry = path.join(this.root, "vendor", "gpt-niang", "gpt-niang-usage", "runtime", "start-widget.ps1");
       if (!existsSync(entry)) { this.fail("龙娘子模块未初始化，请运行 git submodule update --init。"); return; }
       mkdirSync(path.join(this.directory, "widget"), { recursive: true });
@@ -231,6 +234,7 @@ export class DragonBroker {
         "-SkinManaged", "-DataDir", path.join(this.directory, "widget"), "-NodePath", process.execPath,
       ], { windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
       this.child = child;
+      const startedAt = Date.now();
       this.childReady = false;
       let pending = "";
       child.stdin.on("error", () => {});
@@ -252,7 +256,13 @@ export class DragonBroker {
         this.child = null; this.childReady = false;
         this.syncTimer();
         this.monitor?.stop(); this.monitor = null;
-        if (this.enabled && !this.closed) this.error = "龙娘已异常退出，点击关闭后可重新开启。";
+        if (!this.closed) {
+          if (Date.now() - startedAt >= 60000) this.restartAttempts = 0;
+          const delay = Math.min(30000, 1000 * 2 ** Math.min(this.restartAttempts++, 5));
+          this.error = "浮窗正在自动恢复…";
+          this.restartTimer = setTimeout(() => this.launch(), delay);
+          this.restartTimer.unref();
+        }
         this.publish();
       });
       this.readyTimer = setTimeout(() => {
@@ -279,7 +289,7 @@ export class DragonBroker {
     }
   }
   remind() {
-    if (!this.enabled || !this.childReady || !this.workday) return;
+    if (!this.childReady || !this.workday) return;
     const due = currentReminders(this.workday).filter(event => !this.delivered.has(event.id));
     if (!due.length) return;
     for (const event of due) this.delivered.add(event.id);
@@ -337,7 +347,8 @@ export class DragonBroker {
             try { this.preferences(); } catch (error) { this.enabled = previous; throw error; }
           }
           this.error = null;
-          if (this.enabled) { this.launch(); void this.refreshQuota(false); } else this.stopChild();
+          this.launch();
+          if (this.enabled) void this.refreshQuota(false);
           break;
         case "ready":
           if (!widget || !this.child) return;
@@ -388,6 +399,7 @@ export class DragonBroker {
   close() {
     this.closed = true;
     clearInterval(this.timer);
+    clearTimeout(this.restartTimer);
     this.abortController?.abort();
     this.stopChild();
     this.sources.clear();

@@ -10,7 +10,7 @@
   let connected = false, disposed = false, counter = 0;
   let client = null, container = null, unsubscribe = null, discoveryAt = 0;
   let accountKey = null, context = "", identityHash = null, quotaKey = "", themeKey = "";
-  let button = null;
+  let button = null, separator = null;
   const token = () => window.crypto?.randomUUID?.() || Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
   const instance = token();
   const send = (action, params = {}) => {
@@ -39,10 +39,10 @@
   const updateButton = () => {
     if (!button) return;
     const enabled = snapshot?.enabled === true;
-    button.textContent = "龙娘浮窗";
+    button.textContent = "浮窗";
     button.setAttribute("aria-pressed", String(enabled));
     button.disabled = !connected;
-    button.title = snapshot?.error || (enabled ? "关闭龙娘浮窗及喝水／下班提醒" : "开启龙娘浮窗");
+    button.title = snapshot?.error || (enabled ? "隐藏浮窗，后台继续计时与提醒" : "显示浮窗");
     button.dataset.dragonStatus = snapshot?.status || "disconnected";
   };
   const ensure = () => {
@@ -57,19 +57,25 @@
         button.addEventListener("click", () => send("enable", { enabled: snapshot?.enabled !== true }));
       }
     }
-    if (details) {
+    if (!fallback && details) {
       let tabs = details.parentElement;
       if (!tabs.classList.contains("qq-skin-profile-dock-tabs")) {
         tabs = document.createElement("div"); tabs.className = "qq-skin-profile-dock-tabs";
-        tabs.setAttribute("role", "group"); tabs.setAttribute("aria-label", "详细信息与龙娘浮窗");
+        tabs.setAttribute("role", "group"); tabs.setAttribute("aria-label", "详细信息与浮窗");
         details.before(tabs); tabs.appendChild(details);
       }
       if (button.parentElement !== tabs) tabs.appendChild(button);
       button.className = "qq-skin-dragon-toggle qq-skin-dragon-rail-tab";
     } else {
-      if (button.parentElement !== fallback) fallback.appendChild(button);
+      if (!separator?.isConnected) {
+        separator = document.createElement("span");
+        separator.className = "qq-skin-dragon-separator";
+        separator.setAttribute("aria-hidden", "true");
+      }
+      if (button.parentElement !== fallback || separator.parentElement !== fallback) fallback.append(separator, button);
       button.className = "qq-skin-dragon-toggle qq-skin-dragon-toolbar-button";
     }
+    if (!fallback) separator?.remove();
     updateButton();
     discover();
     sendTheme();
@@ -200,7 +206,7 @@
     send, receive, connect, ensure,
     destroy() {
       disposed = true; unsubscribe?.(); clearInterval(timer); window.removeEventListener("focus", focus);
-      button?.remove(); stylesheet.remove();
+      button?.remove(); separator?.remove(); stylesheet.remove();
     },
   };
   connect();

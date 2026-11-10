@@ -86,7 +86,7 @@ export function currentReminders(state, now = Date.now()) {
   if (view.waterRemainingMs === 0) {
     events.push({
       id: "water:" + state.waterStartedAt + ":" + state.settings.waterMinutes,
-      title: "该喝水啦", message: "先喝一杯水吧，喝完点一下“我已喝水”。",
+      title: "该喝水啦", message: "喝完点“喝水”，重新计时。",
     });
   }
   return events;
