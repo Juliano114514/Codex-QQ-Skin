@@ -45,7 +45,8 @@ function Test-InstalledEngineComplete {
     'scripts\windows\start-qq-skin-windows.ps1',
     'scripts\injector.mjs',
     'scripts\windows\switch-theme-windows.ps1',
-    'scripts\deep-theme.mjs'
+    'scripts\deep-theme.mjs',
+    'vendor\gpt-niang\gpt-niang-usage\runtime\skin-managed.ps1'
   )) {
     if (-not (Test-Path -LiteralPath (Join-Path $Root $relative) -PathType Leaf)) { return $false }
   }

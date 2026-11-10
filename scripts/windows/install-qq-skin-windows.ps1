@@ -51,8 +51,9 @@ if (-not $InPlace -and $script:ProjectRoot -ne $script:InstallRoot) {
   New-Item -ItemType Directory -Force -Path $parent | Out-Null
   if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
   New-Item -ItemType Directory -Path $stage | Out-Null
-  $null = & robocopy.exe $script:ProjectRoot $stage /E /XD .git release website macos-app menubar /XF '*.command' '*.sh' '.DS_Store' /NFL /NDL /NJH /NJS
+  $null = & robocopy.exe $script:ProjectRoot $stage /E /XD .git release website macos-app menubar (Join-Path $script:ProjectRoot 'vendor') /XF '*.command' '*.sh' '.DS_Store' /NFL /NDL /NJH /NJS
   if ($LASTEXITCODE -ge 8) { Stop-WithError "Could not stage the Windows engine (robocopy exit $LASTEXITCODE)." }
+  & (Join-Path $PSScriptRoot 'copy-dragon-runtime-windows.ps1') -SourceRoot $script:ProjectRoot -DestinationRoot $stage
   if (Test-Path -LiteralPath $script:InstallRoot) { Move-DirectoryWithRetry -Source $script:InstallRoot -Destination $previous }
   try { Move-DirectoryWithRetry -Source $stage -Destination $script:InstallRoot }
   catch {

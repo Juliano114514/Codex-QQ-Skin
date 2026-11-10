@@ -22,6 +22,7 @@ try {
   foreach ($file in @('package.json','LICENSE','NOTICE.md','README-WINDOWS.md','Install Codex QQ Skin Windows.cmd','Start Codex QQ Skin Windows.cmd','Customize Codex QQ Skin Windows.cmd','Verify Codex QQ Skin Windows.cmd','Restore Codex QQ Skin Windows.cmd')) {
     Copy-Item -LiteralPath (Join-Path $root $file) -Destination (Join-Path $stage $file)
   }
+  & (Join-Path $PSScriptRoot 'copy-dragon-runtime-windows.ps1') -SourceRoot $root -DestinationRoot $stage
 
   if ($UseInstalledNode) {
     $node = (Get-Command node.exe -ErrorAction Stop).Source

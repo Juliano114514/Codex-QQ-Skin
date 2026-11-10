@@ -20,6 +20,7 @@ try {
     if ($LASTEXITCODE -ge 8) { throw "robocopy failed for $directory with exit code $LASTEXITCODE" }
   }
   Copy-Item -LiteralPath (Join-Path $root 'package.json') -Destination $payload
+  & (Join-Path $PSScriptRoot 'copy-dragon-runtime-windows.ps1') -SourceRoot $root -DestinationRoot $payload
   New-Item -ItemType Directory -Force -Path (Join-Path $payload 'runtime') | Out-Null
   if ($UseInstalledNode) {
     Copy-Item -LiteralPath (Get-Command node.exe -ErrorAction Stop).Source -Destination (Join-Path $payload 'runtime\node.exe')

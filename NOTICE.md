@@ -10,6 +10,8 @@ Codex QQ Skin adds a new retro two-row title area, classic three-pane layout, na
 
 ## Trademarks and assets
 
+The optional Windows dragon widget incorporates GPT-Niang from Juliano114514/GPT-Niang (originally T7moris/GPT-Niang). Its source-code MIT notices, separate character asset notice, generation provenance and quotation license are retained under vendor/gpt-niang. The skin integration does not extend the character or quotation licenses.
+
 The MIT License applies to this repository's software source code. It does not grant rights to OpenAI, Codex, ChatGPT, Tencent, QQ, their trademarks, product names, logos, or trade dress.
 
 The QQ-style penguin avatar and retro frame are AI-generated, unofficial visual assets. They are not official Tencent or QQ artwork and do not imply endorsement. Downstream commercial distribution requires an independent rights review.

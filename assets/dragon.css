@@ -1,0 +1,34 @@
+.qq-skin-profile-dock-tabs { display: flex; flex: 0 0 28px; width: 28px; flex-direction: column; align-self: stretch; gap: 4px; }
+.qq-skin-profile-dock-tabs > .qq-skin-profile-dock-tab { flex: none; }
+.qq-skin-dragon-toggle {
+  border: 0; color: var(--ds-text, #443552); background: var(--qq-card-bar, #f0e8f8);
+  cursor: pointer; -webkit-app-region: no-drag;
+}
+.qq-skin-dragon-toggle[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--ds-accent, #8461b0); }
+.qq-skin-dragon-toggle:disabled { opacity: .5; cursor: default; }
+.qq-skin-dragon-toggle[data-dragon-status="error"] { color: #b74839; }
+.qq-skin-dragon-toggle:focus-visible { outline: 2px solid var(--ds-accent, #8461b0); outline-offset: -2px; }
+.qq-skin-dragon-rail-tab { width: 28px; padding: 12px 5px; border-radius: 0 0 4px 4px; writing-mode: vertical-rl; letter-spacing: 2px; font: 600 13px/18px var(--qq-font-ui, system-ui); }
+.qq-skin-dragon-toolbar-button { height: 22px; padding: 0 9px; border-radius: 7px; white-space: nowrap; font: 650 11px/22px system-ui; }
+.qq-skin-workday-dialog {
+  --ds-panel: #fff; --ds-panel-2: #f5f1fa; --ds-text: #443552; --ds-muted: #79659a; --ds-line: #dfd1ec; --ds-accent: #8461b0;
+  width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px);
+  margin: auto; padding: 12px; overflow: auto; border: 1px solid var(--ds-line); border-radius: 8px;
+  background: var(--ds-panel); color: var(--ds-text); font: 13px/1.5 "Microsoft YaHei", system-ui;
+}
+.qq-skin-workday-dialog::backdrop { background: #0005; }
+.qq-skin-workday-dialog .qq-skin-workday-dialog-card { display: block; width: auto; margin: 8px 0 0; }
+.qq-skin-workday-dialog .qq-skin-workday-heading { display: flex; align-items: center; gap: 8px; }
+.qq-skin-workday-dialog .qq-skin-workday-heading > button { margin-left: auto; }
+.qq-skin-workday-dialog .qq-skin-workday-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.qq-skin-workday-dialog .qq-skin-workday-fields label { display: grid; gap: 3px; font-size: 12px; }
+.qq-skin-workday-dialog .qq-skin-workday-wide { grid-column: 1 / -1; }
+.qq-skin-workday-dialog .qq-skin-workday-card [hidden] { display: none !important; }
+.qq-skin-workday-dialog .qq-skin-workday-timer, .qq-skin-workday-dialog .qq-skin-workday-water,
+.qq-skin-workday-dialog .qq-skin-workday-income { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 8px 0; }
+.qq-skin-workday-dialog .qq-skin-workday-income strong { color: inherit; background: transparent; }
+.qq-skin-workday-dialog input { box-sizing: border-box; min-width: 0; width: 100%; padding: 5px; color: inherit; border: 1px solid var(--ds-line); border-radius: 3px; background: var(--ds-panel); }
+.qq-skin-workday-dialog input[type="time"] { width: 110px; }
+.qq-skin-workday-dialog button { padding: 4px 9px; color: inherit; background: var(--ds-panel-2); border: 1px solid var(--ds-line); border-radius: 4px; cursor: pointer; }
+.qq-skin-workday-dialog .qq-skin-workday-actions { display: flex; gap: 8px; margin-top: 10px; }
+.qq-skin-workday-dialog .qq-skin-workday-message { margin: 8px 0 0; color: var(--ds-muted); }

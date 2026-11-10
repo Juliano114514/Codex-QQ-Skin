@@ -290,6 +290,8 @@
   }
   previous?.soundMonitor?.cleanup?.();
   previous?.weatherMonitor?.destroy?.();
+  previous?.closeWorkdaySettings?.();
+  if (previous?.dragonSnapshotHandler) window.removeEventListener("codex-qq-dragon-state", previous.dragonSnapshotHandler);
   previous?.profileCleanup?.();
   previous?.clearProfileDock?.();
   previous?.closeLibraryMenu?.();
@@ -1508,6 +1510,14 @@
   let nativeUsageRoot = null;
   let nextNativeUsageDiscovery = 0;
   const readNativeRateLimit = () => {
+    const dragon = window.__CODEX_QQ_DRAGON__;
+    if (dragon?.connected) {
+      const windows = dragon.snapshot?.quota?.ok ? dragon.snapshot.quota.windows || [] : [];
+      const limiting = windows.reduce((current, item) => !current || item.used > current.used
+        || (item.used === current.used && (item.resetsAt ?? 0) > (current.resetsAt ?? 0)) ? item : current, null);
+      return limiting ? { used_percent: limiting.used, reset_at: limiting.resetsAt,
+        limit_window_seconds: limiting.minutes ? limiting.minutes * 60 : null } : null;
+    }
     try {
       const root = document.getElementById("root");
       const key = root && Object.keys(root).find(key => key.startsWith("__reactContainer"));
@@ -1587,6 +1597,10 @@
     else bar.removeAttribute("aria-valuenow");
     setAttribute(bar, "aria-valuetext", usageParts.quotaText.textContent);
     const hours = rate?.limit_window_seconds / 3600;
+    if (window.__CODEX_QQ_DRAGON__?.connected && rate && !rate.limit_window_seconds) {
+      setAttribute(bar, "title", "Codex 额度 · 个人额度（取剩余最少的窗口）");
+      return;
+    }
     setAttribute(bar, "title", rate ? `Codex 额度 · ${hours >= 24 ? `${hours / 24} 天` : `${hours} 小时`}窗口（取剩余最少的窗口）` : "等待 Codex 原生额度数据");
   };
 
@@ -1676,10 +1690,11 @@
       waterNeedsStart = saved?.waterStartedAt !== next.waterStartedAt;
       return next;
     };
-    let state = read();
+    let state = normalize(window.__CODEX_QQ_DRAGON__?.snapshot?.workday || read());
     let card = null;
     let parts = null;
     let timer = null;
+    let dialog = null;
     let pendingStart = Date.now();
     const localDate = (time) => {
       const date = new Date(time);
@@ -1715,6 +1730,11 @@
     };
     const message = (text) => setTextContent(parts?.message, text);
     const save = (next) => {
+      const shared = window.__CODEX_QQ_DRAGON__;
+      if (shared) {
+        if (!shared.connected || !shared.snapshot?.workday) { message("皮肤后台尚未连接，请稍后重试。"); return false; }
+        return shared.send("workday.save", { revision: shared.snapshot.revision, patch: next });
+      }
       const merged = { ...state, ...next };
       if (merged.settings.waterMinutes !== state.settings.waterMinutes) merged.waterStartedAt = Date.now();
       try { localStorage.setItem(WORKDAY_STORAGE_KEY, JSON.stringify(merged)); }
@@ -1801,26 +1821,37 @@
       return true;
     };
     const onStorage = (event) => {
+      if (window.__CODEX_QQ_DRAGON__) return;
       if (event.key !== WORKDAY_STORAGE_KEY && event.key !== null) return;
       state = read();
       render();
     };
     const onVisible = () => { if (document.visibilityState !== "hidden") render(); };
+    const onShared = (event) => {
+      if (event.detail?.type === "error") { message(event.detail.message); return; }
+      if (!event.detail?.workday) return;
+      state = normalize(event.detail.workday);
+      render();
+    };
     const cleanup = () => {
+      if (dialog?.open) return;
       if (timer !== null) clearInterval(timer);
       timer = null;
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener("codex-qq-dragon-state", onShared);
       document.removeEventListener("visibilitychange", onVisible);
       card?.remove();
       card = null;
       parts = null;
     };
     const park = () => {
+      if (dialog?.open) return;
       if (!card) return;
       card.classList.remove("qq-skin-workday-docked", "qq-skin-growth-docked");
       if (card.parentElement !== document.body) document.body.appendChild(card);
     };
     const placeBefore = (profilePanel) => {
+      if (dialog?.open) return;
       const list = profilePanel.parentElement;
       if (!card?.isConnected || !list || list === document.body) { park(); return; }
       if (card.parentElement !== list || card.nextElementSibling !== profilePanel) list.insertBefore(card, profilePanel);
@@ -1829,7 +1860,7 @@
     const mount = () => {
       if (card?.isConnected) { render(); return; }
       cleanup();
-      state = read();
+      state = normalize(window.__CODEX_QQ_DRAGON__?.snapshot?.workday || read());
       card = document.createElement("section");
       card.id = WORKDAY_PANEL_ID;
       card.className = "qq-skin-workday-card";
@@ -1904,12 +1935,37 @@
       render();
       if (waterNeedsStart) save({});
       timer = setInterval(() => {
-        if (document.visibilityState !== "hidden" && !window[DISABLED_KEY] && skinMode === "qq") render();
+        if (document.visibilityState !== "hidden" && (dialog?.open || (!window[DISABLED_KEY] && skinMode === "qq"))) render();
       }, 1000);
       window.addEventListener("storage", onStorage);
+      window.addEventListener("codex-qq-dragon-state", onShared);
       document.addEventListener("visibilitychange", onVisible);
     };
-    return { mount, cleanup, park, placeBefore };
+    const closeDialog = () => { if (dialog?.open) dialog.close(); };
+    const openSettings = () => {
+      mount();
+      if (!card.getClientRects().length) {
+        if (!dialog) {
+          dialog = document.createElement("dialog"); dialog.className = "qq-skin-workday-dialog";
+          dialog.setAttribute("aria-label", "上班与喝水设置");
+          const close = document.createElement("button"); close.type = "button"; close.textContent = "关闭";
+          close.className = "qq-skin-workday-dialog-close"; close.addEventListener("click", closeDialog);
+          dialog.appendChild(close); document.body.appendChild(dialog);
+          dialog.addEventListener("close", () => {
+            if (card) { card.classList.remove("qq-skin-workday-dialog-card"); document.body.appendChild(card); }
+            dialog.remove(); dialog = null;
+            if (skinMode !== "qq") cleanup();
+            if (window[STATE_KEY]?.installToken === installToken && !window[DISABLED_KEY]) scheduleEnsure({ route: true, layout: true });
+          });
+        }
+        card.classList.add("qq-skin-workday-dialog-card");
+        dialog.appendChild(card); dialog.showModal();
+      }
+      card.classList.remove("qq-skin-window-collapsed");
+      openEditor(state.settings.monthlySalary ? "workHours" : "monthlySalary");
+      card.scrollIntoView({ block: "nearest" });
+    };
+    return { mount, cleanup, park, placeBefore, openSettings, closeDialog };
   })();
   const qqShowCard = (() => {
     const catalogs = (QQ_THEME.qqShow?.styles || (QQ_THEME.qqShow ? [{ ...QQ_THEME.qqShow, id: "classic", name: "经典" }] : []))
@@ -2574,6 +2630,7 @@
         event.preventDefault();
         event.stopPropagation();
         try { window.localStorage?.setItem(USAGE_REFRESH_KEY, String(Date.now())); } catch {}
+        window.__CODEX_QQ_DRAGON__?.send?.("quota.refresh");
         if (usageParts.refreshButton) {
           usageParts.refreshButton.disabled = true;
           usageParts.refreshButton.textContent = "刷新中";
@@ -2708,7 +2765,7 @@
   };
   const onSummaryToggle = (event) => {
     const dock = document.getElementById(PROFILE_DOCK_ID);
-    if (!dock || dock.firstElementChild.disabled) return;
+    if (!dock || dock.querySelector(".qq-skin-profile-dock-tab")?.disabled) return;
     event.preventDefault();
     event.stopPropagation();
     setProfileDockOpen(!profileDockOpen);
@@ -2871,7 +2928,7 @@
     } else if (panel.parentElement !== content) content.appendChild(panel);
     workdayCard.placeBefore(panel);
     qqShowCard.placeAfter(panel);
-    const toggle = dock.firstElementChild;
+    const toggle = dock.querySelector(".qq-skin-profile-dock-tab");
     if (toggle.disabled !== !canFit) toggle.disabled = !canFit;
     setAttribute(toggle, "aria-expanded", String(open));
     setAttribute(toggle, "aria-label", `${open ? "收起" : "展开"}详细信息侧栏`);
@@ -3770,6 +3827,7 @@
     else if (rootPass) {
       ensureToggleButton();
     }
+    window.__CODEX_QQ_DRAGON__?.ensure?.();
     const elapsed = now() - startedAt;
     metrics.ensureTotalMs += elapsed;
     metrics.ensureMaxMs = Math.max(metrics.ensureMaxMs, elapsed);
@@ -4277,6 +4335,7 @@
       document.body.appendChild(control);
     }
     syncToggleButton(control);
+    window.__CODEX_QQ_DRAGON__?.ensure?.();
     return control;
   };
 
@@ -4284,6 +4343,9 @@
     const state = window[STATE_KEY];
     if (state?.installToken !== installToken) return false;
     window[DISABLED_KEY] = true;
+    workdayCard.closeDialog();
+    window.__CODEX_QQ_DRAGON__?.destroy?.();
+    if (state?.dragonSnapshotHandler) window.removeEventListener("codex-qq-dragon-state", state.dragonSnapshotHandler);
     restoreNativeAppearance();
     removeSkinVisuals();
     document.getElementById(TOGGLE_ID)?.remove();
@@ -4463,12 +4525,17 @@
     mediaHandler = () => scheduleEnsure({ root: true, route: true });
   } catch {}
 
+  const dragonSnapshotHandler = () => { if (!window[DISABLED_KEY]) renderQuotaProgress(); };
+  if (window.__CODEX_QQ_DRAGON__) window.addEventListener("codex-qq-dragon-state", dragonSnapshotHandler);
   window[STATE_KEY] = {
     ensure,
     styleVariants,
     cleanup,
     ensureToggleButton,
     setUsageSnapshot,
+    dragonSnapshotHandler,
+    openWorkdaySettings: () => workdayCard.openSettings(),
+    closeWorkdaySettings: () => workdayCard.closeDialog(),
     observer,
     rootObserver,
     toggleAppearanceObserver,

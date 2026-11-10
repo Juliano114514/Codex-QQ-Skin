@@ -8,6 +8,7 @@ import os from "node:os";
 import { readImageMetadata } from "./image-metadata.mjs";
 import { loadQQShowAssets } from "./qqshow-assets.mjs";
 import { loadDeepThemeDirectory, mimeForExtension } from "./deep-theme-core.mjs";
+import { DragonBroker, DRAGON_BINDING } from "./dragon/broker.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
@@ -144,6 +145,7 @@ class CdpSession {
     this.nextId = 1;
     this.pending = new Map();
     this.listeners = new Map();
+    this.executionContexts = new Map();
     this.closed = false;
   }
 
@@ -192,6 +194,12 @@ class CdpSession {
       else waiter.resolve(message.result);
       return;
     }
+    if (message.method === "Runtime.executionContextCreated") {
+      const context = message.params?.context;
+      if (context) this.executionContexts.set(context.id, context);
+    } else if (message.method === "Runtime.executionContextDestroyed") {
+      this.executionContexts.delete(message.params?.executionContextId);
+    } else if (message.method === "Runtime.executionContextsCleared") this.executionContexts.clear();
     for (const listener of this.listeners.get(message.method) ?? []) {
       try { listener(message.params ?? {}); } catch (error) {
         console.error(`[qq-skin] CDP listener failed: ${error.message}`);
@@ -578,7 +586,11 @@ async function loadStaticPayloadAssets() {
       Promise.all(["qq-skin.css", "qqshow.css"].map(file => fs.readFile(path.join(root, "assets", file), "utf8")))
         .then(parts => adaptShellSelectors(parts.join("\n"))),
       fs.readFile(path.join(root, "assets", "custom-skin.css"), "utf8").then(adaptShellSelectors),
-      fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8").then(adaptShellSelectors),
+      Promise.all([
+        fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8"),
+        process.platform === "win32" ? fs.readFile(path.join(root, "assets", "dragon-bridge.js"), "utf8") : Promise.resolve(""),
+        process.platform === "win32" ? fs.readFile(path.join(root, "assets", "dragon.css"), "utf8") : Promise.resolve(""),
+      ]).then(([renderer, dragon, dragonCss]) => dragon.replace("__QQ_DRAGON_CSS_JSON__", JSON.stringify(dragonCss)) + "\n" + adaptShellSelectors(renderer)),
       fs.readFile(path.join(root, "assets", "portal-hero.png")),
       fs.readFile(path.join(root, "assets", "theme.json"), "utf8"),
       fs.readFile(path.join(root, "assets", "codex-pet.png")),
@@ -1322,7 +1334,7 @@ function watchPayloadSources(themeDir, onDirty) {
       watcher = watchFs(directory, { persistent: false }, (_event, filename) => {
         const name = filename ? String(filename) : "";
         const staticChanged = directory === assetsRoot &&
-          (!name || name === "qq-skin.css" || name === "custom-skin.css" || name === "renderer-inject.js" ||
+          (!name || name === "qq-skin.css" || name === "custom-skin.css" || name === "renderer-inject.js" || name === "dragon-bridge.js" || name === "dragon.css" ||
             name === "portal-hero.png" || name === "windows-xp-meadow.jpg" || name === "millennium-ivory-abs.jpg" || name === "theme.json" || name === "theme-dark.json" || name === "theme-iqiyi.json" || name === "themes-media.json" || name === "theme-appearances.json" || name === "qq-media.css" || name === "qq-aesthetics.css" || name === "qq-dark.css" || name === "qq-ui.css" ||
             name === "codex-pet.png" || name === "retro-window-frame.png" ||
             name === "qq-avatar.png" || name === "qq-avatars.json" || name === "qqshow.css" || name === "qqshow.local.json" || name === "level-icons" || name === "audio");
@@ -1349,6 +1361,33 @@ function watchPayloadSources(themeDir, onDirty) {
 async function runWatch(options) {
   let current = await loadPayload(options.themeDir);
   const sessions = new Map();
+  const pushDragonMessage = async (message, targetId = null) => {
+    const records = targetId ? [sessions.get(targetId)].filter(Boolean) : [...sessions.values()];
+    await Promise.all(records.map(record => record.session.closed ? null
+      : record.session.evaluate("window.__CODEX_QQ_DRAGON__?.receive?.(" + JSON.stringify(message) + ")").catch(() => {})));
+  };
+  let dragon = null;
+  if (process.platform === "win32") {
+    try {
+      dragon = new DragonBroker({
+        root, stateDir: resolveStateRoot(options.themeDir), onSnapshot: pushDragonMessage,
+        onOpenSettings: async targetId => {
+          const session = sessions.get(targetId)?.session || [...sessions.values()].find(record => !record.session.closed)?.session;
+          if (!session) throw new Error("主窗口不可用");
+          const result = await session.send("Browser.getWindowForTarget", { targetId: session.target.id }).catch(() => ({}));
+          if (result.bounds?.windowState === "minimized") await session.send("Browser.setWindowBounds", {
+            windowId: result.windowId, bounds: { windowState: "normal" },
+          });
+          await session.send("Page.bringToFront");
+          await session.evaluate("window.__CODEX_QQ_SKIN_STATE__?.openWorkdaySettings?.()");
+        },
+      });
+      await dragon.start();
+    } catch (error) {
+      console.error("[qq-skin] dragon integration unavailable: " + error.message);
+      dragon?.close(); dragon = null;
+    }
+  }
   const rejected = new Map();
   let usageSnapshot = await readUsageSnapshot(options.themeDir)
     || sanitizeUsageSnapshot({ status: "loading", generatedAt: new Date().toISOString() });
@@ -1401,6 +1440,7 @@ async function runWatch(options) {
   const refreshUsage = async () => {
     try {
       usageSnapshot = await runUsageWorker(options.themeDir);
+      dragon?.setUsage(usageSnapshot);
       for (const record of sessions.values()) {
         if (!record.session.closed) {
           await pushUsageSnapshot(record.session, usageSnapshot).catch((error) => {
@@ -1417,6 +1457,7 @@ async function runWatch(options) {
         error: error.message,
         generatedAt: new Date().toISOString(),
       });
+      dragon?.setUsage(usageSnapshot);
       console.error(`[qq-skin] usage refresh failed: ${error.message}`);
       for (const record of sessions.values()) {
         if (!record.session.closed) await pushUsageSnapshot(record.session, usageSnapshot).catch(() => {});
@@ -1551,6 +1592,7 @@ async function runWatch(options) {
       }
       for (const [id, record] of sessions) {
         if (!activeIds.has(id) || record.session.closed) {
+          dragon?.removeSource(id);
           record.session.close();
           sessions.delete(id);
         }
@@ -1582,6 +1624,16 @@ async function runWatch(options) {
           }
           rejected.delete(target.id);
           record = { session, earlyScriptId: null, needsLoadFallback: false };
+          if (dragon) {
+            const { frameTree } = await session.send("Page.getFrameTree");
+            session.on("Runtime.bindingCalled", event => {
+              const context = session.executionContexts.get(event.executionContextId);
+              if (event.name !== DRAGON_BINDING || !context?.auxData?.isDefault
+                || context.auxData.frameId !== frameTree.frame.id || !context.origin?.startsWith("app://")) return;
+              dragon?.enqueue(target.id, event.payload);
+            });
+            await session.send("Runtime.addBinding", { name: DRAGON_BINDING });
+          }
           try {
             // Apply in the current document and register for reloads in one
             // transfer. Older CDP hosts still use the direct fallback below.
@@ -1598,6 +1650,7 @@ async function runWatch(options) {
                 });
               }
               await pushUsageSnapshot(session, usageSnapshot).catch(() => {});
+              if (dragon) await session.evaluate("window.__CODEX_QQ_DRAGON__?.connect?.()").catch(() => {});
             }, 0);
           });
           const earlyApplied = await session.evaluate(
@@ -1611,6 +1664,10 @@ async function runWatch(options) {
           }
           await pushUsageSnapshot(session, usageSnapshot);
           sessions.set(target.id, record);
+          if (dragon) {
+            await session.evaluate("window.__CODEX_QQ_DRAGON__?.connect?.()");
+            dragon.setUsage(usageSnapshot);
+          }
           queueUsageRefresh(usageSnapshot.status === "loading");
           console.log(`[qq-skin] injected verified Codex target ${target.id} (${target.title || target.url})`);
         } catch (error) {
@@ -1641,6 +1698,7 @@ async function runWatch(options) {
       await new Promise((resolve) => setTimeout(resolve, pollDelay));
     }
   } finally {
+    dragon?.close();
     if (reloadTimer) clearTimeout(reloadTimer);
     closePayloadWatchers();
     await reloadChain.catch(() => {});
