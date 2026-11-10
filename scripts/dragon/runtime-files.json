@@ -18,6 +18,7 @@
   "gpt-niang-usage/runtime/ui-settings.ps1",
   "gpt-niang-usage/runtime/quotes.ps1",
   "gpt-niang-usage/runtime/quote-layout.ps1",
+  "gpt-niang-usage/runtime/quote-layout.cs",
   "gpt-niang-usage/runtime/completion-notifications.ps1",
   "gpt-niang-usage/runtime/characters.ps1",
   "gpt-niang-usage/runtime/character-gallery.ps1",
