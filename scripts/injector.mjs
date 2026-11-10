@@ -16,6 +16,8 @@ const SKIN_VERSION = "2.11.0";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
+// Keep image-heavy payloads below the debugger's single-message limit.
+const CDP_SOURCE_CHUNK_CHARS = 4 * 1024 * 1024;
 const MAX_USAGE_SNAPSHOT_BYTES = 256 * 1024;
 const MAX_COMPANION_SNAPSHOT_BYTES = 192 * 1024;
 const USAGE_REFRESH_INTERVAL_MS = 60_000;
@@ -223,12 +225,30 @@ class CdpSession {
   }
 
   async evaluate(expression) {
-    const result = await this.send("Runtime.evaluate", {
-      expression,
-      awaitPromise: true,
-      returnByValue: true,
-      userGesture: false,
-    });
+    let result;
+    if (expression.length <= CDP_SOURCE_CHUNK_CHARS) {
+      result = await this.send("Runtime.evaluate", {
+        expression, awaitPromise: true, returnByValue: true, userGesture: false,
+      });
+    } else {
+      const holder = await this.send("Runtime.evaluate", { expression: "([])", returnByValue: false });
+      const objectId = holder.result?.objectId;
+      if (!objectId) throw new Error("Could not allocate the renderer payload buffer");
+      try {
+        for (let offset = 0; offset < expression.length; offset += CDP_SOURCE_CHUNK_CHARS) {
+          await this.send("Runtime.callFunctionOn", {
+            objectId, functionDeclaration: "function(part) { this.push(part); }",
+            arguments: [{ value: expression.slice(offset, offset + CDP_SOURCE_CHUNK_CHARS) }],
+          });
+        }
+        result = await this.send("Runtime.callFunctionOn", {
+          objectId, functionDeclaration: 'function() { const source = this.join(""); this.length = 0; return (0, eval)(source); }',
+          awaitPromise: true, returnByValue: true, userGesture: false,
+        });
+      } finally {
+        await this.send("Runtime.releaseObject", { objectId }).catch(() => {});
+      }
+    }
     if (result.exceptionDetails) {
       const detail = result.exceptionDetails.exception?.description ?? result.exceptionDetails.text;
       throw new Error(`Renderer evaluation failed: ${detail}`);
@@ -1345,18 +1365,37 @@ async function runWatch(options) {
   process.on("SIGTERM", stop);
 
   const registerEarly = async (session, payload, revision, runImmediately = false) => {
-    const result = await session.send("Page.addScriptToEvaluateOnNewDocument", {
-      source: earlyPayloadFor(payload, revision),
-      ...(runImmediately ? { runImmediately: true } : {}),
-    }, 30000);
-    return result.identifier ?? null;
+    const source = earlyPayloadFor(payload, revision);
+    const identifiers = [];
+    const key = JSON.stringify(`__CODEX_QQ_SKIN_SOURCE_${revision}__`);
+    const add = async source => {
+      const result = await session.send("Page.addScriptToEvaluateOnNewDocument", {
+        source, ...(runImmediately ? { runImmediately: true } : {}),
+      }, 30000);
+      if (result.identifier) identifiers.push(result.identifier);
+    };
+    try {
+      if (source.length <= CDP_SOURCE_CHUNK_CHARS) await add(source);
+      else {
+        for (let offset = 0; offset < source.length; offset += CDP_SOURCE_CHUNK_CHARS) {
+          const chunk = JSON.stringify(source.slice(offset, offset + CDP_SOURCE_CHUNK_CHARS));
+          await add(offset === 0 ? `globalThis[${key}] = [${chunk}];` : `globalThis[${key}].push(${chunk});`);
+        }
+        await add(`(() => { const source = globalThis[${key}].join(""); delete globalThis[${key}]; (0, eval)(source); })();`);
+      }
+      return identifiers;
+    } catch (error) {
+      for (const identifier of identifiers) await session.send("Page.removeScriptToEvaluateOnNewDocument", { identifier }).catch(() => {});
+      if (runImmediately) await session.evaluate(`delete globalThis[${key}]`).catch(() => {});
+      throw error;
+    }
   };
 
   const removeEarly = async (record) => {
     if (!record.earlyScriptId || record.session.closed) return;
-    const identifier = record.earlyScriptId;
+    const identifiers = record.earlyScriptId;
     record.earlyScriptId = null;
-    await record.session.send("Page.removeScriptToEvaluateOnNewDocument", { identifier }).catch(() => {});
+    for (const identifier of identifiers) await record.session.send("Page.removeScriptToEvaluateOnNewDocument", { identifier }).catch(() => {});
   };
 
   const refreshUsage = async () => {
@@ -1402,11 +1441,7 @@ async function runWatch(options) {
       if (session.closed) continue;
       try {
         const nextIdentifier = await registerEarly(session, current.payload, current.revision);
-        if (record.earlyScriptId) {
-          await session.send("Page.removeScriptToEvaluateOnNewDocument", {
-            identifier: record.earlyScriptId,
-          }).catch(() => {});
-        }
+        await removeEarly(record);
         record.earlyScriptId = nextIdentifier;
         record.needsLoadFallback = !nextIdentifier;
         await applyToSession(session, current.payload);
