@@ -1,4 +1,12 @@
-# 2.11.0 更新
+# 3.0.0 更新
+
+- QQ 秀经典版更新为 `LLM-show-Latest`，新增时尚版；「经典 | 时尚」切换位于「还原」旁边，两种风格分别记住角色与搭配。
+- 完整预设使用 Latest 的场景动画，保留透明部件混搭与减少动态时的静态回退。
+- 大体积注入脚本采用分块传输，修复完整资源包导致调试连接断开的问题，同时覆盖当前窗口与新窗口的自动加载。
+
+本轮已在 Windows 主窗口确认经典、时尚切换与图片加载；本次更新源码版本，未重建安装器或发布 Release。
+
+## 2.11.0 更新
 
 **实测兼容版本** · Windows Codex Desktop `26.1103.4239.0`（Microsoft Store / MSIX）。
 
@@ -120,7 +128,7 @@ Windows 实测覆盖新窗口、侧栏开合、窗口化和最大化。版本记
 - 卡片展示本机总用量，缓存输入参与成长。fork、子 Agent 继承历史和重复 Token 事件会去重。
 - 当前日志没有稳定账号 ID，因此这里明确显示“本机统计 / 本机 Codex 等级”，不是 OpenAI 官方账单或账号云端等级。
 
-## 当前源码版本 2.11.0
+## 当前源码版本 3.0.0
 
 本版聊天适配、资料卡片和主题更新见文首。下载区列出已发布的安装包。
 
@@ -357,10 +365,10 @@ npm test
 npm run build:app
 ```
 
-`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。2.11.0 源码对应以下构建产物：
+`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。3.0.0 源码对应以下构建产物：
 
 - macOS：`Codex QQ Skin.app.zip`（可在本机 Mac 用 `npm run build:app` 生成）
-- Windows：`ChatGPT QQ Skin Setup 2.11.0.exe`（由 Windows CI 或 Windows 电脑构建）
+- Windows：`ChatGPT QQ Skin Setup 3.0.0.exe`（由 Windows CI 或 Windows 电脑构建）
 
 请只从本仓库的 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载。设置 `DEVELOPER_ID_APPLICATION` 环境变量后会使用对应证书签名；公开分发前还需使用 Apple 公证服务处理最终 ZIP/DMG。
 
