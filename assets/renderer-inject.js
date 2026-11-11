@@ -253,13 +253,117 @@
   window[DISABLED_KEY] = !skinEnabled;
 
   const previous = window[STATE_KEY];
-  const dataUrlToObjectUrl = (dataUrl, fallbackMime) => {
-    const comma = dataUrl.indexOf(",");
-    const mime = /^data:([^;,]+)/.exec(dataUrl)?.[1] || fallbackMime;
-    const binary = atob(dataUrl.slice(comma + 1));
+  previous?.disposeAssets?.();
+  const pendingAssets = new Map();
+  const assetRequestPrefix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  let nextAssetRequest = 0;
+  const receiveAsset = (id, value) => {
+    const pending = pendingAssets.get(id);
+    if (!pending) return;
+    pendingAssets.delete(id);
+    clearTimeout(pending.timer);
+    pending.resolve(value);
+  };
+  const requestAsset = request => {
+    const send = window.__CODEX_QQ_SKIN_REQUEST_ASSET__;
+    if (typeof send !== "function") return Promise.resolve(null);
+    return new Promise(resolve => {
+      const id = `${assetRequestPrefix}-${++nextAssetRequest}`;
+      const timer = setTimeout(() => receiveAsset(id, null), 15000);
+      pendingAssets.set(id, { resolve, timer });
+      try { send(JSON.stringify({ ...request, id })); }
+      catch { receiveAsset(id, null); }
+    });
+  };
+  if (QQ_THEME.deferredFonts) window.__CODEX_QQ_SKIN_RECEIVE_ASSET__ = receiveAsset;
+  const dataUrlBytes = dataUrl => {
+    const encoded = dataUrl.slice(dataUrl.indexOf(",") + 1);
+    if (typeof Uint8Array.fromBase64 === "function") return Uint8Array.fromBase64(encoded);
+    const binary = atob(encoded);
     const bytes = new Uint8Array(binary.length);
     for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-    return URL.createObjectURL(new Blob([bytes], { type: mime }));
+    return bytes;
+  };
+  const dataUrlToObjectUrl = (dataUrl, fallbackMime) => {
+    const mime = /^data:([^;,]+)/.exec(dataUrl)?.[1] || fallbackMime;
+    return URL.createObjectURL(new Blob([dataUrlBytes(dataUrl)], { type: mime }));
+  };
+  const mediaFontRules = [];
+  const mediaStyleText = QQ_THEME.deferredFonts ? mediaCssText.replace(/@font-face\s*\{[^}]*\}/g, rule => {
+    const placeholder = /__QQ_FONT_[\w-]+__/.exec(rule)?.[0];
+    const file = QQ_THEME.deferredFonts[placeholder];
+    if (!file) return rule;
+    const family = /font-family:\s*"([^"]+)"/.exec(rule)?.[1];
+    const weight = /font-weight:\s*([^;]+)/.exec(rule)?.[1];
+    if (!family || !weight) return rule;
+    mediaFontRules.push({ file, family, weight });
+    return "";
+  }) : mediaCssText;
+  const mediaFonts = new Map();
+  let activeMediaFonts = new Set();
+  let disposedAssets = false;
+  const setMediaFontActive = ({ face, node }, active) => {
+    if (face) {
+      if (active && !document.fonts.has(face)) document.fonts.add(face);
+      else if (!active && document.fonts.has(face)) document.fonts.delete(face);
+    }
+    if (node) {
+      const media = active ? "all" : "not all";
+      if (node.media !== media) node.media = media;
+    }
+  };
+  const syncMediaFonts = (style, brand) => {
+    if (!QQ_THEME.deferredFonts || typeof window.__CODEX_QQ_SKIN_REQUEST_ASSET__ !== "function") return;
+    const pixel = brand === "millennium-pc" || brand === "windows-98";
+    const files = mediaFontRules.filter(({ file }) =>
+      (file.startsWith("IQYHT-") || file.startsWith("HarmonyOS_")) ? brand === "iqiyi"
+        : file.startsWith("QY_Digital-") ? brand === "youku"
+        : file.startsWith("Nunito-") ? brand === "neumorphism"
+        : file.endsWith(".woff2") ? pixel
+        : brand !== "iqiyi" && !pixel);
+    if (brand === "douyin") files.push({ file: "DFPKingGothicGB.css" });
+    activeMediaFonts = new Set(files.map(({ file }) => file));
+    for (const [file, entry] of mediaFonts) {
+      const active = activeMediaFonts.has(file);
+      setMediaFontActive(entry, active);
+      if (active && entry.node && !entry.node.isConnected) style.after(entry.node);
+    }
+    for (const { file, family, weight } of files) {
+      if (mediaFonts.has(file)) continue;
+      const entry = {};
+      mediaFonts.set(file, entry);
+      void requestAsset({ kind: "font", key: file }).then(data => {
+        if (disposedAssets) return;
+        if (typeof data !== "string" || (family && !data.startsWith("data:font/"))) {
+          mediaFonts.delete(file);
+          return;
+        }
+        if (family) {
+          // The host permits data: fonts but blocks blob: font URLs.
+          entry.face = new FontFace(family, dataUrlBytes(data), { weight, display: "swap" });
+        } else {
+          entry.node = document.createElement("style");
+          entry.node.textContent = data;
+        }
+        const active = activeMediaFonts.has(file);
+        setMediaFontActive(entry, active);
+        if (active && entry.node) document.getElementById(MEDIA_STYLE_ID)?.after(entry.node);
+      }).catch(() => mediaFonts.delete(file));
+    }
+  };
+  const disposeAssets = () => {
+    disposedAssets = true;
+    for (const id of pendingAssets.keys()) receiveAsset(id, null);
+    if (window.__CODEX_QQ_SKIN_RECEIVE_ASSET__ === receiveAsset) delete window.__CODEX_QQ_SKIN_RECEIVE_ASSET__;
+    for (const entry of mediaFonts.values()) {
+      setMediaFontActive(entry, false);
+      entry.node?.remove();
+    }
+    mediaFonts.clear();
+  };
+  const suspendMediaFonts = () => {
+    activeMediaFonts.clear();
+    for (const entry of mediaFonts.values()) setMediaFontActive(entry, false);
   };
   const artUrl = dataUrlToObjectUrl(artDataUrl, "image/png");
   const qqArtUrl = dataUrlToObjectUrl(qqArtDataUrl, "image/png");
@@ -904,7 +1008,58 @@
     let statusListener = null;
     let currentStatus = "idle";
     let boundButton = null;
-    let activeCoughAudio = null;
+    let activeMediaAudio = null;
+    let activeBufferSource = null;
+    let recordingPlayback = 0;
+    let preloadTimer = null;
+    const recordings = new Map();
+    const decodedRecordings = new Map();
+    const getRecording = url => {
+      if (!recordings.has(url)) recordings.set(url, new window.Audio(url));
+      return recordings.get(url);
+    };
+    const playRecording = (url, fallback) => {
+      const playback = ++recordingPlayback;
+      const release = failed => {
+        if (recordingPlayback !== playback) return;
+        activeMediaAudio = null;
+        if (failed) fallback?.();
+      };
+      try {
+        activeMediaAudio?.pause?.();
+        activeMediaAudio = null;
+        activeBufferSource?.stop();
+        activeBufferSource = null;
+        const buffer = decodedRecordings.get(url);
+        if (buffer && audioContext?.state === "running") {
+          try {
+            const source = audioContext.createBufferSource();
+            const gain = audioContext.createGain();
+            source.buffer = buffer;
+            gain.gain.value = configuredVolume;
+            source.connect(gain).connect(audioContext.destination);
+            source.onended = () => {
+              source.disconnect();
+              gain.disconnect();
+              if (activeBufferSource === source) activeBufferSource = null;
+            };
+            source.start();
+            activeBufferSource = source;
+            return true;
+          } catch {}
+        }
+        const audio = getRecording(url);
+        activeMediaAudio = audio;
+        audio.currentTime = 0;
+        audio.volume = configuredVolume;
+        audio.onended = () => release(false);
+        audio.play()?.catch(() => release(true));
+        return true;
+      } catch {
+        release(true);
+        return false;
+      }
+    };
     let startupCuePending = false;
     try {
       startupCuePending = window.sessionStorage?.getItem("codex-qq-skin-online-cue-played") !== "true";
@@ -1020,21 +1175,7 @@
         playSynthesizedCough();
         return;
       }
-      try {
-        activeCoughAudio?.pause?.();
-        const audio = new window.Audio(coughAudioUrl);
-        activeCoughAudio = audio;
-        audio.volume = configuredVolume;
-        audio.onended = () => { if (activeCoughAudio === audio) activeCoughAudio = null; };
-        const playback = audio.play();
-        playback?.catch?.(() => {
-          if (activeCoughAudio === audio) activeCoughAudio = null;
-          playSynthesizedCough();
-        });
-      } catch {
-        activeCoughAudio = null;
-        playSynthesizedCough();
-      }
+      playRecording(coughAudioUrl, playSynthesizedCough);
     };
 
     const playKnock = () => {
@@ -1075,17 +1216,7 @@
       if (window[DISABLED_KEY] || !enabled || configuredVolume <= 0) return false;
       const recording = skinMode === "qq" ? QQ_THEME.notificationAudio?.[eventName] : null;
       if (recording && typeof window.Audio === "function") {
-        try {
-          activeCoughAudio?.pause?.();
-          const audio = new window.Audio(recording);
-          activeCoughAudio = audio;
-          audio.volume = configuredVolume;
-          const release = () => { if (activeCoughAudio === audio) activeCoughAudio = null; };
-          audio.onended = release;
-          audio.onerror = release;
-          audio.play()?.catch(release);
-          return true;
-        } catch { return false; }
+        return playRecording(recording);
       }
       const context = ensureAudioContext();
       if (!context) return false;
@@ -1209,6 +1340,22 @@
     };
     const resume = () => {
       initialized = false;
+      if (enabled && configuredVolume > 0 && skinMode === "qq" && typeof window.Audio === "function") {
+        preloadTimer = setTimeout(() => {
+          preloadTimer = null;
+          if (!enabled) return;
+          const context = ensureAudioContext();
+          for (const url of Object.values(QQ_THEME.notificationAudio || {})) {
+            try {
+              if (context?.decodeAudioData) {
+                void context.decodeAudioData(dataUrlBytes(url).buffer).then(buffer => {
+                  if (audioContext === context) decodedRecordings.set(url, buffer);
+                }).catch(() => {});
+              }
+            } catch {}
+          }
+        }, 800);
+      }
       document.addEventListener?.("pointerdown", unlock, true);
       document.addEventListener?.("keydown", unlock, true);
       document.addEventListener?.("click", clickGuard, true);
@@ -1231,8 +1378,22 @@
         document.removeEventListener?.("click", clickGuard, true);
         window.removeEventListener?.("online", handleOnline);
         window.removeEventListener?.("offline", handleOffline);
-        try { activeCoughAudio?.pause?.(); } catch {}
-        activeCoughAudio = null;
+        if (preloadTimer !== null) clearTimeout(preloadTimer);
+        preloadTimer = null;
+        recordingPlayback += 1;
+        for (const audio of recordings.values()) {
+          try {
+            audio.onended = null;
+            audio.pause();
+            audio.removeAttribute("src");
+            audio.load();
+          } catch {}
+        }
+        recordings.clear();
+        decodedRecordings.clear();
+        activeMediaAudio = null;
+        try { activeBufferSource?.stop(); } catch {}
+        activeBufferSource = null;
         try { audioContext?.close?.(); } catch {}
         audioContext = null;
       },
@@ -1977,6 +2138,39 @@
     let card = null;
     let state = null;
     let parts = null;
+    let imageRequest = null;
+    let dockVisible = false;
+    let prefetchTimer = null;
+    const outfitCache = new Map();
+    const outfitLoads = new Map();
+    const outfitKey = (style, layers) => JSON.stringify([style.id, layers]);
+    const matchingPreset = (style, outfit) => style.characters.find(candidate => style.slots.every(slot =>
+      (candidate.preset[slot.id] ?? null) === outfit.selection[slot.id]));
+    const loadOutfit = (style, layers, key) => {
+      if (!outfitLoads.has(key)) {
+        const keys = [...new Set(layers.flatMap(layer => [layer.src, layer.animatedSrc]).filter(Boolean))];
+        const pending = requestAsset({ kind: "outfit", style: style.id, keys }).then(images => {
+          if (images && !disposedAssets) outfitCache.set(style.id, { key, images });
+          return images;
+        }).finally(() => outfitLoads.delete(key));
+        outfitLoads.set(key, pending);
+      }
+      return outfitLoads.get(key);
+    };
+    const prefetchAlternate = () => {
+      if (prefetchTimer !== null || catalogs.length < 2) return;
+      prefetchTimer = setTimeout(() => {
+        prefetchTimer = null;
+        if (!dockVisible || disposedAssets || card.classList.contains("qq-skin-window-collapsed")) return;
+        const style = catalogs.find(style => style.id !== state.styleId);
+        if (style.images) return;
+        const scene = matchingPreset(style, state.styles[style.id])?.scene;
+        if (!scene) return;
+        const layers = [{ ...scene, z: 0 }];
+        const key = outfitKey(style, layers);
+        if (outfitCache.get(style.id)?.key !== key) void loadOutfit(style, layers, key);
+      }, 350);
+    };
     const presetFor = id => characters.find(character => character.id === id) || characters[0];
     const normalize = (raw, style = catalog) => {
       const character = style.characters.find(character => character.id === raw?.characterId) || style.characters[0];
@@ -2023,8 +2217,7 @@
         button.setAttribute("aria-pressed", String(button.dataset.qqshowStyle === state.styleId));
       }
       const character = presetFor(outfit.characterId);
-      const matching = characters.find(candidate => catalog.slots.every(slot =>
-        (candidate.preset[slot.id] ?? null) === outfit.selection[slot.id]));
+      const matching = matchingPreset(catalog, outfit);
       const displayed = matching || character;
       const name = characterName(displayed);
       setTextContent(parts.character, name);
@@ -2044,9 +2237,44 @@
           src: layer.src, animatedSrc: layer.animatedSrc, z: layer.z ?? slot.z, slot: slot.id,
         }));
       }).sort((a, b) => a.z - b.z);
+      parts.doll.setAttribute("aria-label", `${name} ${catalog.name} QQ 秀`);
+      if (!dockVisible || card.classList.contains("qq-skin-window-collapsed")) return;
+      const key = outfitKey(catalog, layers);
+      if (parts.outfitKey === key || imageRequest?.key === key) return;
+      const selection = { key, catalog, parts };
+      imageRequest = null;
+      if (catalog.images) {
+        renderImages(selection, layers, catalog.images);
+        return;
+      }
+      const cached = outfitCache.get(catalog.id);
+      if (cached?.key === key) {
+        renderImages(selection, layers, cached.images);
+        return;
+      }
+      if (typeof window.__CODEX_QQ_SKIN_REQUEST_ASSET__ !== "function") {
+        parts.message.textContent = "QQ 秀素材正在连接…";
+        return;
+      }
+      imageRequest = selection;
+      parts.doll.replaceChildren();
+      parts.outfitKey = null;
+      parts.message.textContent = "正在加载 QQ 秀…";
+      void loadOutfit(catalog, layers, key).then(images => {
+        if (imageRequest !== selection) return;
+        imageRequest = null;
+        if (!images || disposedAssets) {
+          if (!disposedAssets) parts.message.textContent = "QQ 秀素材暂不可用，重新打开详情可重试。";
+          return;
+        }
+        renderImages(selection, layers, images);
+        prefetchAlternate();
+      });
+    };
+    const renderImages = ({ key, catalog, parts }, layers, images) => {
       const fragment = document.createDocumentFragment();
       for (const layer of layers) {
-        const src = catalog.images[layer.src];
+        const src = images[layer.src];
         if (typeof src !== "string" || !/^data:image\/(?:png|gif);base64,/.test(src)) continue;
         const image = document.createElement("img");
         image.src = src;
@@ -2056,7 +2284,7 @@
         image.height = catalog.canvas.height;
         image.addEventListener("error", () => { if (parts) parts.message.textContent = "部分部件加载失败，请重新导入 QQ 秀资源。"; });
         let node = image;
-        const animated = catalog.images[layer.animatedSrc];
+        const animated = images[layer.animatedSrc];
         if (animated?.startsWith("data:image/gif;base64,")) {
           node = document.createElement("picture");
           const source = document.createElement("source");
@@ -2071,7 +2299,7 @@
         fragment.appendChild(node);
       }
       parts.doll.replaceChildren(fragment);
-      parts.doll.setAttribute("aria-label", `${name} ${catalog.name} QQ 秀`);
+      parts.outfitKey = key;
       parts.message.textContent = "";
     };
     const save = () => {
@@ -2088,18 +2316,39 @@
       card?.remove();
       card = null;
       parts = null;
+      dockVisible = false;
+      imageRequest = null;
+      outfitCache.clear();
+      if (prefetchTimer !== null) clearTimeout(prefetchTimer);
+      prefetchTimer = null;
+    };
+    const clearDoll = () => {
+      imageRequest = null;
+      if (parts.outfitKey) {
+        parts.doll.replaceChildren();
+        parts.outfitKey = null;
+      }
     };
     const park = () => {
       if (!card) return;
       closeDrawer();
+      dockVisible = false;
+      clearDoll();
       card.classList.remove("qq-skin-qqshow-docked", "qq-skin-growth-docked");
       if (card.parentElement !== document.body) document.body.appendChild(card);
     };
-    const placeAfter = profilePanel => {
+    const placeAfter = (profilePanel, visible = true) => {
       const list = profilePanel.parentElement;
       if (!card?.isConnected || !list || list === document.body) { park(); return; }
       if (card.parentElement !== list || profilePanel.nextElementSibling !== card) profilePanel.after(card);
       card.classList.add("qq-skin-qqshow-docked", "qq-skin-growth-docked");
+      if (dockVisible === visible) return;
+      dockVisible = visible;
+      if (visible) render();
+      else {
+        closeDrawer();
+        clearDoll();
+      }
     };
     const mount = () => {
       if (card?.isConnected) return;
@@ -2141,6 +2390,10 @@
         styleSwitch: card.querySelector(".qq-skin-qqshow-style-switch"),
         message: card.querySelector(".qq-skin-qqshow-message"), selects: new Map() };
       const reset = card.querySelector("[data-qqshow-reset]");
+      card.querySelector(".qq-skin-window-toggle")?.addEventListener("click", () => {
+        if (card.classList.contains("qq-skin-window-collapsed")) clearDoll();
+        else render();
+      });
       if (!ready) {
         card.querySelector(".qq-skin-qqshow-layout").hidden = true;
         reset.hidden = true;
@@ -2904,7 +3157,7 @@
     const thread = footer?.closest('[class~="group/thread-scroll-layout"]');
     const host = thread?.parentElement;
     if (!host || document.querySelector('section[data-pip-obstacle="quick-chat"][data-state="open"]')) {
-      clearProfileDock();
+      if (document.getElementById(PROFILE_DOCK_ID)) clearProfileDock();
       return false;
     }
     let dock = document.getElementById(PROFILE_DOCK_ID);
@@ -2982,7 +3235,7 @@
       if (panel.parentElement !== list) list.appendChild(panel);
     } else if (panel.parentElement !== content) content.appendChild(panel);
     workdayCard.placeBefore(panel);
-    qqShowCard.placeAfter(panel);
+    qqShowCard.placeAfter(panel, open);
     const toggle = dock.querySelector(".qq-skin-profile-dock-tab");
     if (toggle.disabled !== !canFit) toggle.disabled = !canFit;
     setAttribute(toggle, "aria-expanded", String(open));
@@ -3271,17 +3524,19 @@
     style.dataset.dreamSkinStyleRevision = modeRevision;
     const mediaEnabled = skinMode === "qq" && MEDIA_APPEARANCES.includes(qqAppearance);
     let mediaStyle = document.getElementById(MEDIA_STYLE_ID);
-    if (mediaEnabled && mediaCssText && !mediaStyle) {
+    if (mediaEnabled && mediaStyleText && !mediaStyle) {
       mediaStyle = document.createElement("style");
       mediaStyle.id = MEDIA_STYLE_ID;
       style.after(mediaStyle);
     }
     if (mediaStyle) {
       if (mediaStyle.dataset.dreamSkinStyleRevision !== STYLE_REVISION) {
-        mediaStyle.textContent = mediaCssText;
+        mediaStyle.textContent = mediaStyleText;
         mediaStyle.dataset.dreamSkinStyleRevision = STYLE_REVISION;
       }
       setAttribute(mediaStyle, "media", mediaEnabled ? "all" : "not all");
+      if (mediaEnabled) syncMediaFonts(mediaStyle, qqAppearance);
+      else if (activeMediaFonts.size) suspendMediaFonts();
     }
     return style;
   };
@@ -3894,6 +4149,7 @@
     clearProfileDock();
     clearReferenceLayout();
     document.getElementById(MEDIA_STYLE_ID)?.remove();
+    suspendMediaFonts();
     for (const name of ['data-qq-home-part', 'data-qq-shell-layout', 'data-qq-browser-layer', 'data-qq-sidebar-part', 'data-qq-main-layer', 'data-qq-thread-frame', 'data-qq-native-main', 'data-qq-native-composer', 'data-qq-header-center']) {
       document.querySelectorAll(`[${name}]`).forEach((node) => node.removeAttribute(name));
     }
@@ -4425,6 +4681,7 @@
       document.removeEventListener("click", state.routeInteractionHandler, true);
     }
     state?.soundMonitor?.cleanup?.();
+    disposeAssets();
     state?.weatherMonitor?.destroy?.();
     if (state?.mediaHandler && state?.mediaQuery) {
       try { state.mediaQuery.removeEventListener("change", state.mediaHandler); } catch {}
@@ -4603,6 +4860,7 @@
     resizeHandler,
     routeInteractionHandler,
     soundMonitor,
+    disposeAssets,
     profileCleanup,
     clearProfileDock,
     closeLibraryMenu,

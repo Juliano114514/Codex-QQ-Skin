@@ -29,7 +29,7 @@ if (-not $debugReady) {
 # Apply and verify synchronously before starting the persistent watcher. This
 # avoids a startup race where verification begins before the packaged app has
 # finished constructing its renderer shell.
-$injectArgs = @('--once','--enable-skin','--port',$Port,'--theme-dir',$script:ThemeDir,'--timeout-ms','60000')
+$injectArgs = @('--once','--enable-skin','--defer-assets','--port',$Port,'--theme-dir',$script:ThemeDir,'--timeout-ms','60000')
 if ($SkinMode) { $injectArgs += @('--skin-mode', $SkinMode) }
 Invoke-Injector -Arguments $injectArgs | Out-Null
 $codexProcess = @(Get-CodexProcesses) | Select-Object -First 1

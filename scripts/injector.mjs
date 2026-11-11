@@ -19,11 +19,52 @@ const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
 // Keep image-heavy payloads below the debugger's single-message limit.
 const CDP_SOURCE_CHUNK_CHARS = 4 * 1024 * 1024;
+const ASSET_BINDING = "__CODEX_QQ_SKIN_REQUEST_ASSET__";
 const MAX_USAGE_SNAPSHOT_BYTES = 256 * 1024;
 const MAX_COMPANION_SNAPSHOT_BYTES = 192 * 1024;
 const USAGE_REFRESH_INTERVAL_MS = 60_000;
 const COMPANION_REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
 let staticPayloadAssets = null;
+
+const FONT_FILES = [
+  "fusion-pixel-12px-proportional-zh_hans.woff2",
+  "IQYHT-Regular.ttf", "IQYHT-Medium.ttf", "IQYHT-Bold.ttf",
+  "QY_Digital-Regular.ttf", "QY_Digital-SemiBold.ttf",
+  "HarmonyOS_Sans_SC_Regular.ttf", "HarmonyOS_Sans_SC_Bold.ttf",
+  "PingFangSC-Regular.otf", "PingFangSC-Semibold.otf", "Nunito-Variable.ttf",
+];
+const fontPlaceholder = file => `__QQ_FONT_${path.basename(file, path.extname(file)).replaceAll("-", "_")}__`;
+const fontDirectory = path.join(root, "assets", "fonts");
+
+async function readFontData(file) {
+  const bytes = await fs.readFile(path.join(fontDirectory, file));
+  const extension = path.extname(file);
+  const mime = extension === ".woff2" ? "woff2" : extension === ".otf" ? "otf" : "ttf";
+  return `data:font/${mime};base64,${bytes.toString("base64")}`;
+}
+
+function qqShowWithoutImages(bundle) {
+  if (!bundle) return null;
+  const strip = ({ images, ...catalog }) => catalog;
+  return bundle.styles ? { ...bundle, styles: bundle.styles.map(strip) } : strip(bundle);
+}
+
+async function readRendererAsset(staticAssets, request) {
+  if (request.kind === "font") {
+    if (request.key === "DFPKingGothicGB.css") return fs.readFile(path.join(fontDirectory, request.key), "utf8");
+    if (FONT_FILES.includes(request.key)) return readFontData(request.key);
+  }
+  if (request.kind === "outfit" && ["classic", "fashion"].includes(request.style)
+      && Array.isArray(request.keys) && request.keys.length <= 40
+      && request.keys.every(key => typeof key === "string" && key.length <= 160)) {
+    const bundle = staticAssets.qqShow;
+    const catalog = bundle?.styles ? bundle.styles.find(style => style.id === request.style)
+      : request.style === "classic" ? bundle : null;
+    return Object.fromEntries(request.keys.filter(key => catalog?.images && Object.hasOwn(catalog.images, key))
+      .map(key => [key, catalog.images[key]]));
+  }
+  return null;
+}
 
 // Codex 26.908 moved shell/composer classes to CSS modules. Match semantic
 // prefixes, never build-specific hashes, and retain the legacy selectors.
@@ -81,6 +122,7 @@ function parseArgs(argv) {
     screenshot: null,
     reload: false,
     enableSkin: false,
+    deferAssets: false,
     skinMode: null,
     themeDir: null,
   };
@@ -97,6 +139,7 @@ function parseArgs(argv) {
     else if (arg === "--theme-dir") options.themeDir = path.resolve(argv[++i]);
     else if (arg === "--reload") options.reload = true;
     else if (arg === "--enable-skin") options.enableSkin = true;
+    else if (arg === "--defer-assets") options.deferAssets = true;
     else if (arg === "--skin-mode") options.skinMode = String(argv[++i] || "");
     else throw new Error(`Unknown argument: ${arg}`);
   }
@@ -579,7 +622,7 @@ async function loadTheme(themeDir) {
   }
 }
 
-async function loadStaticPayloadAssets() {
+async function loadStaticPayloadAssets(deferAssets) {
   const cacheHit = Boolean(staticPayloadAssets);
   if (!staticPayloadAssets) {
     staticPayloadAssets = Promise.all([
@@ -617,16 +660,11 @@ async function loadStaticPayloadAssets() {
         css = css.replace("__QQ_XP_MEADOW__", `data:image/jpeg;base64,${xpMeadow.toString("base64")}`);
         const pcAbs = await fs.readFile(path.join(root, "assets", "millennium-ivory-abs.jpg"));
         css = css.replace("__QQ_PC_ABS__", `data:image/jpeg;base64,${pcAbs.toString("base64")}`);
-        const pcPixelFont = await fs.readFile(path.join(root, "assets", "fonts", "fusion-pixel-12px-proportional-zh_hans.woff2"));
-        css = css.replace("__QQ_FONT_fusion_pixel_12px_proportional_zh_hans__", `data:font/woff2;base64,${pcPixelFont.toString("base64")}`);
-        for (const file of ["IQYHT-Regular.ttf", "IQYHT-Medium.ttf", "IQYHT-Bold.ttf", "QY_Digital-Regular.ttf", "QY_Digital-SemiBold.ttf",
-          "HarmonyOS_Sans_SC_Regular.ttf", "HarmonyOS_Sans_SC_Bold.ttf", "PingFangSC-Regular.otf", "PingFangSC-Semibold.otf", "Nunito-Variable.ttf"]) {
-          const bytes = await fs.readFile(path.join(root, "assets", "fonts", file));
-          const name = path.basename(file, path.extname(file)).replaceAll("-", "_");
-          const mime = file.endsWith(".otf") ? "font/otf" : "font/ttf";
-          css = css.replace(`__QQ_FONT_${name}__`, `data:${mime};base64,${bytes.toString("base64")}`);
+        if (!deferAssets) {
+          for (const file of FONT_FILES) css = css.replace(fontPlaceholder(file), await readFontData(file));
+          css += "\n" + await fs.readFile(path.join(fontDirectory, "DFPKingGothicGB.css"), "utf8");
         }
-        return adaptShellSelectors(css + "\n" + await fs.readFile(path.join(root, "assets", "fonts", "DFPKingGothicGB.css"), "utf8"));
+        return adaptShellSelectors(css);
       }),
     ]).catch((error) => {
       staticPayloadAssets = null;
@@ -636,7 +674,13 @@ async function loadStaticPayloadAssets() {
   const [baseCss, customCss, template, qqArt, qqThemeJson, pet, retroFrame, qqAvatar, coughAudio, darkCss, darkThemeJson, levelIconCss, profileAssets, uiCss, iqiyiThemeJson, mediaThemesJson, appearancesJson, mediaCss] = await staticPayloadAssets;
   const qqTheme = JSON.parse(qqThemeJson);
   qqTheme.avatarLibrary = JSON.parse(profileAssets[0]);
-  qqTheme.qqShow = profileAssets[1];
+  const qqShow = profileAssets[1];
+  qqTheme.qqShow = deferAssets ? qqShowWithoutImages(qqShow) : qqShow;
+  if (deferAssets) {
+    qqTheme.deferredFonts = Object.fromEntries(FONT_FILES.map(file => [fontPlaceholder(file), file]));
+    qqTheme.qqShowRevision = createHash("sha256").update(JSON.stringify(qqTheme.qqShow))
+      .update(String((await fs.stat(path.join(root, "assets", "qqshow.local.json")).catch(() => null))?.mtimeMs ?? "")).digest("hex").slice(0, 16);
+  }
   qqTheme.notificationAudio = Object.fromEntries(await Promise.all(
     [["approval", "action-required.wav"], ["completed", "task-completed.wav"]].map(async ([event, file]) => {
       const bytes = await fs.readFile(path.join(root, "assets", "audio", file));
@@ -658,7 +702,7 @@ async function loadStaticPayloadAssets() {
     if (!theme.schemes.light || !theme.schemes.dark) throw new Error(`Missing light/dark palette: ${brand}`);
   }
   const css = `${baseCss}\n${darkCss}\n${uiCss}\n/* qq-media-start */\n${mediaCss}\n/* qq-media-end */\n${levelIconCss.join("\n")}`;
-  return { css, customCss, template, qqArt, qqTheme, pet, retroFrame, qqAvatar, coughAudio, cacheHit };
+  return { css, customCss, template, qqArt, qqTheme, qqShow, pet, retroFrame, qqAvatar, coughAudio, cacheHit };
 }
 
 function invalidateStaticPayloadAssets() {
@@ -975,10 +1019,10 @@ function runLibrarySwitch(themeId) {
   });
 }
 
-async function loadPayload(themeDir) {
+async function loadPayload(themeDir, deferAssets = false) {
   const startedAt = performance.now();
   const [staticAssets, loaded] = await Promise.all([
-    loadStaticPayloadAssets(),
+    loadStaticPayloadAssets(deferAssets),
     loadTheme(themeDir),
   ]);
   const { css, customCss, template, qqArt, qqTheme, pet, retroFrame, qqAvatar, coughAudio } = staticAssets;
@@ -1048,6 +1092,7 @@ async function loadPayload(themeDir) {
     payload,
     revision,
     theme,
+    qqShow: deferAssets ? staticAssets.qqShow : null,
     timings: {
       buildMs: Number((performance.now() - startedAt).toFixed(3)),
       staticCacheHit: staticAssets.cacheHit,
@@ -1245,7 +1290,7 @@ async function capture(session, outputPath) {
 
 async function runOneShot(options) {
   const connected = await connectCodexTargets(options.port, options.timeoutMs);
-  const loaded = (options.mode === "once" || options.reload) ? await loadPayload(options.themeDir) : null;
+  const loaded = (options.mode === "once" || options.reload) ? await loadPayload(options.themeDir, options.deferAssets) : null;
   const payload = loaded?.payload ?? null;
   const results = [];
   let screenshotCaptured = false;
@@ -1359,7 +1404,7 @@ function watchPayloadSources(themeDir, onDirty) {
 }
 
 async function runWatch(options) {
-  let current = await loadPayload(options.themeDir);
+  let current = await loadPayload(options.themeDir, true);
   const sessions = new Map();
   const pushDragonMessage = async (message, targetId = null) => {
     const records = targetId ? [sessions.get(targetId)].filter(Boolean) : [...sessions.values()];
@@ -1474,7 +1519,7 @@ async function runWatch(options) {
   };
 
   const refreshPayload = async () => {
-    const next = await loadPayload(options.themeDir);
+    const next = await loadPayload(options.themeDir, true);
     if (next.revision === current.revision) return;
     current = next;
     for (const record of sessions.values()) {
@@ -1624,16 +1669,27 @@ async function runWatch(options) {
           }
           rejected.delete(target.id);
           record = { session, earlyScriptId: null, needsLoadFallback: false };
-          if (dragon) {
-            const { frameTree } = await session.send("Page.getFrameTree");
-            session.on("Runtime.bindingCalled", event => {
-              const context = session.executionContexts.get(event.executionContextId);
-              if (event.name !== DRAGON_BINDING || !context?.auxData?.isDefault
-                || context.auxData.frameId !== frameTree.frame.id || !context.origin?.startsWith("app://")) return;
-              dragon?.enqueue(target.id, event.payload);
-            });
-            await session.send("Runtime.addBinding", { name: DRAGON_BINDING });
-          }
+          const { frameTree } = await session.send("Page.getFrameTree");
+          let activeAssetRequests = 0;
+          session.on("Runtime.bindingCalled", event => {
+            const context = session.executionContexts.get(event.executionContextId);
+            if (!context?.auxData?.isDefault || context.auxData.frameId !== frameTree.frame.id
+                || !context.origin?.startsWith("app://")) return;
+            if (event.name === DRAGON_BINDING) dragon?.enqueue(target.id, event.payload);
+            if (event.name !== ASSET_BINDING || typeof event.payload !== "string"
+                || event.payload.length > 8192 || activeAssetRequests >= 6) return;
+            let request;
+            try { request = JSON.parse(event.payload); } catch { return; }
+            if (typeof request?.id !== "string" || !/^[a-z0-9-]{1,80}$/.test(request.id)) return;
+            activeAssetRequests += 1;
+            void readRendererAsset(current, request).catch(() => null).then(async asset => {
+              if (session.closed || session.executionContexts.get(event.executionContextId) !== context) return;
+              await session.evaluate(`window.__CODEX_QQ_SKIN_RECEIVE_ASSET__?.(${JSON.stringify(request.id)}, ${JSON.stringify(asset)}); void 0`);
+            }).catch(error => console.error("[qq-skin] renderer asset delivery failed: " + error.message))
+              .finally(() => { activeAssetRequests -= 1; });
+          });
+          await session.send("Runtime.addBinding", { name: ASSET_BINDING });
+          if (dragon) await session.send("Runtime.addBinding", { name: DRAGON_BINDING });
           try {
             // Apply in the current document and register for reloads in one
             // transfer. Older CDP hosts still use the direct fallback below.
@@ -1712,7 +1768,7 @@ if (path.resolve(process.argv[1] || "") === path.resolve(scriptPath)) {
   try {
     const options = parseArgs(process.argv.slice(2));
     if (options.mode === "check") {
-      const loaded = await loadPayload(options.themeDir);
+      const loaded = await loadPayload(options.themeDir, options.deferAssets);
       console.log(JSON.stringify({
         pass: true,
         version: SKIN_VERSION,
