@@ -1,4 +1,10 @@
-# 3.0.0 更新
+# 3.1.0 更新
+
+- QQ 秀改为上方展示、下方四列配饰。展示框左右各留 10% 边距，图像按原比例缩放。点击居中的粗体形象名可打开上滑抽屉，旁边的 `▾` / `▴` 展开或收起配饰。ChatGPT 和 DeepSeek 分别显示为 GPT、DS。
+- Windows 新增龙娘浮窗，可从顶部工具条显示或隐藏。点击龙娘或气泡依次查看工时、额度和语录，大气泡收起后由小气泡显示喝水倒计时，隐藏浮窗时后台提醒继续运行。[Windows 浮窗说明](README-WINDOWS.md#龙娘浮窗源码集成)
+- 对齐龙娘的大小气泡，缩短场景切换动效，减少长语录首次排版和后台状态更新的等待。[Windows 性能测量](docs/floating-widget-performance.md)
+
+## 3.0.0 更新
 
 - QQ 秀经典版更新为 `LLM-show-Latest`，新增时尚版；「经典 | 时尚」切换位于「还原」旁边，两种风格分别记住角色与搭配。
 - 完整预设使用 Latest 的场景动画，保留透明部件混搭与减少动态时的静态回退。
@@ -114,11 +120,11 @@ Windows 实测覆盖新窗口、侧栏开合、窗口化和最大化。版本记
 
 ## Codex 成长中心
 
-- 新增独立「QQ 秀」卡片：左侧为 AI 娘展示框，右侧为垂直滚动的预设与部件设置栏，两者同一行排布。支持 GPT、DeepSeek、Claude、Grok、千问、Gemini、GLM 七套预设，以及场景、光环、背饰、发型、鞋袜、裙装、上装、表情、头饰、手持、闪光 11 类混搭；本机自动保存，支持还原预设、独立折叠和减少动态偏好。卡片沿用当前皮肤配色，并适配各美学主题的材质。
+- 「QQ 秀」卡片上方展示形象，下方每行四个配饰选项，经典版 11 项，时尚版 12 项。点击形象名可从抽屉切换 GPT、DS、Claude、Grok、千问、Gemini、GLM 七套预设，搭配自动保存在本机。卡片支持还原预设、独立折叠和减少动态偏好，并沿用当前皮肤配色。
 - QQ 秀支持「经典 | 时尚」切换，开关位于「还原」旁；两种风格各有七个角色，分别保存搭配。完整预设使用 Latest 场景动画，混搭沿用透明部件与动态背景。
 - 本地美术资源导入：`node scripts/qqshow-assets.mjs --import "D:/LLM-show/LLM-show-Latest"`，然后重新加载皮肤。资源随本地安装的 assets 目录加载，无需启动原项目或访问远程服务。导入文件 `assets/qqshow.local.json` 保留来源说明并已加入 Git 忽略；源码下载不包含这份本地美术包。详见 [QQ 秀接入说明](docs/qqshow.md)。
 
-- 右侧栏按「摘要信息 → 上班状态 → 个人资料」排列，三张卡片分别收起。「上班状态」独立显示下班倒计时与今日收入，可设置上班时长、加班时长、月工资、月工作天数和加班费。默认正常上班 9 小时、加班 3 小时、每月 20 天、加班费 150 元，月工资自行填写。
+- 右侧栏按「摘要信息 → 上班状态 → 个人资料 → QQ 秀」排列，各卡片可独立收起。「上班状态」显示下班倒计时与今日收入，可设置上班时长、加班时长、月工资、月工作天数和加班费。默认正常上班 9 小时、加班 3 小时、每月 20 天、加班费 150 元，月工资自行填写。
 - 卡片显示时间、喝水倒计时、已赚金额和进度条。喝水默认 60 分钟，齿轮内可设置间隔，点击「我已喝水」重新计时。未上班时显示首次加载的时间，可直接点击修改；点击「上班」开始 HH:MM 正常工时倒计时，结束后自动切换「加班」倒计时。已赚金额每分钟更新，下班时结算，加班满时长一次计入，未满不计。数据本地保存，支持重启恢复与跨零点夜班。
 - 交互参考 [salary-clock](https://github.com/XiaoZ-0218/salary-clock) 和 [realtime-salary-calculator](https://github.com/Youks7/realtime-salary-calculator)，采用项目现有原生 JavaScript 独立实现，无新增依赖。
 - QQ 模式右侧「详细信息」栏中的个人资料卡片显示今日、所选周期和历史累计用量，可在趋势图上切换 7 天和 30 天。
@@ -128,9 +134,9 @@ Windows 实测覆盖新窗口、侧栏开合、窗口化和最大化。版本记
 - 卡片展示本机总用量，缓存输入参与成长。fork、子 Agent 继承历史和重复 Token 事件会去重。
 - 当前日志没有稳定账号 ID，因此这里明确显示“本机统计 / 本机 Codex 等级”，不是 OpenAI 官方账单或账号云端等级。
 
-## 当前源码版本 3.0.0
+## 当前源码版本 3.1.0
 
-本版聊天适配、资料卡片和主题更新见文首。下载区列出已发布的安装包。
+本版 QQ 秀和 Windows 龙娘浮窗更新见文首。下载区列出已发布的安装包。
 
 ## 2.6.3 亮点
 
@@ -365,10 +371,10 @@ npm test
 npm run build:app
 ```
 
-`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。3.0.0 源码对应以下构建产物：
+`npm run build:app` 会在 `release/` 生成同时支持 Apple Silicon 与 Intel 的 `Codex QQ Skin.app`。3.1.0 源码对应以下构建产物：
 
 - macOS：`Codex QQ Skin.app.zip`（可在本机 Mac 用 `npm run build:app` 生成）
-- Windows：`ChatGPT QQ Skin Setup 3.0.0.exe`（由 Windows CI 或 Windows 电脑构建）
+- Windows：`ChatGPT QQ Skin Setup 3.1.0.exe`（由 Windows CI 或 Windows 电脑构建）
 
 请只从本仓库的 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载。设置 `DEVELOPER_ID_APPLICATION` 环境变量后会使用对应证书签名；公开分发前还需使用 Apple 公证服务处理最终 ZIP/DMG。
 

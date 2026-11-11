@@ -26,13 +26,14 @@
 .qq-skin-qqshow-body { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
 .qq-skin-qqshow-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(76px, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   gap: 8px;
   min-width: 0;
 }
-.qq-skin-qqshow-display { min-width: 0; margin: 0; align-self: start; }
+.qq-skin-qqshow-display { min-width: 0; margin: 0 10%; align-self: start; }
 .qq-skin-qqshow-stage {
+  position: relative;
   display: grid;
   place-items: center;
   min-width: 0;
@@ -46,7 +47,7 @@
 .qq-skin-qqshow-doll {
   position: relative;
   isolation: isolate;
-  width: 140px;
+  width: 100%;
   max-width: 100%;
   aspect-ratio: 140 / 226;
   overflow: hidden;
@@ -78,18 +79,55 @@
   .qq-skin-qqshow-effect { animation: qq-show-sparkle 1.92s steps(1, end) infinite; }
   .qq-skin-qqshow-card.qq-skin-window-collapsed .qq-skin-qqshow-effect { animation-play-state: paused; }
 }
-.qq-skin-qqshow-display figcaption { display: grid; gap: 1px; margin-top: 7px; min-width: 0; text-align: center; }
-.qq-skin-qqshow-display figcaption > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.qq-skin-qqshow-display figcaption > b { font-size: 11px; font-weight: 600; }
+.qq-skin-qqshow-drawer {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: 8px;
+  border-top: 1px solid var(--ds-line);
+  background: var(--ds-panel);
+  box-shadow: 0 -2px 8px rgb(0 0 0 / .18);
+}
+.qq-skin-qqshow-card .qq-skin-qqshow-drawer > button[aria-pressed="true"] {
+  color: var(--ds-accent);
+  border-color: var(--ds-accent);
+  background: var(--ds-panel-2);
+  font-weight: 600;
+}
+@keyframes qq-show-drawer-in { from { transform: translateY(100%); } }
+@media (prefers-reduced-motion: no-preference) {
+  .qq-skin-qqshow-drawer:not([hidden]) { animation: qq-show-drawer-in 160ms ease-out; }
+}
+.qq-skin-qqshow-toolbar { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 4px; }
+.qq-skin-qqshow-card .qq-skin-qqshow-character { border-color: transparent; background: transparent; font-weight: 700; }
+.qq-skin-qqshow-card .qq-skin-qqshow-character:hover { border-color: transparent; color: var(--ds-accent); text-decoration: underline; text-underline-offset: 2px; }
+.qq-skin-qqshow-card [data-qqshow-settings-toggle] {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  min-height: 20px;
+  padding: 0;
+  border-radius: 2px;
+  background: linear-gradient(var(--ds-panel-2), var(--ds-panel));
+  box-shadow: inset 0 1px rgb(255 255 255 / .14), 0 1px 1px rgb(0 0 0 / .15);
+  font: 16px/1 "Segoe UI Symbol", sans-serif;
+}
+.qq-skin-qqshow-card [data-qqshow-settings-toggle]:hover { color: var(--ds-accent); }
 .qq-skin-qqshow-settings { position: relative; min-width: 0; min-height: 0; }
 .qq-skin-qqshow-controls {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 48px;
   gap: 8px;
   min-width: 0;
   min-height: 0;
+  max-height: 164px;
   padding: 2px 4px 2px 2px;
   overflow-x: hidden;
   overflow-y: auto;

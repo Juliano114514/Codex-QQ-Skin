@@ -1994,11 +1994,23 @@
         styles: Object.fromEntries(catalogs.map(style => [style.id,
           normalize(raw?.styles?.[style.id] || (!raw?.styles && style.id === "classic" ? raw : null), style)])) };
     };
-    const characterName = character => character?.id === "gpt" ? "ChatGPT" : character?.name || "原版";
+    const characterNames = { gpt: "GPT", deepseek: "DS" };
+    const characterName = character => characterNames[character?.id] || character?.name || "原版";
     const ownerName = item => characterName(characters.find(character => character.id === item.characterId));
+    const closeDrawer = () => {
+      if (!parts || parts.drawer.hidden) return;
+      parts.drawer.hidden = true;
+      parts.character.setAttribute("aria-expanded", "false");
+      document.removeEventListener("pointerdown", dismissDrawer, true);
+      document.removeEventListener("focusin", dismissDrawer);
+    };
+    const dismissDrawer = event => {
+      if (!parts.drawer.contains(event.target) && !parts.character.contains(event.target)) closeDrawer();
+    };
     const render = () => {
       if (!ready || !parts) return;
       if (parts.styleId !== state.styleId) {
+        closeDrawer();
         catalog = catalogs.find(style => style.id === state.styleId);
         items = new Map(catalog.items.map(item => [item.id, item]));
         characters = catalog.characters;
@@ -2013,7 +2025,12 @@
       const character = presetFor(outfit.characterId);
       const matching = characters.find(candidate => catalog.slots.every(slot =>
         (candidate.preset[slot.id] ?? null) === outfit.selection[slot.id]));
-      parts.preset.value = matching?.id || "custom";
+      const displayed = matching || character;
+      const name = characterName(displayed);
+      setTextContent(parts.character, name);
+      for (const button of parts.drawer.children) {
+        setAttribute(button, "aria-pressed", String(button.dataset.qqshowCharacterId === displayed.id));
+      }
       for (const slot of catalog.slots) {
         const select = parts.selects.get(slot.id);
         select.value = outfit.selection[slot.id] ?? "";
@@ -2054,9 +2071,7 @@
         fragment.appendChild(node);
       }
       parts.doll.replaceChildren(fragment);
-      parts.doll.setAttribute("aria-label", `${characterName(matching || character)} ${catalog.name} QQ 秀`);
-      parts.name.textContent = characterName(matching || character);
-      parts.name.title = parts.name.textContent;
+      parts.doll.setAttribute("aria-label", `${name} ${catalog.name} QQ 秀`);
       parts.message.textContent = "";
     };
     const save = () => {
@@ -2068,6 +2083,7 @@
       if (ready && (event.key === QQSHOW_STORAGE_KEY || event.key === null)) { state = read(); render(); }
     };
     const cleanup = () => {
+      closeDrawer();
       window.removeEventListener("storage", onStorage);
       card?.remove();
       card = null;
@@ -2075,6 +2091,7 @@
     };
     const park = () => {
       if (!card) return;
+      closeDrawer();
       card.classList.remove("qq-skin-qqshow-docked", "qq-skin-growth-docked");
       if (card.parentElement !== document.body) document.body.appendChild(card);
     };
@@ -2101,18 +2118,25 @@
         <div class="qq-skin-qqshow-body">
           <div class="qq-skin-qqshow-layout">
             <figure class="qq-skin-qqshow-display">
-              <div class="qq-skin-qqshow-stage"><div class="qq-skin-qqshow-doll" role="img"></div></div>
-              <figcaption><b data-qqshow-name></b></figcaption>
+              <div class="qq-skin-qqshow-stage">
+                <div class="qq-skin-qqshow-doll" role="img"></div>
+                <div id="${QQSHOW_PANEL_ID}-drawer" class="qq-skin-qqshow-drawer" role="group" aria-label="选择形象" hidden></div>
+              </div>
+              <figcaption class="qq-skin-qqshow-toolbar">
+                <button type="button" class="qq-skin-qqshow-character" aria-controls="${QQSHOW_PANEL_ID}-drawer" aria-expanded="false"></button>
+                <button type="button" data-qqshow-settings-toggle aria-controls="${QQSHOW_PANEL_ID}-settings" aria-expanded="true" aria-label="收起设置" title="收起设置">▴</button>
+              </figcaption>
             </figure>
-            <div class="qq-skin-qqshow-settings">
-              <div class="qq-skin-qqshow-controls" role="group" aria-label="角色与部件" tabindex="0"></div>
+            <div id="${QQSHOW_PANEL_ID}-settings" class="qq-skin-qqshow-settings">
+              <div class="qq-skin-qqshow-controls" role="group" aria-label="配饰" tabindex="0"></div>
             </div>
           </div>
           <p class="qq-skin-qqshow-message" role="status"></p>
         </div>`;
       document.body.appendChild(card);
       ensureFloatingPanel(card, ".qq-skin-qqshow-heading");
-      parts = { doll: card.querySelector(".qq-skin-qqshow-doll"), name: card.querySelector("[data-qqshow-name]"),
+      parts = { doll: card.querySelector(".qq-skin-qqshow-doll"), character: card.querySelector(".qq-skin-qqshow-character"),
+        drawer: card.querySelector(".qq-skin-qqshow-drawer"), settings: card.querySelector(".qq-skin-qqshow-settings"),
         controls: card.querySelector(".qq-skin-qqshow-controls"),
         styleSwitch: card.querySelector(".qq-skin-qqshow-style-switch"),
         message: card.querySelector(".qq-skin-qqshow-message"), selects: new Map() };
@@ -2124,6 +2148,32 @@
         parts.message.textContent = "QQ 秀资源尚未导入。请按项目说明导入 AI 娘资源后重新加载皮肤。";
         return;
       }
+      const settingsToggle = card.querySelector("[data-qqshow-settings-toggle]");
+      settingsToggle.addEventListener("click", () => {
+        const expanded = parts.settings.hidden;
+        parts.settings.hidden = !expanded;
+        const label = expanded ? "收起设置" : "展开设置";
+        settingsToggle.textContent = expanded ? "▴" : "▾";
+        settingsToggle.setAttribute("aria-expanded", String(expanded));
+        settingsToggle.setAttribute("aria-label", label);
+        settingsToggle.title = label;
+      });
+      parts.character.addEventListener("click", () => {
+        if (!parts.drawer.hidden) { closeDrawer(); return; }
+        parts.drawer.hidden = false;
+        parts.character.setAttribute("aria-expanded", "true");
+        document.addEventListener("pointerdown", dismissDrawer, true);
+        document.addEventListener("focusin", dismissDrawer);
+        const active = parts.drawer.querySelector('[aria-pressed="true"]') || parts.drawer.firstElementChild;
+        active?.focus({ preventScroll: true });
+      });
+      card.addEventListener("keydown", event => {
+        if (event.key !== "Escape" || parts.drawer.hidden) return;
+        event.preventDefault();
+        event.stopPropagation();
+        closeDrawer();
+        parts.character.focus({ preventScroll: true });
+      });
       parts.styleSwitch.hidden = catalogs.length < 2;
       for (const button of parts.styleSwitch.querySelectorAll("[data-qqshow-style]")) {
         button.addEventListener("click", () => {
@@ -2135,6 +2185,7 @@
       }
       parts.buildControls = () => {
         parts.controls.replaceChildren();
+        parts.drawer.replaceChildren();
         parts.selects.clear();
         const addSelect = (label, id) => {
           const field = document.createElement("label");
@@ -2149,21 +2200,25 @@
           select.addEventListener("focus", () => field.scrollIntoView({ block: "nearest", inline: "nearest" }));
           return select;
         };
-        const option = (select, value, text, disabled = false) => {
+        const option = (select, value, text) => {
           const node = document.createElement("option");
           node.value = value;
           node.textContent = text;
-          node.disabled = disabled;
           select.appendChild(node);
         };
-        parts.preset = addSelect("角色", "preset");
-        option(parts.preset, "custom", "混搭", true);
-        for (const character of characters) option(parts.preset, character.id, characterName(character));
-        parts.preset.addEventListener("change", () => {
-          const character = presetFor(parts.preset.value);
-          state.styles[state.styleId] = normalize({ characterId: character.id, selection: character.preset });
-          save();
-        });
+        for (const character of characters) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.qqshowCharacterId = character.id;
+          button.textContent = characterName(character);
+          button.addEventListener("click", () => {
+            state.styles[state.styleId] = normalize({ characterId: character.id, selection: character.preset });
+            closeDrawer();
+            save();
+            parts.character.focus({ preventScroll: true });
+          });
+          parts.drawer.appendChild(button);
+        }
         for (const slot of catalog.slots) {
           const select = addSelect(slot.label, slot.id);
           if (slot.optional) option(select, "", "不使用");

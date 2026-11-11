@@ -16,8 +16,8 @@ using System.Web.Script.Serialization;
 [assembly: AssemblyDescription("ChatGPT QQ Skin native Windows installer")]
 [assembly: AssemblyCompany("Codex QQ Skin")]
 [assembly: AssemblyProduct("ChatGPT QQ Skin")]
-[assembly: AssemblyVersion("3.0.0.0")]
-[assembly: AssemblyFileVersion("3.0.0.0")]
+[assembly: AssemblyVersion("3.1.0.0")]
+[assembly: AssemblyFileVersion("3.1.0.0")]
 
 namespace CodexQQSkinSetup
 {
@@ -47,7 +47,7 @@ namespace CodexQQSkinSetup
         private WebClient updateClient;
         private volatile bool updateCancelled;
 
-        private const string CurrentVersion = "3.0.0";
+        private const string CurrentVersion = "3.1.0";
         private const string LatestReleaseApi = "https://api.github.com/repos/zhulin025/Codex-QQ-Skin/releases/latest";
 
         public MainForm(string[] args)

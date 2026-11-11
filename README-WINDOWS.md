@@ -1,4 +1,4 @@
-# ChatGPT QQ Skin for Windows 3.0.0
+# ChatGPT QQ Skin for Windows 3.1.0
 
 Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动”“上传图片生成皮肤”和“安装 Codex 深度皮肤助手”入口，并内置运行引擎与 Node.js，无需用户另外安装依赖。
 
@@ -16,7 +16,7 @@ Windows 10/11 x64 原生 C# GUI 版本。安装器提供“一键安装并启动
 
 ## 下载
 
-当前源码版本为 3.0.0。以下是已发布安装包的下载与安装说明。
+当前源码版本为 3.1.0。以下是已发布安装包的下载与安装说明。
 
 从 [GitHub Releases](https://github.com/zhulin025/Codex-QQ-Skin/releases) 下载：
 
@@ -95,9 +95,13 @@ QQ 模式右侧的“个人资料”显示昵称、头像、状态、签名和�
 
 点击齿轮或底栏昵称编辑个人资料；点击头像选择经典头像，40px 与底栏 16px 版本配对切换。底栏签名支持点击编辑，Enter/失焦保存，Escape 取消。资料保存在本机皮肤设置，不修改 Codex 账号。
 
-右侧栏按「摘要信息 → 上班状态 → 个人资料」排列，三张卡片分别收起。「上班状态」显示时间、喝水倒计时、已赚金额和进度条；喝水默认 60 分钟，点击「我已喝水」重新计时，间隔可在齿轮中设置。初次加载的上班时间可直接修改，点击「上班」开始 HH:MM 正常工时倒计时，结束后自动切换「加班」倒计时。齿轮内可设置上班时长、加班时长、月工资、月工作天数和加班费，默认 9 小时、3 小时、20 天、150 元。已赚金额每分钟更新，下班时结算，加班满时长一次计入，未满不计。数据本地保存，支持重启恢复与跨零点夜班。
+右侧栏按「摘要信息 → 上班状态 → 个人资料 → QQ 秀」排列，各卡片可独立收起。「上班状态」显示时间、喝水倒计时、已赚金额和进度条；喝水默认 60 分钟，点击「我已喝水」重新计时，间隔可在齿轮中设置。初次加载的上班时间可直接修改，点击「上班」开始 HH:MM 正常工时倒计时，结束后自动切换「加班」倒计时。齿轮内可设置上班时长、加班时长、月工资、月工作天数和加班费，默认 9 小时、3 小时、20 天、150 元。已赚金额每分钟更新，下班时结算，加班满时长一次计入，未满不计。数据本地保存，支持重启恢复与跨零点夜班。
 
 统计只读取当前 Windows 用户目录下的 Codex 本地 session 日志，增量缓存保存在 `%APPDATA%\CodexQQSkin\usage`。Token 展示与加速档位均包含缓存。不需要额外登录，不读取 API Key，也不会上传 prompt 或 token 数据。统计是本机口径，不是 OpenAI 官方账单或账号云端等级。
+
+## 3.1.0 更新（2026-11-11）
+
+QQ 秀改为上下布局，加入形象抽屉和三角形配饰开关。龙娘浮窗优化气泡对齐、状态响应和长语录排版。[更新摘要](README.md#310-更新) · [性能测量](docs/floating-widget-performance.md)
 
 ## 3.0.0 更新（2026-11-10）
 
@@ -226,12 +230,12 @@ $env:CODEX_EXE = 'C:\完整路径\ChatGPT.exe'
 需要 **Windows 10/11** 或 GitHub Actions `windows-2022`。macOS 无法直接生成本安装器 `.exe`。
 
 ```powershell
-.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 3.0.0.exe'
+.\scripts\windows\build-gui-installer.ps1 -UseInstalledNode -OutputFileName 'ChatGPT QQ Skin Setup 3.1.0.exe'
 ```
 
 不使用 `-UseInstalledNode` 时，构建脚本会下载官方 Node.js 运行时并校验 SHA-256。输出文件保存在 `release` 目录。
 
-发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v3.0.0`），由 CI 构建并上传 EXE。
+发布时也可在仓库 Actions 中运行 `Publish release assets`，输入已有 draft tag（如 `v3.1.0`），由 CI 构建并上传 EXE。
 
 ## 安全说明
 
