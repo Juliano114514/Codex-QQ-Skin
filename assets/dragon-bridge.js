@@ -10,6 +10,7 @@
   let connected = false, disposed = false, counter = 0;
   let client = null, container = null, unsubscribe = null, discoveryAt = 0;
   let accountKey = null, context = "", identityHash = null, quotaKey = "", themeKey = "";
+  let activityKey = "", taskSentAt = 0;
   let button = null, separator = null;
   const token = () => window.crypto?.randomUUID?.() || Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
   const instance = token();
@@ -35,6 +36,7 @@
     try { legacy = JSON.parse(localStorage.getItem("codex-qq-skin-workday-v1")); } catch {}
     send("hello", { legacy, focused: document.hasFocus() });
     discover();
+    publishActivity(true);
   };
   const updateButton = () => {
     if (!button) return;
@@ -107,6 +109,42 @@
     themeKey = signature; send("theme", theme);
   };
   const unavailable = error => ({ ok: false, queryOk: false, windows: [], error, source: "native", observedAt: Date.now() });
+  const localThreadIdFor = row => {
+    if (row?.getAttribute("data-app-action-sidebar-thread-host-id") !== "local") return null;
+    const uuid = /^[\da-f]{8}-[\da-f]{4}-7[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
+    const id = row.getAttribute("data-app-action-sidebar-thread-id")?.replace(/^local:/, "");
+    if (id && uuid.test(id)) return id;
+    // A new chat can keep a temporary sidebar key after its real ID is assigned.
+    const key = Object.keys(row).find(name => name.startsWith("__reactFiber"));
+    for (let fiber = key && row[key], depth = 0; fiber && depth < 16; fiber = fiber.return, depth++) {
+      const { hostId, conversationId } = fiber.memoizedProps || {};
+      if (hostId === "local" && typeof conversationId === "string" && uuid.test(conversationId)) return conversationId;
+    }
+    return null;
+  };
+  const publishActivity = (force = false) => {
+    if (disposed) return;
+    // Use the desktop's own working indicator and title, without reading chat content.
+    const row = '[data-app-action-sidebar-thread-row][data-sidebar-indicator="working"][data-app-action-sidebar-thread-title]';
+    const running = [...document.querySelectorAll(row)];
+    const rank = item => item.getAttribute("data-app-action-sidebar-thread-selected") === "true" ? 0
+      : item.getAttribute("data-app-action-sidebar-thread-active") === "true" ? 1 : 2;
+    const tasks = new Map();
+    for (const item of running.sort((a, b) => rank(a) - rank(b))) {
+      const localThreadId = localThreadIdFor(item);
+      const id = localThreadId || item.getAttribute("data-app-action-sidebar-thread-id");
+      if (!id || tasks.has(id)) continue;
+      const raw = item.getAttribute("data-app-action-sidebar-thread-title") || "";
+      const title = Array.from(raw.trim().slice(0, 240)).slice(0, 100).join("") || "Codex 任务";
+      tasks.set(id, { id, title, localThreadId });
+      if (tasks.size >= 64) break;
+    }
+    const list = [...tasks.values()];
+    const key = JSON.stringify(list);
+    const now = Date.now();
+    if (!force && key === activityKey && (!list.length || now - taskSentAt < 10000)) return;
+    if (send("activity", { tasks: list })) { activityKey = key; taskSentAt = now; }
+  };
   const publishNative = () => {
     if (!client || disposed) return;
     try {
@@ -197,15 +235,16 @@
       publishNative();
     }
   };
-  const focus = () => { send("focus"); quotaKey = ""; publishNative(); themeKey = ""; sendTheme(); };
+  const focus = () => { publishActivity(true); send("focus"); quotaKey = ""; publishNative(); themeKey = ""; sendTheme(); };
   window.addEventListener("focus", focus);
   const timer = setInterval(discover, 15000);
+  const activityTimer = setInterval(publishActivity, 2000);
   window.__CODEX_QQ_DRAGON__ = {
     get snapshot() { return snapshot; },
     get connected() { return connected; },
     send, receive, connect, ensure,
     destroy() {
-      disposed = true; unsubscribe?.(); clearInterval(timer); window.removeEventListener("focus", focus);
+      disposed = true; unsubscribe?.(); clearInterval(timer); clearInterval(activityTimer); window.removeEventListener("focus", focus);
       button?.remove(); separator?.remove(); stylesheet.remove();
     },
   };

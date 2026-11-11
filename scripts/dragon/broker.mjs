@@ -3,9 +3,11 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { spawn } from "node:child_process";
 import { normalizeWorkday, editWorkday, workdayView, currentReminders } from "./workday.mjs";
+import { ActivityStepReader, LOCAL_THREAD_ID, activitySnippet } from "./activity-step.mjs";
 
 export const DRAGON_BINDING = "__CODEX_QQ_DRAGON_SEND__";
 const MAX_MESSAGE = 65536;
+const ACTIVITY_MAX_AGE_MS = 45000;
 const object = value => value && typeof value === "object" && !Array.isArray(value);
 function readJson(file, fallback) {
   if (!existsSync(file)) return fallback;
@@ -68,6 +70,11 @@ export class DragonBroker {
     this.delivered = new Set(Array.isArray(saved?.delivered) ? saved.delivered.filter(id => typeof id === "string").slice(-128) : []);
     this.sources = new Map();
     this.activeSource = null;
+    this.sentActivityKey = "";
+    this.stepReader = new ActivityStepReader();
+    this.activityStep = null;
+    this.activityFocus = null;
+    this.readingActivityStep = false;
     this.quota = unavailable();
     this.usage = null;
     this.theme = null;
@@ -99,6 +106,8 @@ export class DragonBroker {
         this.remind();
         const minute = Math.floor(Date.now() / 60000);
         if (this.childReady && minute !== this.lastMinute) { this.lastMinute = minute; this.publish(); }
+        else this.publishActivity();
+        void this.refreshActivityStep();
       } catch { this.fail("保存提醒状态失败，请检查皮肤数据目录。"); }
     }, 1000);
     this.timer.unref();
@@ -121,8 +130,62 @@ export class DragonBroker {
   publish() {
     if (this.closed) return;
     const snapshot = this.snapshot();
-    this.send(snapshot);
+    this.publishActivity(snapshot);
     Promise.resolve(this.onSnapshot(snapshot)).catch(() => {});
+  }
+  currentActivities() {
+    if (!this.enabled) return [];
+    const now = Date.now(), tasks = new Map();
+    const records = [this.sources.get(this.activeSource), ...this.sources.values()];
+    for (const record of records) {
+      const activity = record?.activity;
+      if (!activity || now - activity.at >= ACTIVITY_MAX_AGE_MS) continue;
+      for (const task of activity.tasks) {
+        if (!tasks.has(task.id)) tasks.set(task.id, task);
+        if (tasks.size >= 64) return [...tasks.values()];
+      }
+    }
+    return [...tasks.values()];
+  }
+  publishActivity(snapshot = null) {
+    const tasks = this.currentActivities().map(({ id, title, threadId }) => ({ id, title,
+      step: threadId && threadId === this.activityStep?.id ? this.activityStep.step : null }));
+    const key = JSON.stringify(tasks);
+    // Activity stays on the native pipe; renderer snapshots and disk state never carry titles.
+    if (!snapshot && (!this.childReady || key === this.sentActivityKey)) return;
+    if (this.send({ ...(snapshot || this.snapshot()), tasks })) this.sentActivityKey = key;
+  }
+  focusedThreadId() {
+    const tasks = this.currentActivities();
+    return (tasks.find(task => task.id === this.activityFocus) || tasks[0])?.threadId;
+  }
+  async refreshActivityStep() {
+    const id = this.focusedThreadId();
+    if (!this.childReady || !id || this.readingActivityStep) return;
+    this.readingActivityStep = true;
+    try {
+      const step = await this.stepReader.read(id);
+      if (!this.closed && this.focusedThreadId() === id) {
+        this.activityStep = { id, step };
+        this.publishActivity();
+      }
+    } finally { this.readingActivityStep = false; }
+  }
+  activity(source, { tasks }) {
+    const record = this.sources.get(source);
+    if (!record || !Array.isArray(tasks) || tasks.length > 64) return;
+    const items = [];
+    for (const task of tasks) {
+      if (!object(task) || typeof task.id !== "string" || !/^[A-Za-z0-9:._-]{1,160}$/.test(task.id)
+        || typeof task.title !== "string" || task.title.length > 200) continue;
+      const title = activitySnippet(task.title, 100);
+      if (!title) continue;
+      const threadId = typeof task.localThreadId === "string" && LOCAL_THREAD_ID.test(task.localThreadId) ? task.localThreadId : null;
+      items.push({ id: threadId || task.id, title, threadId });
+    }
+    record.activity = { tasks: items, at: Date.now() };
+    this.publishActivity();
+    void this.refreshActivityStep();
   }
   fail(message) { this.error = message; this.publish(); }
   send(message) {
@@ -140,7 +203,7 @@ export class DragonBroker {
       this.contextGeneration++;
       this.quota = unavailable();
       this.publish();
-    }
+    } else this.publishActivity();
   }
   selectSource(source) {
     if (source === this.activeSource) return;
@@ -209,11 +272,19 @@ export class DragonBroker {
       if (this.closed || !this.childReady || !this.completionEnabled) return;
       this.monitor = new CompletionMonitor({
         stateFile: path.join(this.directory, "completion-state.json"),
-        onNotification: event => this.send({ v: 1, type: "completion", event }),
+        preview: value => activitySnippet(value, 120),
+        onNotification: event => void this.sendCompletion(event).catch(() => {}),
       });
       this.monitor.start();
     } catch { this.fail("回答结束监听暂不可用。"); }
     finally { this.monitorStarting = false; }
+  }
+  async sendCompletion(event) {
+    const id = event.sessionId.slice(-42, -6);
+    const liveTitle = this.currentActivities().find(task => task.threadId === id)?.title;
+    const title = liveTitle ?? await this.stepReader.title(id) ?? "Codex 任务";
+    if (this.closed || !this.childReady || !this.completionEnabled) return;
+    this.send({ v: 1, type: "reminder", kind: "completion", title, message: event.preview || "回复已完成" });
   }
   async start() {
     this.launch();
@@ -295,8 +366,10 @@ export class DragonBroker {
     for (const event of due) this.delivered.add(event.id);
     this.delivered = new Set([...this.delivered].slice(-128));
     this.persistWorkday();
-    this.send({ v: 1, type: "reminder", id: due.map(event => event.id).join("|"),
-      title: due.map(event => event.title).join(" · "), message: due.map(event => event.message).join("\n") });
+    for (const event of due) {
+      this.send({ v: 1, type: "reminder", kind: event.id.startsWith("water:") ? "water" : "workday",
+        title: event.title, message: event.message });
+    }
     this.publish();
   }
   enqueue(source, raw) {
@@ -331,6 +404,13 @@ export class DragonBroker {
           if (!this.activeSource || params.focused === true) this.selectSource(source);
           break;
         case "focus": if (!widget && this.sources.has(source)) this.selectSource(source); break;
+        case "activity": if (!widget) this.activity(source, params); return;
+        case "activity.focus":
+          if (widget && typeof params.id === "string" && /^[A-Za-z0-9:._-]{1,160}$/.test(params.id)) {
+            this.activityFocus = params.id;
+            void this.refreshActivityStep();
+          }
+          return;
         case "native": if (!widget) this.native(source, params); return;
         case "theme":
           if (!widget && source === this.activeSource) {
