@@ -2124,10 +2124,10 @@
               </div>
               <figcaption class="qq-skin-qqshow-toolbar">
                 <button type="button" class="qq-skin-qqshow-character" aria-controls="${QQSHOW_PANEL_ID}-drawer" aria-expanded="false"></button>
-                <button type="button" data-qqshow-settings-toggle aria-controls="${QQSHOW_PANEL_ID}-settings" aria-expanded="true" aria-label="收起设置" title="收起设置">▴</button>
+                <button type="button" data-qqshow-settings-toggle aria-controls="${QQSHOW_PANEL_ID}-settings" aria-expanded="false" aria-label="展开设置" title="展开设置">▾</button>
               </figcaption>
             </figure>
-            <div id="${QQSHOW_PANEL_ID}-settings" class="qq-skin-qqshow-settings">
+            <div id="${QQSHOW_PANEL_ID}-settings" class="qq-skin-qqshow-settings" hidden>
               <div class="qq-skin-qqshow-controls" role="group" aria-label="配饰" tabindex="0"></div>
             </div>
           </div>
